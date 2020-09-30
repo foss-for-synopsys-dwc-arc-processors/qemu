@@ -209,6 +209,9 @@ typedef struct mips_elf_abiflags_v0 {
 
 #define EF_AVR_MACH     0x7F       /* Mask for AVR e_flags to get core type */
 
+#define EM_ARC_COMPACT  93  /* Synopsys ARCompact */
+#define EM_ARC_COMPACT2 195 /* Synopsys ARCompact V2 */
+
 /* This is the info that is needed to parse the dynamic section of the file */
 #define DT_NULL		0
 #define DT_NEEDED	1
