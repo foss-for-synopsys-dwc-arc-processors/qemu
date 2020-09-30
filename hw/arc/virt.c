@@ -120,10 +120,12 @@ static void virt_init(MachineState *machine)
     boot_info.kernel_cmdline = machine->kernel_cmdline;
 
     for (n = 0; n < smp_cpus; n++) {
-#ifdef TARGET_ARCV2
+#if defined(TARGET_ARCV2)
         cpu = ARC_CPU(cpu_create("archs-" TYPE_ARC_CPU));
-#else
+#elif defined(TARGET_ARCV3)
         cpu = ARC_CPU(cpu_create("hs6x-" TYPE_ARC_CPU));
+#else
+#error "Should not happen. Something is wrong."
 #endif
         if (cpu == NULL) {
             fprintf(stderr, "Unable to find CPU definition!\n");
