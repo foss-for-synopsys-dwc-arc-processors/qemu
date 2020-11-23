@@ -30,6 +30,7 @@
 #include "qemu/host-utils.h"
 #include "exec/helper-proto.h"
 #include "irq.h"
+#include "semihosting/semihost.h"
 
 void arc_cpu_do_interrupt(CPUState *cs)
 {
@@ -51,6 +52,20 @@ void arc_cpu_do_interrupt(CPUState *cs)
     if (cs->exception_index == EXCP_LPEND_REACHED
         || cs->exception_index == EXCP_FAKE) {
         env->pc = env->param;
+        CPU_PCL(env) = env->pc & 0xfffffffe;
+        return;
+    }
+
+    /*
+     * NOTE: Special handling of the SWI exception when having
+     * semihosting enabled.
+     */
+    if (cs->exception_index == EXCP_SWI
+        && semihosting_enabled()){
+        qemu_log_mask(CPU_LOG_INT, "Entering semihosting\n");
+        do_arc_semihosting(env);
+        /* Return to the next instruction. */
+        env->pc = env->erbta;
         CPU_PCL(env) = env->pc & 0xfffffffe;
         return;
     }

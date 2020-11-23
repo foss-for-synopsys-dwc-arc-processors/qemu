@@ -456,6 +456,8 @@ void arc_cpu_dump_state(CPUState *cs, FILE *f, int flags);
 hwaddr arc_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
 int arc_cpu_gdb_read_register(CPUState *cpu, GByteArray *buf, int reg);
 int arc_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
+void do_arc_semihosting(CPUARCState *env);
+void arc_sim_open_console(Chardev *chr);
 
 void QEMU_NORETURN arc_raise_exception(CPUARCState *env, int32_t excp_idx);
 
