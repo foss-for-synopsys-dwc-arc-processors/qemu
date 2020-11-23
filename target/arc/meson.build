@@ -14,6 +14,7 @@ arc_softmmu_ss.add(files(
   'timer.c',
   'irq.c',
   'cache.c',
+  'arc-semi.c',
 ))
 
 target_arch += {'arc': arc_softmmu_ss}
