@@ -1,10 +1,10 @@
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "qemu/log.h"
 #include "chardev/char-fe.h"
+#include "qapi/error.h"
 #include "exec/helper-proto.h"
 #include "hw/semihosting/semihost.h"
-#include "qapi/error.h"
-#include "qemu/log.h"
 
 enum {
     TARGET_SYS_exit = 1,
@@ -12,61 +12,19 @@ enum {
     TARGET_SYS_write = 4,
     TARGET_SYS_open = 5,
     TARGET_SYS_close = 6,
-    TARGET_SYS_unlink = 0x0a,
-    TARGET_SYS_lseek = 0x13,
+    TARGET_SYS_unlink = 10,
+    TARGET_SYS_time = 13,
+    TARGET_SYS_lseek = 19,
+    TARGET_SYS_times = 43,
     TARGET_SYS_gettimeofday = 78,
+    TARGET_SYS_stat = 106, /* nsim stat's is corupted.  */
+    TARGET_SYS_fstat = 108,
 
     TARGET_SYS_argc = 1000,
     TARGET_SYS_argv_sz = 1001,
     TARGET_SYS_argv = 1002,
     TARGET_SYS_memset = 1004,
 };
-
-enum {
-    SELECT_ONE_READ   = 1,
-    SELECT_ONE_WRITE  = 2,
-    SELECT_ONE_EXCEPT = 3,
-};
-
-enum {
-    TARGET_EPERM        =  1,
-    TARGET_ENOENT       =  2,
-    TARGET_ESRCH        =  3,
-    TARGET_EINTR        =  4,
-    TARGET_EIO          =  5,
-    TARGET_ENXIO        =  6,
-    TARGET_E2BIG        =  7,
-    TARGET_ENOEXEC      =  8,
-    TARGET_EBADF        =  9,
-    TARGET_ECHILD       = 10,
-    TARGET_EAGAIN       = 11,
-    TARGET_ENOMEM       = 12,
-    TARGET_EACCES       = 13,
-    TARGET_EFAULT       = 14,
-    TARGET_ENOTBLK      = 15,
-    TARGET_EBUSY        = 16,
-    TARGET_EEXIST       = 17,
-    TARGET_EXDEV        = 18,
-    TARGET_ENODEV       = 19,
-    TARGET_ENOTDIR      = 20,
-    TARGET_EISDIR       = 21,
-    TARGET_EINVAL       = 22,
-    TARGET_ENFILE       = 23,
-    TARGET_EMFILE       = 24,
-    TARGET_ENOTTY       = 25,
-    TARGET_ETXTBSY      = 26,
-    TARGET_EFBIG        = 27,
-    TARGET_ENOSPC       = 28,
-    TARGET_ESPIPE       = 29,
-    TARGET_EROFS        = 30,
-    TARGET_EMLINK       = 31,
-    TARGET_EPIPE        = 32,
-    TARGET_EDOM         = 33,
-    TARGET_ERANGE       = 34,
-    TARGET_ENOSYS       = 88,
-    TARGET_ELOOP        = 92,
-};
-
 
 typedef struct ArcSimConsole {
     CharBackend be;
@@ -78,8 +36,8 @@ typedef struct ArcSimConsole {
 
 static ArcSimConsole *sim_console;
 
-
 static IOCanReadHandler sim_console_can_read;
+
 static int sim_console_can_read(void *opaque)
 {
     ArcSimConsole *p = opaque;
@@ -88,6 +46,7 @@ static int sim_console_can_read(void *opaque)
 }
 
 static IOReadHandler sim_console_read;
+
 static void sim_console_read(void *opaque, const uint8_t *buf, int size)
 {
     ArcSimConsole *p = opaque;
@@ -160,7 +119,6 @@ void do_arc_semihosting(CPUARCState *env)
                             /* stdout, stderr */
                             io_done = qemu_chr_fe_write_all(&sim_console->be,
                                                             buf, io_sz);
-                            regs[1] = errno;
                         } else if (!is_write && fd == 0) {
                             /* stdin */
                             if (sim_console->input.offset) {
@@ -176,7 +134,6 @@ void do_arc_semihosting(CPUARCState *env)
                                 qemu_chr_fe_accept_input(&sim_console->be);
                             } else {
                                 io_done = -1;
-                                regs[1] = EAGAIN;
                             }
                         } else {
                             qemu_log_mask(LOG_GUEST_ERROR,
@@ -184,13 +141,11 @@ void do_arc_semihosting(CPUARCState *env)
                                           is_write ?
                                           "writing to" : "reading from", fd);
                             io_done = -1;
-                            regs[1] = EBADF;
                         }
                     } else {
                         io_done = is_write ?
                             write(fd, buf, io_sz) :
                             read(fd, buf, io_sz);
-                        regs[1] = errno;
                     }
                     if (io_done == -1) {
                         error = true;
@@ -199,7 +154,6 @@ void do_arc_semihosting(CPUARCState *env)
                     cpu_physical_memory_unmap(buf, sz, !is_write, io_done);
                 } else {
                     error = true;
-                    regs[1] = EINVAL;
                     break;
                 }
                 if (error) {
@@ -233,10 +187,8 @@ void do_arc_semihosting(CPUARCState *env)
 
             if (rc == 0 && i < ARRAY_SIZE(name)) {
                 regs[0] = open(name, regs[1], regs[2]);
-                regs[1] = errno;
             } else {
                 regs[0] = -1;
-                regs[1] = EINVAL;
             }
         }
         break;
@@ -244,17 +196,57 @@ void do_arc_semihosting(CPUARCState *env)
     case TARGET_SYS_close:
         if (regs[0] < 3) {
             /* Ignore attempts to close stdin/out/err. */
-            regs[0] = regs[1] = 0;
+            regs[0] = 0;
         } else {
             regs[0] = close(regs[0]);
-            regs[1] = errno;
         }
         break;
 
     case TARGET_SYS_lseek:
         regs[0] = lseek(regs[0], (off_t)(int32_t)regs[1], regs[2]);
-        regs[1] = errno;
         break;
+
+    case TARGET_SYS_times:
+    case TARGET_SYS_time:
+        regs[0] = time (NULL);
+        break;
+
+    case TARGET_SYS_gettimeofday:
+    {
+        qemu_timeval tv;
+        struct timeval p;
+        uint32_t result = qemu_gettimeofday(&tv);
+        uint32_t base = regs[0];
+        uint32_t sz = sizeof (struct timeval);
+        hwaddr len = sz;
+        void *buf = cpu_physical_memory_map(base, &len, 1);
+
+        p.tv_sec = tv.tv_sec;
+        p.tv_usec = tv.tv_usec;
+        if (buf)
+        {
+            memcpy(buf, &p, sizeof (struct timeval));
+            cpu_physical_memory_unmap(buf, len, 1, len);
+        }
+        regs[0] = result;
+        break;
+    }
+
+    case TARGET_SYS_fstat:
+    {
+        struct stat sbuf;
+        memset(&sbuf, 0, sizeof(sbuf));
+        regs[0] = fstat(regs[0], &sbuf);
+
+        hwaddr len = sizeof(sbuf);
+        void *buf = cpu_physical_memory_map(regs[1], &len, 1);
+        if (buf)
+        {
+            memcpy(buf, &sbuf, sizeof (sbuf));
+            cpu_physical_memory_unmap(buf, len, 1, len);
+        }
+        break;
+    }
 
 #if 0
     case TARGET_SYS_argc:
@@ -330,9 +322,8 @@ void do_arc_semihosting(CPUARCState *env)
 #endif
 
     default:
-        qemu_log_mask(LOG_GUEST_ERROR, "%s(%d): not implemented\n", __func__, regs[2]);
+        qemu_log_mask(LOG_GUEST_ERROR, "%s(%d): not implemented\n", __func__, regs[8]);
         regs[0] = -1;
-        regs[1] = ENOSYS;
         break;
     }
 }
