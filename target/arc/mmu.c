@@ -297,6 +297,12 @@ arc_mmu_aux_set_tlbcmd(const struct arc_aux_reg_detail *aux_reg_detail,
         tlb = arc_mmu_get_tlb_at_index(mmu->tlbindex & TLBINDEX_INDEX, mmu);
         tlb->pd0 = mmu->tlbpd0;
         tlb->pd1 = mmu->tlbpd1;
+
+        /*
+         * don't try to optimize this: upon ASID rollover the entire TLB is
+         * unconditionally flushed for any ASID
+         */
+        tlb_flush(cs);
     }
     if (val == TLB_CMD_READ) {
         /*
