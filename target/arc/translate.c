@@ -310,6 +310,7 @@ static void arc_tr_init_disas_context(DisasContextBase *dcbase,
 
     dc->base.is_jmp = DISAS_NEXT;
     dc->mem_idx = dc->base.tb->flags & 1;
+    dc->in_delay_slot = false;
 }
 static void arc_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
 {
