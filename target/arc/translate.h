@@ -64,6 +64,8 @@ typedef struct DisasContext {
     uint16_t buffer[2];
     uint8_t  mem_idx;
 
+    bool in_delay_slot;
+
 } DisasContext;
 
 

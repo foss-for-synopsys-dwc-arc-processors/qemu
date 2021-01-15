@@ -234,81 +234,78 @@ extern bool enabled_interrupts;
 void
 arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch)
 {
-    static int in_delay_slot = false;
+    assert(ctx->insn.limm_p == 0 && !ctx->in_delay_slot);
 
-    assert(ctx->insn.limm_p == 0 && !in_delay_slot);
+    ctx->in_delay_slot = true;
+    uint32_t cpc = ctx->cpc;
+    uint32_t pcl = ctx->pcl;
+    insn_t insn = ctx->insn;
 
-    if (ctx->insn.limm_p == 0 && !in_delay_slot) {
-        in_delay_slot = true;
-        uint32_t cpc = ctx->cpc;
-        uint32_t pcl = ctx->pcl;
-        insn_t insn = ctx->insn;
+    ctx->cpc = ctx->npc;
+    ctx->pcl = ctx->cpc & 0xfffffffc;
 
-        ctx->cpc = ctx->npc;
-        ctx->pcl = ctx->cpc & 0xfffffffc;
+    ++ctx->ds;
 
-        ++ctx->ds;
+    TCGLabel *do_not_set_bta_and_de = gen_new_label();
+    tcg_gen_brcondi_i32(TCG_COND_NE, take_branch, 1, do_not_set_bta_and_de);
+    /*
+     * In case an exception should be raised during the execution
+     * of delay slot, bta value is used to set erbta.
+     */
+    tcg_gen_mov_tl(cpu_bta, bta);
+    /* We are in a delay slot */
+    tcg_gen_mov_tl(cpu_DEf, take_branch);
+    gen_set_label(do_not_set_bta_and_de);
 
-        TCGLabel *do_not_set_bta_and_de = gen_new_label();
-        tcg_gen_brcondi_i32(TCG_COND_NE, take_branch, 1, do_not_set_bta_and_de);
-        /*
-         * In case an exception should be raised during the execution
-         * of delay slot, bta value is used to set erbta.
-         */
-        tcg_gen_mov_tl(cpu_bta, bta);
-        /* We are in a delay slot */
-        tcg_gen_mov_tl(cpu_DEf, take_branch);
-        gen_set_label(do_not_set_bta_and_de);
+    tcg_gen_movi_tl(cpu_is_delay_slot_instruction, 1);
 
-        tcg_gen_movi_tl(cpu_is_delay_slot_instruction, 1);
+    /* Set the pc to the next pc */
+    tcg_gen_movi_tl(cpu_pc, ctx->npc);
+    /* Necessary for the likely call to restore_state_to_opc() */
+    tcg_gen_insn_start(ctx->npc);
 
-        /* Set the pc to the next pc */
-        tcg_gen_movi_tl(cpu_pc, ctx->npc);
-        /* Necessary for the likely call to restore_state_to_opc() */
-        tcg_gen_insn_start(ctx->npc);
+    DisasJumpType type = ctx->base.is_jmp;
+    enabled_interrupts = false;
 
-        DisasJumpType type = ctx->base.is_jmp;
-        enabled_interrupts = false;
-
-        /*
-         * In case we might be in a situation where the delayslot is in a
-         * different MMU page. Make a fake exception to interrupt
-         * delayslot execution in the context of the branch.
-         * The delayslot will then be re-executed in isolation after the
-         * branch code has set bta and DEf status flag.
-         */
-        if ((cpc & PAGE_MASK) < 0x80000000 &&
-            (cpc & PAGE_MASK) != (ctx->cpc & PAGE_MASK)) {
-            in_delay_slot = false;
-            TCGv dpc = tcg_const_local_i32(ctx->npc);
-            tcg_gen_mov_tl(cpu_pc, dpc);
-            gen_helper_fake_exception(cpu_env, dpc);
-            tcg_temp_free_i32(dpc);
-            return;
-        }
-
-        decode_opc(ctx->env, ctx);
-        enabled_interrupts = true;
-        ctx->base.is_jmp = type;
-
-        tcg_gen_movi_tl(cpu_DEf, 0);
-        tcg_gen_movi_tl(cpu_is_delay_slot_instruction, 0);
-
-        /* Restore the pc back */
-        tcg_gen_movi_tl(cpu_pc, cpc);
-        /* Again, restore_state_to_opc() must use recent value */
-        tcg_gen_insn_start(cpc);
-
-        assert(ctx->base.is_jmp == DISAS_NEXT);
-
-        --ctx->ds;
-
-        /* Restore old values.  */
-        ctx->cpc = cpc;
-        ctx->pcl = pcl;
-        ctx->insn = insn;
-        in_delay_slot = false;
+    /*
+     * In case we might be in a situation where the delayslot is in a
+     * different MMU page. Make a fake exception to interrupt
+     * delayslot execution in the context of the branch.
+     * The delayslot will then be re-executed in isolation after the
+     * branch code has set bta and DEf status flag.
+     */
+    if ((cpc & PAGE_MASK) < 0x80000000 &&
+        (cpc & PAGE_MASK) != (ctx->cpc & PAGE_MASK)) {
+        ctx->in_delay_slot = false;
+        TCGv dpc = tcg_const_local_i32(ctx->npc);
+        tcg_gen_mov_tl(cpu_pc, dpc);
+        gen_helper_fake_exception(cpu_env, dpc);
+        tcg_temp_free_i32(dpc);
+        return;
     }
+
+    decode_opc(ctx->env, ctx);
+    enabled_interrupts = true;
+    ctx->base.is_jmp = type;
+
+    tcg_gen_movi_tl(cpu_DEf, 0);
+    tcg_gen_movi_tl(cpu_is_delay_slot_instruction, 0);
+
+    /* Restore the pc back */
+    tcg_gen_movi_tl(cpu_pc, cpc);
+    /* Again, restore_state_to_opc() must use recent value */
+    tcg_gen_insn_start(cpc);
+
+    assert(ctx->base.is_jmp == DISAS_NEXT);
+
+    --ctx->ds;
+
+    /* Restore old values.  */
+    ctx->cpc = cpc;
+    ctx->pcl = pcl;
+    ctx->insn = insn;
+    ctx->in_delay_slot = false;
+
     return;
 }
 
