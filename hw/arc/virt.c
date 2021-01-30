@@ -22,6 +22,7 @@
 #include "sysemu/reset.h"
 #include "sysemu/sysemu.h"
 #include "hw/arc/cpudevs.h"
+#include "hw/pci-host/gpex.h"
 #include "hw/sysbus.h"
 
 #define VIRT_RAM_BASE      0x80000000
@@ -37,6 +38,70 @@
 #define VIRT_VIRTIO_BASE   (VIRT_IO_BASE + VIRT_VIRTIO_OFFSET)
 #define VIRT_VIRTIO_SIZE   0x2000
 #define VIRT_VIRTIO_IRQ    31
+
+/* PCI */
+#define VIRT_PCI_ECAM_BASE 0xe0000000
+#define VIRT_PCI_ECAM_SIZE 0x01000000
+#define VIRT_PCI_MMIO_BASE 0xd0000000
+#define VIRT_PCI_MMIO_SIZE 0x10000000
+#define VIRT_PCI_PIO_BASE  0xc0000000
+#define VIRT_PCI_PIO_SIZE  0x00004000
+#define PCIE_IRQ           40  /* IRQs 40-43 as GPEX_NUM_IRQS=4 */
+
+static void create_pcie(ARCCPU *cpu)
+{
+    hwaddr base_ecam = VIRT_PCI_ECAM_BASE;
+    hwaddr size_ecam = VIRT_PCI_ECAM_SIZE;
+    hwaddr base_pio  = VIRT_PCI_PIO_BASE;
+    hwaddr size_pio  = VIRT_PCI_PIO_SIZE;
+    hwaddr base_mmio = VIRT_PCI_MMIO_BASE;
+    hwaddr size_mmio = VIRT_PCI_MMIO_SIZE;
+
+    MemoryRegion *ecam_alias;
+    MemoryRegion *ecam_reg;
+    MemoryRegion *pio_alias;
+    MemoryRegion *pio_reg;
+    MemoryRegion *mmio_alias;
+    MemoryRegion *mmio_reg;
+
+    DeviceState *dev;
+    int i;
+
+    dev = qdev_new(TYPE_GPEX_HOST);
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+
+    /* Map only the first size_ecam bytes of ECAM space. */
+    ecam_alias = g_new0(MemoryRegion, 1);
+    ecam_reg = sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0);
+    memory_region_init_alias(ecam_alias, OBJECT(dev), "pcie-ecam",
+                             ecam_reg, 0, size_ecam);
+    memory_region_add_subregion(get_system_memory(), base_ecam, ecam_alias);
+
+    /*
+     * Map the MMIO window into system address space so as to expose
+     * the section of PCI MMIO space which starts at the same base address
+     * (ie 1:1 mapping for that part of PCI MMIO space visible through
+     * the window).
+     */
+    mmio_alias = g_new0(MemoryRegion, 1);
+    mmio_reg = sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 1);
+    memory_region_init_alias(mmio_alias, OBJECT(dev), "pcie-mmio",
+                             mmio_reg, base_mmio, size_mmio);
+    memory_region_add_subregion(get_system_memory(), base_mmio, mmio_alias);
+
+    /* Map IO port space. */
+    pio_alias = g_new0(MemoryRegion, 1);
+    pio_reg = sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 2);
+    memory_region_init_alias(pio_alias, OBJECT(dev), "pcie-pio",
+                             pio_reg, 0, size_pio);
+    memory_region_add_subregion(get_system_memory(), base_pio, pio_alias);
+
+    /* Connect IRQ lines. */
+    for (i = 0; i < GPEX_NUM_IRQS; i++) {
+        sysbus_connect_irq(SYS_BUS_DEVICE(dev), i, cpu->env.irq[PCIE_IRQ + i]);
+        gpex_set_irq_num(GPEX_HOST(dev), i, PCIE_IRQ + i);
+    }
+}
 
 static void virt_init(MachineState *machine)
 {
@@ -88,6 +153,8 @@ static void virt_init(MachineState *machine)
                              VIRT_VIRTIO_BASE + VIRT_VIRTIO_SIZE * n,
                              cpu->env.irq[VIRT_VIRTIO_IRQ + n]);
     }
+
+    create_pcie(cpu);
 
     arc_load_kernel(cpu, &boot_info);
 }

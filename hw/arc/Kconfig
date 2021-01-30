@@ -2,6 +2,8 @@ config ARC_VIRT
     bool
     select SERIAL
     select VIRTIO_MMIO
+    select PCI_EXPRESS_GENERIC_BRIDGE
+    select PCI_DEVICES
 
 config ARC
     bool
