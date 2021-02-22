@@ -1,0 +1,35 @@
+Helper file for ARC instruction traslation functions.
+
+The code generator was implemented using ruby language.
+In order to change the content of semfunc.c file these scripts should be used.
+
+Ruby instalation process:
+
+The recommended way to obtain a compatible ruby is to install it in a user
+local directory using RVM.
+Instructions to install RVM can be found in https://rvm.io/.
+
+Using RVM one can install Ruby interpreter executing the following
+steps/commands.
+
+Install Ruby version 2.6:
+  # rvm install ruby-2.6
+Set ruby version 2.6 as current in use.
+  # rvm use 2.6
+Create an isolated environment for the required ruby dependencies.
+  # rvm gemset create arc_generator
+Install bundler tool
+  # gem install bundler
+Bundle tool reads the Gemfile file and installs project dependencies.
+  # cd ${QEMU_SOURCE}/target/arc/semfunc_generator & bundle install
+
+
+In order to regenerate the semfunc.c file, please execute the following command.
+  # ruby regenerate_semfunc.rb > ../semfunc.c
+
+By default the tool reads the semfunc.c file and prints the new content for
+the same file.
+The information of what is generated is presented as comment in the file.
+In order to change the functionality of those functions one should change the
+"pseudo code" in the comments, which is what is used to generate the
+semantically similar TCG code.
