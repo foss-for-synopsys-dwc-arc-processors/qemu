@@ -1148,11 +1148,9 @@ arc_gen_VADD2(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
 static int
 arc_gen_VADD2H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
 {
-    if (verify_all_regs_are_even(ctx)) {
-        gen_cc_prologue(ctx);
-        gen_vec_op2h(ctx, gen_add16, dest, b, c);
-        gen_cc_epilogue(ctx);
-    }
+    gen_cc_prologue(ctx);
+    gen_vec_op2h(ctx, gen_add16, dest, b, c);
+    gen_cc_epilogue(ctx);
     return DISAS_NEXT;
 }
 
