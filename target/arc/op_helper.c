@@ -115,6 +115,9 @@ static void report_aux_reg_error(uint32_t aux)
 
 void helper_sr(CPUARCState *env, uint32_t val, uint32_t aux)
 {
+    /* saving return address in case an exception must be raised later */
+    env->host_pc = GETPC();
+
     struct arc_aux_reg_detail *aux_reg_detail =
         arc_aux_reg_struct_for_address(aux, ARC_OPCODE_ARCv2HS);
 
@@ -123,9 +126,6 @@ void helper_sr(CPUARCState *env, uint32_t val, uint32_t aux)
         report_aux_reg_error(aux);
         arc_raise_exception(env, EXCP_INST_ERROR);
     }
-
-    /* saving return address in case an exception must be raised later */
-    env->host_pc = GETPC();
 
     switch (aux_reg_detail->id) {
     case AUX_ID_lp_start:
@@ -209,6 +209,9 @@ target_ulong helper_lr(CPUARCState *env, uint32_t aux)
     ARCCPU *cpu = env_archcpu(env);
     target_ulong result = 0;
 
+    /* saving return address in case an exception must be raised later */
+    env->host_pc = GETPC();
+
     struct arc_aux_reg_detail *aux_reg_detail =
         arc_aux_reg_struct_for_address(aux, ARC_OPCODE_ARCv2HS);
 
@@ -216,9 +219,6 @@ target_ulong helper_lr(CPUARCState *env, uint32_t aux)
         report_aux_reg_error(aux);
         arc_raise_exception(env, EXCP_INST_ERROR);
     }
-
-    /* saving return address in case an exception must be raised later */
-    env->host_pc = GETPC();
 
     switch (aux_reg_detail->id) {
     case AUX_ID_aux_volatile:
