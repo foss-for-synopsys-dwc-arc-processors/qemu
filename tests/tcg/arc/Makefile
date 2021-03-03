@@ -85,6 +85,7 @@ TESTCASES += check_vsub.tst
 TESTCASES += check_mpyd.tst
 TESTCASES += check_bi.tst
 TESTCASES += check_bih.tst
+TESTCASES += check_privilege.tst
 
 all: $(TESTCASES)
 OBJECTS = ivt.o

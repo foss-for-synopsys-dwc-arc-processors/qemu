@@ -3866,6 +3866,8 @@ arc_gen_LR(DisasCtxt *ctx, TCGv dest, TCGv src)
  *    Functions: getRegister, setRegister
  * --- code ---
  * {
+ *   if (user_mode())
+ *     gen_exception(PRIVILEGE_VIOLATION);
  *   status32 = getRegister (R_STATUS32);
  *   ie = (status32 & 2147483648);
  *   ie = (ie >> 27);
@@ -3883,6 +3885,10 @@ int
 arc_gen_CLRI(DisasCtxt *ctx, TCGv c)
 {
     int ret = DISAS_NEXT;
+    TCGLabel *in_kernel_mode = gen_new_label();
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_Uf, 0, in_kernel_mode);
+    arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);
+    gen_set_label(in_kernel_mode);
     TCGv temp_1 = tcg_temp_local_new_i32();
     TCGv status32 = tcg_temp_local_new_i32();
     TCGv ie = tcg_temp_local_new_i32();
@@ -3923,6 +3929,8 @@ arc_gen_CLRI(DisasCtxt *ctx, TCGv c)
  *    Functions: getRegister, setRegister
  * --- code ---
  * {
+ *   if (user_mode())
+ *     gen_exception(PRIVILEGE_VIOLATION);
  *   status32 = getRegister (R_STATUS32);
  *   e_mask = 30;
  *   e_mask = ~e_mask;
@@ -3953,6 +3961,10 @@ int
 arc_gen_SETI(DisasCtxt *ctx, TCGv c)
 {
     int ret = DISAS_NEXT;
+    TCGLabel *in_kernel_mode = gen_new_label();
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_Uf, 0, in_kernel_mode);
+    arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);
+    gen_set_label(in_kernel_mode);
     TCGv temp_5 = tcg_temp_local_new_i32();
     TCGv status32 = tcg_temp_local_new_i32();
     TCGv e_mask = tcg_temp_local_new_i32();
