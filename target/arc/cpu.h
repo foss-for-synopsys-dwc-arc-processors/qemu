@@ -109,7 +109,6 @@ enum exception_code_list {
 /* Flags in pstate */
 #define Hf_b  (0)
 #define AEf_b (5)
-#define Uf_b  (7)
 #define Lf_b  (12)
 #define DZf_b (13)
 #define SCf_b (14)
@@ -127,6 +126,8 @@ enum exception_code_list {
 #define DEf_b   (6)
 #define DEf_bS  (1)
 
+#define Uf_b    (7)
+#define Uf_bS   (1)
 #define Vf_b    (8)
 #define Vf_bS   (1)
 #define Cf_b    (9)
@@ -163,6 +164,7 @@ typedef struct {
     uint32_t RBf;
     uint32_t Ef;     /* irq priority treshold. */
     uint32_t Vf;     /*  overflow                */
+    uint32_t Uf;     /*  user mode               */
     uint32_t Cf;     /*  carry                   */
     uint32_t Nf;     /*  negative                */
     uint32_t Zf;     /*  zero                    */

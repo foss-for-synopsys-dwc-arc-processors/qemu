@@ -50,6 +50,7 @@ uint32_t pack_status32(ARCStatus *status_r)
     res |= (status_r->Nf & ((1 << Nf_bS)-1)) << Nf_b;
     res |= (status_r->Cf & ((1 << Cf_bS)-1)) << Cf_b;
     res |= (status_r->Vf & ((1 << Vf_bS)-1)) << Vf_b;
+    res |= (status_r->Uf & ((1 << Uf_bS)-1)) << Uf_b;
     res |= (status_r->DEf & ((1 << DEf_bS)-1)) << DEf_b;
     res |= (status_r->Ef  & ((1 << Ef_bS)-1)) << Ef_b;
     res |= (status_r->IEf & ((1 << IEf_bS)-1)) << IEf_b;
@@ -66,6 +67,7 @@ void unpack_status32(ARCStatus *status_r, uint32_t value)
     status_r->Nf  = ((value >> Nf_b)&((1 << Nf_bS)-1));
     status_r->Cf  = ((value >> Cf_b)&((1 << Cf_bS)-1));
     status_r->Vf  = ((value >> Vf_b)&((1 << Vf_bS)-1));
+    status_r->Uf  = ((value >> Uf_b)&((1 << Uf_bS)-1));
     status_r->DEf = ((value >> DEf_b)&((1 << DEf_bS)-1));
     status_r->Ef  = ((value >> Ef_b)&((1 << Ef_bS)-1));
     status_r->IEf = ((value >> IEf_b)&((1 << IEf_bS)-1));
