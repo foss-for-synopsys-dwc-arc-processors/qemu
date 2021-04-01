@@ -46,6 +46,11 @@ static target_ulong get_identity(CPUARCState *env)
         arcver = 0x54;
         break;
 
+    /* TODO: Add V3/ARC32. */
+    case ARC_OPCODE_V3_ARC64:
+        arcver = 0x70;
+        break;
+
     default:
         arcver = 0;
 
