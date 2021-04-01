@@ -541,6 +541,8 @@ elif check_define __loongarch64 ; then
   cpu="loongarch64"
 elif check_define __arc__ ; then
   cpu="arc"
+elif check_define __arc64__ ; then
+  cpu="arc64"
 else
   # Using uname is really broken, but it is just a fallback for architectures
   # that are going to use TCI anyway
