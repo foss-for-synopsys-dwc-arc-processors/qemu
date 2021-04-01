@@ -193,6 +193,9 @@ static void arc_cpu_disas_set_info(CPUState *cs, disassemble_info *info)
     case ARC_OPCODE_ARCv2HS:
         info->mach = bfd_mach_arc_arcv2hs;
         break;
+    case ARC_OPCODE_V3_ARC64:
+        info->mach = bfd_mach_arcv3_64;
+        break;
     default:
         info->mach = bfd_mach_arc_arcv2;
         break;
@@ -226,6 +229,7 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
      */
     cpu->freq_hz = cpu->cfg.freq_hz;
 
+#ifdef TARGET_ARCV2
     cpu->isa_config = 0x02;
     switch (cpu->cfg.pc_size) {
     case 16:
@@ -290,6 +294,18 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
     cpu->isa_config |= (cpu->cfg.byte_order ? BIT(20) : 0) | BIT(21)
       | (cpu->cfg.dmp_unaligned ? BIT(22) : 0) | BIT(23)
       | (cpu->cfg.code_density ? (2 << 24) : 0) | BIT(28);
+
+#elif TARGET_ARCV3
+    cpu->isa_config = 0x03        /* ver */
+                      | (1 << 8)  /* va_size: 48-bit */
+                      | (1 << 16) /* pa_size: 48-bit */
+                      | ((cpu->cfg.byte_order ? 1 : 0) << 20) /* endian */
+                      | (1 << 21) /* atomic=1: LLOCK, LLOCKL, WLFC */
+                      | ((cpu->cfg.dmp_unaligned ? 1 : 0) << 23) /* unaliged access */
+                      | (0 << 24) /* 128-bit load/store TBD */
+                      | (3 << 26) /* Code density instructions */
+                      | (0 << 28); /* 64-bit DIV/REM TBD */
+#endif
 
     arc_initializeTIMER(cpu);
     arc_initializeIRQ(cpu);
@@ -379,7 +395,11 @@ static void arc_cpu_class_init(ObjectClass *oc, void *data)
     cc->gdb_write_register = arc_cpu_gdb_write_register;
 
     /* Core GDB support */
+#ifdef TARGET_ARCV2
     cc->gdb_core_xml_file = "arc-v2-core.xml";
+#else
+    cc->gdb_core_xml_file = "arc-core-v3.xml";
+#endif
     cc->gdb_num_core_regs = GDB_REG_LAST;
     cc->gdb_arch_name = arc_gdb_arch_name;
 
@@ -395,6 +415,7 @@ static void arc_any_initfn(Object *obj)
     cpu->family = ARC_OPCODE_ARC700;
 }
 
+#ifdef TARGET_ARCV2
 static void arc600_initfn(Object *obj)
 {
     ARCCPU *cpu = ARC_CPU(obj);
@@ -418,6 +439,15 @@ static void archs_initfn(Object *obj)
     ARCCPU *cpu = ARC_CPU(obj);
     cpu->family = ARC_OPCODE_ARCv2HS;
 }
+#endif
+
+#ifdef TARGET_ARCV3
+static void arc64_initfn(Object *obj)
+{
+    ARCCPU *cpu = ARC_CPU(obj);
+    cpu->family = ARC_OPCODE_V3_ARC64;
+}
+#endif
 
 typedef struct ARCCPUInfo {
     const char     *name;
@@ -425,10 +455,15 @@ typedef struct ARCCPUInfo {
 } ARCCPUInfo;
 
 static const ARCCPUInfo arc_cpus[] = {
+#ifdef TARGET_ARCV2
     { .name = "arc600", .initfn = arc600_initfn },
     { .name = "arc700", .initfn = arc700_initfn },
     { .name = "arcem", .initfn = arcem_initfn },
     { .name = "archs", .initfn = archs_initfn },
+#endif
+#ifdef TARGET_ARCV3
+    { .name = "arc64", .initfn = arc64_initfn },
+#endif
     { .name = "any", .initfn = arc_any_initfn },
 };
 
