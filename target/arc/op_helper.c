@@ -188,7 +188,9 @@ void helper_rtie(CPUARCState *env)
                       (target_ulong) pack_status32(&env->stat));
     }
 
+#ifdef TARGET_ARCV2
     helper_zol_verify(env, env->pc);
+#endif
 }
 
 void helper_flush(CPUARCState *env)
@@ -390,17 +392,103 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
     }
 }
 
-/*
- * uint32_t lf_variable = 0;
- * uint32_t helper_get_lf(void)
- * {
- *   return lf_variable;
- * }
- * void helper_set_lf(uint32_t v)
- * {
- *   lf_variable = v;
- * }
- */
+#ifdef TARGET_ARCV3
+uint64_t helper_carry_add_flag32(uint64_t dest, uint64_t b, uint64_t c) {
+    return carry_add_flag(dest, b, c, 32);
+}
+
+target_ulong helper_overflow_add_flag32(target_ulong dest, target_ulong b, target_ulong c) {
+    return overflow_add_flag(dest, b, c, 32);
+}
+
+target_ulong helper_overflow_sub_flag32(target_ulong dest, target_ulong b, target_ulong c) {
+    dest = dest & 0xffffffff;
+    b = b & 0xffffffff;
+    c = c & 0xffffffff;
+    return overflow_sub_flag(dest, b, c, 32);
+}
+
+uint64_t helper_carry_sub_flag32(uint64_t dest, uint64_t b, uint64_t c)
+{
+    uint32_t t1, t2, t3;
+
+    t1 = ~b;
+    t2 = t1 & c;
+    t3 = (t1 | c) & dest;
+
+    t2 = t2 | t3;
+    return (t2 >> 31) & 1;
+}
+
+uint64_t helper_rotate_left32(uint64_t orig, uint64_t n)
+{
+    uint64_t t;
+    uint64_t dest = (orig << n) & ((0xffffffff << n) & 0xffffffff);
+
+    t = (orig >> (32 - n)) & ((1 << n) - 1);
+    dest |= t;
+
+    return dest;
+}
+
+uint64_t helper_rotate_right32(uint64_t orig, uint64_t n)
+{
+    uint64_t t;
+    uint64_t dest = (orig >> n) & (0xffffffff >> n);
+
+    t = ((orig & ((1 << n) - 1)) << (32 - n));
+    dest |= t;
+
+    return dest;
+}
+
+uint64_t helper_asr_32(uint64_t b, uint64_t c)
+{
+  uint64_t t;
+  c = c & 31;
+  t = b;
+  for(int i = 0; i < c; i++) {
+    t >>= 1;
+    if((b & 0x80000000) != 0)
+      t |= 0x80000000;
+  }
+      //t |= ((1 << (c+1)) - 1) << (32 - c);
+
+  return t;
+}
+
+target_ulong helper_ffs32(CPUARCState *env, uint64_t src)
+{
+    int i;
+    if (src == 0) {
+      return 31;
+    }
+    for (i = 0; i <= 31; i++) {
+      if (((src >> i) & 1) != 0) {
+        break;
+      }
+    }
+    return i;
+}
+
+target_ulong helper_norml(CPUARCState *env, uint64_t src1)
+{
+    int i;
+    int64_t tmp = (int64_t) src1;
+    if (tmp == 0 || tmp == -1) {
+      return 0;
+    }
+    for (i = 0; i <= 63; i++) {
+      if ((tmp >> i) == 0) {
+          break;
+      }
+      if ((tmp >> i) == -1) {
+          break;
+      }
+    }
+    return i;
+}
+#endif
 
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
 /* vim: set ts=4 sw=4 et: */
