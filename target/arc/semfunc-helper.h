@@ -118,6 +118,9 @@ void arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch);
 
 #define getNFlag(R)     cpu_Nf
 #define setNFlag(ELEM)  tcg_gen_shri_tl(cpu_Nf, ELEM, (TARGET_LONG_BITS - 1))
+#ifdef TARGET_ARCV3
+#define setNFlag32(ELEM)  tcg_gen_shri_tl(cpu_Nf, ELEM, 31)
+#endif
 
 #define setCFlag(ELEM)  tcg_gen_andi_tl(cpu_Cf, ELEM, 1)
 #define getCFlag(R)     tcg_gen_mov_tl(R, cpu_Cf)
@@ -151,7 +154,21 @@ void arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch);
 #define setBLINK(BLINK_ADDR) \
   tcg_gen_mov_tl(cpu_blink, BLINK_ADDR);
 
+#ifdef TARGET_ARCV2
+
 #define Carry(R, A)             tcg_gen_shri_tl(R, A, 31);
+
+#endif
+
+
+#ifdef TARGET_ARCV3
+
+#define Carry(R, A)             tcg_gen_shri_tl(R, A, 63);
+#define Carry32(R, A) \
+                                tcg_gen_shri_tl(R, A, 31); \
+                                tcg_gen_andi_tl(R, R, 0x1);
+
+#endif
 
 #define CarryADD(R, A, B, C)    gen_helper_carry_add_flag(R, A, B, C)
 #define OverflowADD(R, A, B, C) gen_helper_overflow_add_flag(R, A, B, C)
@@ -175,6 +192,13 @@ void arc_gen_sub_Cf(TCGv ret, TCGv dest, TCGv src1, TCGv src2);
 #define arithmeticShiftRight(R, B, C) tcg_gen_sar_tl(R, B, C)
 #define rotateLeft(R, B, C)           tcg_gen_rotl_tl(R, B, C)
 #define rotateRight(R, B, C)          tcg_gen_rotr_tl(R, B, C)
+
+#ifdef TARGET_ARCV3
+#define rotateLeft32(R, B, C)     gen_helper_rotate_left32(R, B, C)
+#define rotateRight32(R, B, C)    gen_helper_rotate_right32(R, B, C)
+
+#define arithmeticShiftRight32(R, B, C)   gen_helper_asr_32(R, B, C)
+#endif
 
 void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
 #define getBit(R, A, POS)   arc_gen_get_bit(R, A, POS)
@@ -285,6 +309,13 @@ bool arc_is_instruction_operand_a_register(const DisasCtxt *ctx, int nop);
     arc_is_instruction_operand_a_register(ctx, NOP)
 
 void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
+
+#ifdef TARGET_ARCV3
+
+//#define se32to64(A, B) gen_helper_se32to64(A, B)
+#define se32to64(A, B) tcg_gen_ext32s_tl(A, B)
+
+#endif
 
 #endif /* SEMFUNC_HELPER_H_ */
 
