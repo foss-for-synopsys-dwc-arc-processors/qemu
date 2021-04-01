@@ -308,8 +308,15 @@ static int arc_read_mem(bfd_vma memaddr,
     case bfd_mach_arc_arcv2hs:
         *isa_mask = ARC_OPCODE_ARCv2HS;
         break;
+    case bfd_mach_arcv3_64:
+        *isa_mask = ARC_OPCODE_V3_ARC64;
+        break;
+    case bfd_mach_arcv3_32:
+        *isa_mask = ARC_OPCODE_V3_ARC32;
+        break;
+
     default:
-        *isa_mask = ARC_OPCODE_ARCv2EM;
+        *isa_mask = ARC_OPCODE_NONE;
         break;
     }
 
@@ -390,15 +397,41 @@ int print_insn_arc(bfd_vma memaddr, struct disassemble_info *info)
     opcode = arc_find_format(&dis_insn, insn, insn_len, isa_mask);
 
     /* If limm is required, read it. */
-    if (dis_insn.limm_p) {
-        bfd_byte buffer[4];
-        int status = (*info->read_memory_func)(memaddr + insn_len, buffer,
-                                               4, info);
-        if (status != 0) {
-            return -1;
+    if((isa_mask & ARC_OPCODE_V3_ALL) != 0) {
+        if (dis_insn.unsigned_limm_p) {
+            bfd_byte buffer[4];
+            int status = (*info->read_memory_func)(memaddr + insn_len, buffer,
+                                                   4, info);
+            if (status != 0) {
+                return -1;
+            }
+            dis_insn.limm = ARRANGE_ENDIAN (info, buffer);
+            insn_len += 4;
         }
-        dis_insn.limm = ARRANGE_ENDIAN(info, buffer);
-        insn_len += 4;
+        else if (dis_insn.signed_limm_p) {
+            bfd_byte buffer[4];
+            int status = (*info->read_memory_func)(memaddr + insn_len, buffer,
+                                                   4, info);
+            if (status != 0) {
+                return -1;
+            }
+            dis_insn.limm = ARRANGE_ENDIAN (info, buffer);
+            if(dis_insn.limm & 0x80000000)
+              dis_insn.limm += 0xffffffff00000000;
+            insn_len += 4;
+        }
+
+    } else {
+        if (dis_insn.limm_p) {
+            bfd_byte buffer[4];
+            int status = (*info->read_memory_func)(memaddr + insn_len, buffer,
+                                                   4, info);
+            if (status != 0) {
+                return -1;
+            }
+            dis_insn.limm = ARRANGE_ENDIAN(info, buffer);
+            insn_len += 4;
+        }
     }
 
     /* Print the mnemonic. */
