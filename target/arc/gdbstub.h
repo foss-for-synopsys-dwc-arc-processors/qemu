@@ -20,7 +20,11 @@
 #ifndef ARC_GDBSTUB_H
 #define ARC_GDBSTUB_H
 
+#ifdef TARGET_ARCV2
 #define GDB_TARGET_STRING "arc:ARCv2"
+#else
+#define GDB_TARGET_STRING "arc:ARCv3_64"
+#endif
 
 enum gdb_regs {
     GDB_REG_0 = 0,
@@ -147,6 +151,12 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_TLBPD1,           /* page descriptor 1 */
     GDB_AUX_OTHER_REG_TLB_INDEX,        /* tlb index         */
     GDB_AUX_OTHER_REG_TLB_CMD,          /* tlb command       */
+#ifdef TARGET_ARCV3
+    /* mmuv6 */
+    GDB_AUX_OTHER_REG_MMU_CTRL,         /* mmuv6 control */
+    GDB_AUX_OTHER_REG_RTP0,             /* region 0 ptr  */
+    GDB_AUX_OTHER_REG_RTP1,             /* region 1 ptr  */
+#endif
 
     GDB_AUX_OTHER_REG_LAST
 };
