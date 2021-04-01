@@ -303,6 +303,15 @@ static bool read_and_decode_context(DisasContext *ctx,
                                         cpu_ldl_code(ctx->env,
                                         ctx->cpc + length));
         length += 4;
+#ifdef TARGET_ARCV3
+    } else if(ctx->insn.signed_limm_p) {
+        ctx->insn.limm = ARRANGE_ENDIAN(true,
+                                        cpu_ldl_code (ctx->env,
+                                        ctx->cpc + length));
+        if(ctx->insn.limm & 0x80000000)
+          ctx->insn.limm += 0xffffffff00000000;
+        length += 4;
+#endif
     } else {
         ctx->insn.limm = 0;
     }
@@ -747,7 +756,14 @@ arc_gen_SR(DisasCtxt *ctx, TCGv src2, TCGv src1)
 {
     int ret = DISAS_NEXT;
 
+#ifdef TARGET_ARCV2
     writeAuxReg(src2, src1);
+#elif TARGET_ARCV3
+    TCGv temp = tcg_temp_local_new();
+    tcg_gen_andi_tl(temp, src1, 0xffffffff);
+    writeAuxReg(src2, src1);
+    tcg_temp_free(temp);
+#endif
     return ret;
 }
 int
@@ -769,6 +785,169 @@ arc_gen_SYNC(DisasCtxt *ctx)
     return ret;
 }
 
+
+#ifdef TARGET_ARCV3
+/*
+ * The mpyl instruction is a 64x64 signed multipler that produces
+ * a 64-bit product (the lower 64-bit of the actual prodcut).
+ */
+int
+arc_gen_MPYL(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    if ((getFFlag () == true)) {
+        arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+        return DISAS_NEXT;
+    }
+
+    TCGLabel *done = gen_new_label();
+
+    if (ctx->insn.cc) {
+        TCGv cc = tcg_temp_local_new();
+        arc_gen_verifyCCFlag(ctx, cc);
+        tcg_gen_brcondi_tl(TCG_COND_NE, cc, 1, done);
+        tcg_temp_free(cc);
+    }
+
+    TCGv_i64 lo = tcg_temp_local_new_i64();
+    TCGv_i64 hi = tcg_temp_local_new_i64();
+
+    tcg_gen_muls2_i64(lo, hi, b, c);
+    tcg_gen_mov_tl(a, lo);
+
+    tcg_temp_free_i64(hi);
+    tcg_temp_free_i64(lo);
+    gen_set_label(done);
+
+    return DISAS_NEXT;
+}
+
+/*
+ * The mpyml instruction is a 64x64 signed multipler that produces
+ * a 64-bit product (the higher 64-bit of the actual prodcut).
+ */
+int
+arc_gen_MPYML(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    if ((getFFlag () == true)) {
+        arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+        return DISAS_NEXT;
+    }
+
+    TCGLabel *done = gen_new_label();
+
+    if (ctx->insn.cc) {
+        TCGv cc = tcg_temp_local_new();
+        arc_gen_verifyCCFlag(ctx, cc);
+        tcg_gen_brcondi_tl(TCG_COND_NE, cc, 1, done);
+        tcg_temp_free(cc);
+    }
+
+    TCGv lo = tcg_temp_local_new();
+    TCGv hi = tcg_temp_local_new();
+    tcg_gen_muls2_i64(lo, hi, b, c);
+    tcg_gen_mov_tl(a, hi);
+
+    tcg_temp_free(hi);
+    tcg_temp_free(lo);
+    gen_set_label(done);
+
+    return DISAS_NEXT;
+}
+
+/*
+ * The mpymul instruction is a 64x64 unsigned multipler that produces
+ * a 64-bit product (the higher 64-bit of the actual prodcut).
+ */
+int
+arc_gen_MPYMUL(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    if ((getFFlag () == true)) {
+        arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+        return DISAS_NEXT;
+    }
+
+    TCGLabel *done = gen_new_label();
+
+    if (ctx->insn.cc) {
+        TCGv cc = tcg_temp_local_new();
+        arc_gen_verifyCCFlag(ctx, cc);
+        tcg_gen_brcondi_tl(TCG_COND_NE, cc, 1, done);
+        tcg_temp_free(cc);
+    }
+
+    TCGv lo = tcg_temp_local_new();
+    TCGv hi = tcg_temp_local_new();
+
+    tcg_gen_mulu2_i64(lo, hi, b, c);
+    tcg_gen_mov_tl(a, hi);
+
+    tcg_temp_free(hi);
+    tcg_temp_free(lo);
+    gen_set_label(done);
+
+    return DISAS_NEXT;
+}
+
+/*
+ * The mpymsul instruction is a 64x64 signedxunsigned multipler that
+ * produces * a 64-bit product (the higher 64-bit of the actual prodcut).
+ */
+int
+arc_gen_MPYMSUL(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    if ((getFFlag () == true)) {
+        arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+        return DISAS_NEXT;
+    }
+
+    TCGLabel *done = gen_new_label();
+
+    if (ctx->insn.cc) {
+        TCGv cc = tcg_temp_local_new();
+        arc_gen_verifyCCFlag(ctx, cc);
+        tcg_gen_brcondi_tl(TCG_COND_NE, cc, 1, done);
+        tcg_temp_free(cc);
+    }
+
+    TCGv lo = tcg_temp_local_new();
+    TCGv hi = tcg_temp_local_new();
+    tcg_gen_mulsu2_tl(lo, hi, b, c);
+    tcg_gen_mov_tl(a, hi);
+
+    tcg_temp_free(hi);
+    tcg_temp_free(lo);
+    gen_set_label(done);
+
+    return DISAS_NEXT;
+}
+
+/*
+ * a = b + (c << 32)
+ */
+int
+arc_gen_ADDHL(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    TCGLabel *done = gen_new_label();
+
+    if (ctx->insn.cc) {
+        TCGv cc = tcg_temp_local_new();
+        arc_gen_verifyCCFlag(ctx, cc);
+        tcg_gen_brcondi_tl(TCG_COND_NE, cc, 1, done);
+        tcg_temp_free(cc);
+    }
+
+    TCGv shifted = tcg_temp_local_new();
+    tcg_gen_shli_tl(shifted, c, 32);
+    tcg_gen_add_tl(a, b, shifted);
+
+    tcg_temp_free(shifted);
+    gen_set_label(done);
+
+    return DISAS_NEXT;
+}
+
+#endif
+#ifdef TARGET_ARCV2
 
 /*
  * Function to add boiler plate code for conditional execution.
@@ -1208,6 +1387,7 @@ arc_gen_VSUB4H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
     }
     return DISAS_NEXT;
 }
+#endif
 
 int
 arc_gen_SWI(DisasCtxt *ctx, TCGv a)
