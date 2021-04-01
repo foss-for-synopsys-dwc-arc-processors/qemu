@@ -30,7 +30,13 @@
 #define REG_ADDR(reg, processor_type) \
     arc_aux_reg_address_for((reg), (processor_type))
 
+#ifdef TARGET_ARCV2
 #define GDB_GET_REG gdb_get_reg32
+#elif TARGET_ARCV3
+#define GDB_GET_REG gdb_get_reg64
+#else
+    #error No target is selected.
+#endif
 
 int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
 {
@@ -272,6 +278,18 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_BTA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_bta, cpu->family));
         break;
+#ifdef TARGET_ARCV3
+    /* MMUv6 */
+    case GDB_AUX_OTHER_REG_MMU_CTRL:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_ctrl, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_RTP0:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_RTP1:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp1, cpu->family));
+        break;
+#endif
     default:
         assert(!"Unsupported other auxiliary register is being read.");
     }
@@ -395,8 +413,13 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     return 4;
 }
 
+#ifdef TARGET_ARCV2
 #define GDB_TARGET_MINIMAL_XML "arc-v2-aux.xml"
 #define GDB_TARGET_AUX_XML     "arc-v2-other.xml"
+#else
+#define GDB_TARGET_MINIMAL_XML "arc64-aux-minimal.xml"
+#define GDB_TARGET_AUX_XML     "arc64-aux-other.xml"
+#endif
 
 void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
 {
