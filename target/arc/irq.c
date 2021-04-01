@@ -30,8 +30,15 @@
 #include "qemu/host-utils.h"
 
 #define CACHE_ENTRY_SIZE (TARGET_LONG_BITS / 8)
+#ifdef TARGET_ARCV2
 #define TARGET_LONG_LOAD(ENV, ADDR) cpu_ldl_data(ENV, ADDR)
 #define TARGET_LONG_STORE(ENV, ADDR, VALUE) cpu_stl_data(ENV, ADDR, VALUE)
+#elif TARGET_ARCV3
+#define TARGET_LONG_LOAD(ENV, ADDR) cpu_ldq_data(ENV, ADDR)
+#define TARGET_LONG_STORE(ENV, ADDR, VALUE) cpu_stq_data(ENV, ADDR, VALUE)
+#else
+#error "This should never happen !!!!"
+#endif
 
 /* Static functions and variables. */
 
@@ -181,12 +188,14 @@ static void arc_rtie_irq(CPUARCState *env)
         CPU_BLINK(env) = irq_pop(env, "blink");
     }
 
+#ifdef TARGET_ARCV2
     /* Pop lp_end, lp_start, lp_count if aux_irq_ctrl.l bit is set. */
     if (env->aux_irq_ctrl & (1 << 10)) {
         env->lpe = irq_pop(env, "LP_END");
         env->lps = irq_pop(env, "LP_START");
         CPU_LP(env) = irq_pop(env, "lp");
     }
+#endif
 
     /*
      * Pop EI_BASE, JLI_BASE, LDI_BASE if LP bit is set and Code
@@ -313,12 +322,14 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
         irq_push(env, 0xdeadbeef, "dummy EI_BASE");
     }
 
+#ifdef TARGET_ARCV2
     /* Push LP_COUNT, LP_START, LP_END registers if required. */
     if (env->aux_irq_ctrl & (1 << 10)) {
         irq_push(env, CPU_LP(env), "lp");
         irq_push(env, env->lps, "LP_START");
         irq_push(env, env->lpe, "LP_END");
     }
+#endif
 
     /* Push BLINK register if required */
     if (env->aux_irq_ctrl & (1 << 9) && ((env->aux_irq_ctrl & 0x1F) != 16)) {
