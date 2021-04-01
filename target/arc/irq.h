@@ -32,6 +32,13 @@ void arc_resetIRQ(ARCCPU *);
 uint32_t pack_status32(ARCStatus *);
 void unpack_status32(ARCStatus *, uint32_t);
 
+#ifdef TARGET_ARCV2
 #define OFFSET_FOR_VECTOR(VECNO) (VECNO << 2)
+#elif TARGET_ARCV3
+#define OFFSET_FOR_VECTOR(VECNO) (VECNO << 3)
+#else
+#error Should never be reached
+#endif
+
 
 #endif
