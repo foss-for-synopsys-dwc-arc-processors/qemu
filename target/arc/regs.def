@@ -410,3 +410,23 @@ AUX_REG (xylsbasey, NULL, NULL)
 AUX_REG (aux_rtc_ctrl, aux_timer_get, aux_timer_set)
 AUX_REG (aux_rtc_low, aux_timer_get, aux_timer_set)
 AUX_REG (aux_rtc_high, aux_timer_get, aux_timer_set)
+
+/* ARCV3 specific registers. */
+
+AUX_REG_GETTER(arc_mmuv6_aux_get)
+AUX_REG_SETTER(arc_mmuv6_aux_set)
+
+AUX_REG (mmuv6_build, arc_mmuv6_aux_get, NULL)
+AUX_REG (mmuv6_tlbcommand,  arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+
+AUX_REG (mmu_ctrl, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_rtp0, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_rtp0hi, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_rtp1, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_rtp1hi, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_ttbcr, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_tlb_data0, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_tlb_data1, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_fault_status, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
+AUX_REG (mmu_mem_attr, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
