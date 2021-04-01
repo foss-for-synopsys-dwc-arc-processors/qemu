@@ -214,6 +214,8 @@ enum bfd_architecture
 #define bfd_mach_arc_arcv2     5
 #define bfd_mach_arc_arcv2em   6
 #define bfd_mach_arc_arcv2hs   7
+#define bfd_mach_arcv3_64      0x10
+#define bfd_mach_arcv3_32      0x20
   bfd_arch_m32r,       /* Mitsubishi M32R/D */
 #define bfd_mach_m32r          0  /* backwards compatibility */
   bfd_arch_mn10200,    /* Matsushita MN10200 */
