@@ -127,15 +127,26 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
 
 #define MEMIDX (ctx->mem_idx)
 
+#ifdef TARGET_ARCV2
 const MemOp memop_for_size_sign[2][3] = {
     { MO_UL, MO_UB, MO_UW }, /* non sign-extended */
     { MO_UL, MO_SB, MO_SW } /* sign-extended */
 };
+#endif
+
+#ifdef TARGET_ARCV3
+const MemOp memop_for_size_sign[2][4] = {
+    { MO_UL, MO_UB, MO_UW, MO_Q }, /* non sign-extended */
+    { MO_SL, MO_SB, MO_SW, MO_Q } /* sign-extended */
+};
+#endif
 
 void arc_gen_set_memory(const DisasCtxt *ctx, TCGv vaddr, int size,
         TCGv src, bool sign_extend)
 {
+#ifdef TARGET_ARCV2
     assert(size != 0x3);
+#endif
 
     tcg_gen_qemu_st_tl(src, vaddr, MEMIDX,
                        memop_for_size_sign[sign_extend][size]);
@@ -144,7 +155,9 @@ void arc_gen_set_memory(const DisasCtxt *ctx, TCGv vaddr, int size,
 void arc_gen_get_memory(const DisasCtxt *ctx, TCGv dest, TCGv vaddr,
         int size, bool sign_extend)
 {
+#ifdef TARGET_ARCV2
     assert(size != 0x3);
+#endif
 
     tcg_gen_qemu_ld_tl(dest, vaddr, MEMIDX,
                        memop_for_size_sign[sign_extend][size]);
