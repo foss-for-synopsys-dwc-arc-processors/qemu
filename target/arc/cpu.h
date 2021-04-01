@@ -25,6 +25,7 @@
 
 #include "target/arc/arc-common.h"
 #include "target/arc/mmu.h"
+#include "target/arc/mmu-v6.h"
 #include "target/arc/mpu.h"
 #include "target/arc/cache.h"
 
@@ -66,8 +67,15 @@ enum exception_code_list {
     EXCP_MEMORY_ERROR,
     EXCP_INST_ERROR,
     EXCP_MACHINE_CHECK,
+#ifdef TARGET_ARCV2
     EXCP_TLB_MISS_I,
     EXCP_TLB_MISS_D,
+#elif TARGET_ARCV3
+    EXCP_IMMU_FAULT,
+    EXCP_DMMU_FAULT,
+#else
+    #error "TARGET macro not defined!"
+#endif
     EXCP_PROTV,
     EXCP_PRIVILEGEV,
     EXCP_SWI,
@@ -244,7 +252,11 @@ typedef struct CPUARCState {
     uint32_t causecode;
     uint32_t param;
 
+#ifdef TARGET_ARCV2
     struct arc_mmu mmu;       /* mmu.h */
+#elif TARGET_ARCV3
+    struct arc_mmuv6 mmu;       /* mmu.h */
+#endif
     ARCMPU mpu;               /* mpu.h */
     struct arc_cache cache;   /* cache.h */
 
