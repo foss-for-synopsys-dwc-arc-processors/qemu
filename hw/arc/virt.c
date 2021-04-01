@@ -120,7 +120,11 @@ static void virt_init(MachineState *machine)
     boot_info.kernel_cmdline = machine->kernel_cmdline;
 
     for (n = 0; n < smp_cpus; n++) {
+#ifdef TARGET_ARCV2
         cpu = ARC_CPU(cpu_create("archs-" TYPE_ARC_CPU));
+#else
+        cpu = ARC_CPU(cpu_create("arc64-" TYPE_ARC_CPU));
+#endif
         if (cpu == NULL) {
             fprintf(stderr, "Unable to find CPU definition!\n");
             exit(1);
