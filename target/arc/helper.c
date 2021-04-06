@@ -32,6 +32,7 @@
 #include "irq.h"
 #include "semihosting/semihost.h"
 
+#ifndef CONFIG_USER_ONLY
 void arc_cpu_do_interrupt(CPUState *cs)
 {
     ARCCPU      *cpu    = ARC_CPU(cs);
@@ -220,6 +221,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
 
     cs->exception_index = -1;
 }
+#endif /* CONFIG_USER_ONLY */
 
 static gint arc_cpu_list_compare(gconstpointer a, gconstpointer b)
 {
