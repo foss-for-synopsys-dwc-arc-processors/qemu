@@ -23,7 +23,7 @@
 #include "bsd-mman.h"
 #include "exec/exec-all.h"
 
-//#define DEBUG_MMAP
+#define DEBUG_MMAP
 
 static pthread_mutex_t mmap_mutex = PTHREAD_MUTEX_INITIALIZER;
 static __thread int mmap_lock_count;

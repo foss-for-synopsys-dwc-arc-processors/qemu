@@ -277,6 +277,10 @@ typedef struct CPUARCState {
     const struct arc_boot_info *boot_info;
 
     bool enabled_interrupts;
+
+#ifdef CONFIG_USER_ONLY
+    target_ulong tls_backup;
+#endif
 } CPUARCState;
 
 /*
@@ -418,7 +422,7 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
     *pc = env->pc;
     *cs_base = 0;
 #ifdef CONFIG_USER_ONLY
-    assert(0); /* Not really supported at the moment. */
+    //assert(0); /* Not really supported at the moment. */
 #else
     *pflags = cpu_mmu_index(env, 0);
 #endif
