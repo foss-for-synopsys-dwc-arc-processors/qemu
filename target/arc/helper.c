@@ -32,6 +32,7 @@
 #include "irq.h"
 #include "semihosting/semihost.h"
 
+#ifndef CONFIG_USER_ONLY
 void arc_cpu_do_interrupt(CPUState *cs)
 {
     ARCCPU      *cpu    = ARC_CPU(cs);
@@ -217,6 +218,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
 
     cs->exception_index = -1;
 }
+#endif /* CONFIG_USER_ONLY */
 
 static gint arc_cpu_list_compare(gconstpointer a, gconstpointer b)
 {
@@ -265,6 +267,7 @@ int arc_cpu_memory_rw_debug(CPUState *cs, vaddr addr, uint8_t *buf,
     return cpu_memory_rw_debug(cs, addr, buf, len, is_write);
 }
 
+#ifndef CONFIG_USER_ONLY
 hwaddr arc_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
 {
     ARCCPU *cpu = ARC_CPU(cs);
@@ -272,6 +275,7 @@ hwaddr arc_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
 
     return arc_mmu_debug_translate(env, addr);
 }
+#endif /* CONFIG_USER_ONLY */
 
 void helper_debug(CPUARCState *env)
 {
