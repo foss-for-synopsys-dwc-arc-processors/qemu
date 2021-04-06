@@ -31,6 +31,7 @@
 #include "timer.h"
 #include "gdbstub.h"
 
+#ifndef CONFIG_USER_ONLY
 static const VMStateDescription vms_arc_cpu = {
     .name               = "cpu",
     .version_id         = 0,
@@ -39,6 +40,7 @@ static const VMStateDescription vms_arc_cpu = {
       VMSTATE_END_OF_LIST()
     }
 };
+#endif
 
 static Property arc_cpu_properties[] = {
     DEFINE_PROP_UINT32("address-size", ARCCPU, cfg.addr_size, 32),
@@ -155,10 +157,12 @@ static void arc_cpu_reset(DeviceState *dev)
     env->in_delayslot_instruction = false;
     env->next_insn_is_delayslot = false;
 
+#ifndef CONFIG_USER_ONLY
     /* Initialize mmu/reset it. */
     arc_mmu_init(env);
 
     arc_mpu_init(cpu);
+#endif
 
     arc_resetTIMER(cpu);
     arc_resetIRQ(cpu);

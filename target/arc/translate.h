@@ -44,12 +44,12 @@
 typedef struct DisasContext {
     DisasContextBase base;
 
-    uint32_t cpc;   /*  current pc      */
-    uint32_t npc;   /*  next pc         */
-    uint32_t dpc;   /*  next next pc    */
-    uint32_t pcl;
-    uint32_t lpe;
-    uint32_t lps;
+    uint64_t cpc;   /*  current pc      */
+    uint64_t npc;   /*  next pc         */
+    uint64_t dpc;   /*  next next pc    */
+    uint64_t pcl;
+    uint64_t lpe;
+    uint64_t lps;
 
     unsigned ds;    /*  we are within ds*/
 

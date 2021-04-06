@@ -721,7 +721,6 @@ void arc_mmu_init(CPUARCState *env)
 }
 
 
-#ifndef CONFIG_USER_ONLY
 /* Softmmu support function for MMU. */
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
@@ -730,6 +729,7 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     /* TODO: this rwe should go away when the TODO below is done */
     enum mmu_access_type rwe = (char) access_type;
     CPUARCState *env = &((ARC_CPU(cs))->env);
+#ifndef CONFIG_USER_ONLY
     int action = decide_action(env, address, mmu_idx);
 
     switch (action) {
@@ -788,6 +788,23 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     }
 
     return true;
+#else /* CONFIG_USER_ONLY */
+    const struct mmu_exception *mmu_excp = &env->mmu.exception;
+    switch (access_type) {
+    case MMU_INST_FETCH:
+        SET_MMU_EXCEPTION(env, EXCP_TLB_MISS_I, 0x00, 0x00);
+
+        break;
+    case MMU_DATA_LOAD:
+    case MMU_DATA_STORE:
+        SET_MMU_EXCEPTION(env, EXCP_TLB_MISS_D, CAUSE_CODE(rwe), 0x00);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+    raise_mem_exception(cs, address, retaddr,
+                        mmu_excp->number, CAUSE_CODE(rwe), 0);
+#endif /* CONFIG_USER_ONLY */
 }
 
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
@@ -795,9 +812,6 @@ hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
    return arc_mmu_translate(env, addr, MMU_MEM_IRRELEVANT_TYPE,
                             NULL);
 }
-
-
-#endif /* ifndef CONFIG_USER_ONLY */
 
 void arc_mmu_disable(CPUARCState *env)
 {

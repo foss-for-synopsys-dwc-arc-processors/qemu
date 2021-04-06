@@ -253,6 +253,7 @@ typedef struct CPUARCState {
 #define TMR_PD  (1 << 4)
     ARCTimer timer[2];    /* ARC CPU-Timer 0/1 */
 
+    /* TODO: Verify correctness of this types for both ARCv2 and v3. */
     ARCIrq irq_bank[256]; /* IRQ register bank */
     uint32_t irq_select;     /* AUX register */
     uint32_t aux_irq_act;    /* AUX register */
@@ -265,9 +266,10 @@ typedef struct CPUARCState {
     uint32_t aux_rtc_low;
     uint32_t aux_rtc_high;
 
+    /* TODO: This one in particular. */
     /* Fields required by exception handling. */
     uint32_t causecode;
-    uint32_t param;
+    target_ulong param;
 
 #if defined(TARGET_ARCV2)
     struct arc_mmu mmu;       /* mmu.h */
@@ -293,6 +295,9 @@ typedef struct CPUARCState {
     bool in_delayslot_instruction;
     bool next_insn_is_delayslot;
 
+#ifdef CONFIG_USER_ONLY
+    target_ulong tls_backup;
+#endif
 } CPUARCState;
 
 /*
@@ -434,7 +439,7 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
     *pc = env->pc;
     *cs_base = 0;
 #ifdef CONFIG_USER_ONLY
-    assert(0); /* Not really supported at the moment. */
+    //assert(0); /* Not really supported at the moment. */
 #else
     *pflags = cpu_mmu_index(env, 0);
 #endif
@@ -469,6 +474,8 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       bool probe, uintptr_t retaddr);
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr);
 void arc_mmu_disable(CPUARCState *env);
+
+#define MMU_USER_IDX 1
 
 #include "exec/cpu-all.h"
 

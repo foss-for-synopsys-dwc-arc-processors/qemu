@@ -254,6 +254,8 @@ arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
     }
 }
 
+#ifndef CONFIG_USER_ONLY
+
 #define ALL1_64BIT (0xffffffffffffffff)
 
 static uint64_t
@@ -500,9 +502,18 @@ page_table_traverse(struct CPUARCState *env,
     return -1;
 }
 
+#endif /* CONFIG_USER_ONLY */
+
 #undef PAGE_OFFSET_MASK
 #undef PTE_PADDR_MASK
 #undef PADDR
+
+void arc_mmu_init(CPUARCState *env)
+{
+    return;
+}
+
+#ifndef CONFIG_USER_ONLY
 
 static target_ulong
 arc_mmuv6_translate(struct CPUARCState *env,
@@ -544,14 +555,7 @@ static int mmuv6_decide_action(const struct CPUARCState *env,
   else
     return DIRECT_ACTION;
 }
-
-void arc_mmu_init(CPUARCState *env)
-{
-    return;
-}
-
-
-#ifndef CONFIG_USER_ONLY
+#endif /* CONFIG_USER_ONLY */
 
 static void QEMU_NORETURN raise_mem_exception(
         CPUState *cs, target_ulong addr, uintptr_t host_pc,
@@ -581,8 +585,9 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     enum mmu_access_type rwe = (char) access_type;
     ARCCPU *cpu = ARC_CPU(cs);
     CPUARCState *env = &(cpu->env);
-    int prot;
 
+#ifndef CONFIG_USER_ONLY
+    int prot;
     int action = mmuv6_decide_action(env, address, mmu_idx);
 
     switch (action) {
@@ -618,11 +623,29 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     default:
         g_assert_not_reached();
     }
+#else /* CONFIG_USER_ONLY */
+    const struct mmuv6_exception *mmu_excp = &env->mmu.exception;
+
+    switch (access_type) {
+    case MMU_INST_FETCH:
+        SET_MMU_EXCEPTION(env, EXCP_IMMU_FAULT, 0x00, 0x00);
+
+        break;
+    case MMU_DATA_LOAD:
+    case MMU_DATA_STORE:
+        SET_MMU_EXCEPTION(env, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+    raise_mem_exception(cs, address, retaddr,
+                        mmu_excp->number, CAUSE_CODE(rwe), 0);
+#endif /* CONFIG_USER_ONLY */
 
     return true;
 }
-#endif /* CONFIG_USER_ONLY */
 
+#ifndef CONFIG_USER_ONLY
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
 {
     if(mmuv6_enabled()) {
@@ -631,6 +654,7 @@ hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
         return addr;
     }
 }
+#endif /* CONFIG_USER_ONLY */
 
 void arc_mmu_disable(CPUARCState *env) {
     disable_mmuv6();
