@@ -59,4 +59,6 @@ struct target_pt_regs {
 /* This comes from linux/kernel/fork.c, CONFIG_CLONE_BACKWARDS */
 #define TARGET_CLONE_BACKWARDS
 
+#define MMAP_SHIFT TARGET_PAGE_BITS
+
 #endif

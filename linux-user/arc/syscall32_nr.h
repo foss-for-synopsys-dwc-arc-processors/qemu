@@ -226,8 +226,13 @@
 #define TARGET_NR_rt_tgsigqueueinfo 240
 #define TARGET_NR_perf_event_open 241
 #define TARGET_NR_accept4 242
-#define TARGET_NR_arch_specific_syscall 244
-#define TARGET_NR_riscv_flush_icache (TARGET_NR_arch_specific_syscall + 15)
+
+#define TARGET_NR_arc_cacheflush 244
+#define TARGET_NR_arc_settls 245
+#define TARGET_NR_arc_gettls 246
+#define TARGET_NR_arc_sysfs 247
+#define TARGET_NR_arc_usr_cmpxchg 248
+
 #define TARGET_NR_prlimit64 261
 #define TARGET_NR_fanotify_init 262
 #define TARGET_NR_fanotify_mark 263

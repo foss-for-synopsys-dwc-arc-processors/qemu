@@ -70,37 +70,70 @@ void cpu_loop(CPUARCState *env)
     EXCP_LPEND_REACHED = 9000,
     EXCP_FAKE
     */
-//        case EXCP_INTERRUPT:
-//            /* just indicate that signals should be handled asap */
-//            break;
-//        case EXCP_ATOMIC:
-//            cpu_exec_step_atomic(cs);
-//            break;
+        case EXCP_LPEND_REACHED:
+        case EXCP_FAKE:
+            env->pc = env->param;
+            CPU_PCL(env) = env->pc & (~1);  
+            break;
+        case EXCP_TLB_MISS_I:
+        case EXCP_TLB_MISS_D:
+            signum = TARGET_SIGSEGV;
+            sigcode = TARGET_SEGV_MAPERR;
+            sigaddr = env->efa;
+            break;
+        case EXCP_INTERRUPT:
+            /* just indicate that signals should be handled asap */
+            break;
+        case EXCP_ATOMIC:
+            cpu_exec_step_atomic(cs);
+            break;
         case EXCP_TRAP:
-            env->pc += 4;
+            env->pc += 2;
             //if (env->r[8] == TARGET_NR_arch_specific_syscall + 15) {
             //    /* riscv_flush_icache_syscall is a no-op in QEMU as
             //       self-modifying code is automatically detected */
             //    ret = 0;
             //} else {
-                ret = do_syscall(env,
-                                 env->r[8],
-                                 env->r[0],
-                                 env->r[1],
-                                 env->r[2],
-                                 env->r[3],
-                                 env->r[4],
-                                 env->r[5],
-                                 env->r[6],
-                                 env->r[7]);
-            //}
-            if (ret == -TARGET_ERESTARTSYS) {
-                env->pc -= 4;
-            } else if (ret != -TARGET_QEMU_ESIGRETURN) {
-                env->r[0] = ret;
-            }
-            if (cs->singlestep_enabled) {
-                goto gdbstep;
+            target_ulong syscall_num = env->r[8];
+
+            switch(syscall_num) {
+                case TARGET_NR_arc_settls:
+                    env->tls_backup = env->r[0];
+                    env->r[0] = 0;
+                    break;
+                case TARGET_NR_arc_gettls:
+                    env->r[0] = env->tls_backup;
+                    break;
+                case TARGET_NR_arc_cacheflush:
+                    break;
+                case TARGET_NR_arc_sysfs:
+                    break;
+                case TARGET_NR_arc_usr_cmpxchg:
+                    break;
+                default: 
+                    {
+                        ret = do_syscall(env,
+                                         env->r[8],
+                                         env->r[0],
+                                         env->r[1],
+                                         env->r[2],
+                                         env->r[3],
+                                         env->r[4],
+                                         env->r[5],
+                                         env->r[6],
+                                         env->r[7]);
+                        //}
+                        if (ret == -TARGET_ERESTARTSYS) {
+                            env->pc -= 2;
+                        } else if (ret != -TARGET_QEMU_ESIGRETURN) {
+                            env->r[0] = ret;
+                        }
+                        CPU_PCL(env) = env->pc & (~1);  
+                        if (cs->singlestep_enabled) {
+                            goto gdbstep;
+                        }
+                    }
+                    break;
             }
             break;
 //        case RISCV_EXCP_ILLEGAL_INST:
@@ -123,7 +156,7 @@ void cpu_loop(CPUARCState *env)
 //        //    env->gpr[xA0] = do_common_semihosting(cs);
 //        //    env->pc += 4;
 //        //    break;
-//        case EXCP_DEBUG:
+        case EXCP_DEBUG:
         gdbstep:
             signum = TARGET_SIGTRAP;
             sigcode = TARGET_TRAP_BRKPT;
@@ -156,7 +189,7 @@ void target_cpu_copy_regs(CPUArchState *env, struct target_pt_regs *regs)
 
     env->pc = regs->sepc;
     CPU_SP(env) = regs->sp;
-    //env->elf_flags = info->elf_flags;
+    //env->r[8] = info->elf_flags;
 
 //    if ((env->misa & RVE) && !(env->elf_flags & EF_ARC_RVE)) {
 //        error_report("Incompatible ELF: ARC cpu requires ARC ABI binary");
