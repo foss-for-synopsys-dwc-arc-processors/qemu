@@ -63,7 +63,7 @@ extern const char *opcode_name_str[OPCODE_SIZE];
     OPERANDS_##NAME,
 #define FLAGS_LIST(...)
 #define MNEMONIC(...)
-enum operands {
+enum arc_operands {
     OPERANDS_LIST_INVALID = -1,
     #include "opcodes-v3.def"
     OPERANDS_LIST_SIZE
@@ -79,7 +79,7 @@ enum operands {
 #define FLAGS_LIST(NAME, ...) \
     FLAGS_##NAME,
 #define MNEMONIC(...)
-enum flags {
+enum arc_flags {
     FLAGS_INVALID = -1,
     #include "opcodes-v3.def"
     FLAGS_SIZE
