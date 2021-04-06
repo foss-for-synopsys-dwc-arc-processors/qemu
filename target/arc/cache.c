@@ -19,7 +19,9 @@
  */
 
 #include "qemu/osdep.h"
+#ifndef CONFIG_USER_ONLY
 #include "hw/hw.h"
+#endif
 #include "cpu.h"
 #include "target/arc/regs.h"
 #include "target/arc/cache.h"
@@ -81,8 +83,10 @@ void arc_cache_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
         break;
 
     default:
+#ifndef CONFIG_USER_ONLY
         hw_error("%s@%d: Attempt to write read-only register 0x%02x!\n",
                  __func__, __LINE__, (unsigned int)aux_reg_detail->id);
+#endif
         break;
     }
 
@@ -173,8 +177,10 @@ target_ulong arc_cache_aux_get(const struct arc_aux_reg_detail *aux_reg_detail,
         break;
 
     default:
+#ifndef CONFIG_USER_ONLY
         hw_error("%s@%d: Attempt to read write-only register 0x%02x!\n",
                  __func__, __LINE__, (unsigned int)aux_reg_detail->id);
+#endif
         break;
     }
 

@@ -27,22 +27,44 @@
 #include "timer.h"
 #include "qemu/main-loop.h"
 
+#define NANOSECONDS_PER_SECOND 1000000000LL
 #define TIMER_PERIOD(hz) (1000000000LL / (hz))
 #define TIMEOUT_LIMIT 1000000
 
 #define FREQ_HZ (env_archcpu(env)->freq_hz)
 #define T_PERIOD (TIMER_PERIOD(FREQ_HZ))
-#define T_COUNT(T)                                                      \
-    ((uint32_t) ((qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) -               \
-                  env->timer[T].last_clk) / T_PERIOD))
+
+static uint64_t cycles_get_count(CPUARCState *env)
+{
+#ifndef CONFIG_USER_ONLY
+    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
+                   FREQ_HZ, NANOSECONDS_PER_SECOND);
+#else
+    return cpu_get_host_ticks();
+#endif
+}
+
+static uint32_t get_t_count(CPUARCState *env, uint32_t t)
+{
+#ifndef CONFIG_USER_ONLY
+    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) - env->timer[t].last_clk,
+                   FREQ_HZ, NANOSECONDS_PER_SECOND);
+#else
+    return cpu_get_host_ticks() - env->timer[t].last_clk;
+#endif
+}
+//#define T_COUNT(T)                                                      \
+//    ((uint32_t) ((qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) -               \
+//                  env->timer[T].last_clk) / T_PERIOD))
+#define T_COUNT(T) (get_t_count(env, T))
 
 /* Update the next timeout time as difference between Count and Limit */
 static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
 {
     uint32_t delta;
     uint32_t t_count = T_COUNT(timer);
-    uint64_t now =
-        (qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / T_PERIOD) * T_PERIOD;
+    uint64_t now = cycles_get_count(env);
+        //(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / T_PERIOD) * T_PERIOD;
     uint32_t period = T_PERIOD;
 
     delta = env->timer[timer].T_Limit - t_count - 1;
@@ -58,7 +80,10 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
         delta = TIMEOUT_LIMIT / period;
     }
 
+// TODO: This should be changed for usermode
+#ifndef CONFIG_USER_ONLY
     timer_mod(env->cpu_timer[timer], now + ((uint64_t)delta * period));
+#endif
 
     qemu_log_mask(LOG_UNIMP,
                   "[TMR%d] Timer update in 0x" TARGET_FMT_lx
@@ -84,7 +109,7 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
     }
     env->timer[timer].T_Cntrl |= TMR_IP;
     env->timer[timer].last_clk =
-        (qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / T_PERIOD) * T_PERIOD;
+        (cycles_get_count(env) / T_PERIOD) * T_PERIOD;
     if (unlocked) {
         qemu_mutex_unlock_iothread();
     }
@@ -134,7 +159,7 @@ static void cpu_rtc_count_update(CPUARCState *env)
     uint64_t llreg;
 
     assert((env_archcpu(env)->timer_build & TB_RTC) && env->cpu_rtc);
-    now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    now = cycles_get_count(env);
 
     if (!(env->aux_rtc_ctrl & 0x01)) {
         return;
@@ -156,7 +181,7 @@ static void cpu_rtc_update(CPUARCState *env)
     uint64_t now, next, period;
 
     assert(env->cpu_rtc);
-    now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    now = cycles_get_count(env);
 
     if (!(env->aux_rtc_ctrl & 0x01)) {
         return;
@@ -173,7 +198,10 @@ static void cpu_rtc_update(CPUARCState *env)
     }
 
     next = now + (uint64_t) wait * period;
+// TODO: This should be changed for usermode
+#ifndef CONFIG_USER_ONLY
     timer_mod(env->cpu_rtc, next);
+#endif
     qemu_log_mask(LOG_UNIMP, "[RTC] RTC update\n");
 }
 
@@ -190,7 +218,7 @@ static void arc_rtc_cb(void *opaque)
 
     env->aux_rtc_high = 0;
     env->aux_rtc_low = 0;
-    env->last_clk_rtc = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    env->last_clk_rtc = cycles_get_count(env);
     cpu_rtc_update(env);
 }
 
@@ -219,7 +247,7 @@ static void cpu_arc_count_set(CPUARCState *env, uint32_t timer, uint32_t val)
         qemu_mutex_lock_iothread();
     }
     env->timer[timer].last_clk =
-        ((qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / T_PERIOD) + val) * T_PERIOD;
+        ((cycles_get_count(env) / T_PERIOD) + val) * T_PERIOD;
     cpu_arc_timer_update(env, timer);
     if (unlocked) {
         qemu_mutex_unlock_iothread();
@@ -276,12 +304,13 @@ static uint32_t arc_rtc_count_get(CPUARCState *env, bool lower)
 /* Set the RTC control bits. */
 static void arc_rtc_ctrl_set(CPUARCState *env, uint32_t val)
 {
+#ifndef CONFIG_USER_ONLY
     assert(GET_STATUS_BIT(env->stat, Uf) == 0);
 
     if (val & 0x02) {
         env->aux_rtc_low = 0;
         env->aux_rtc_high = 0;
-        env->last_clk_rtc = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+        env->last_clk_rtc = cycles_get_count(env);
     }
     if (!(val & 0x01)) {
         timer_del(env->cpu_rtc);
@@ -289,11 +318,12 @@ static void arc_rtc_ctrl_set(CPUARCState *env, uint32_t val)
 
     /* Restart RTC, update last clock. */
     if ((env->aux_rtc_ctrl & 0x01) == 0 && (val & 0x01)) {
-        env->last_clk_rtc = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+        env->last_clk_rtc = cycles_get_count(env);
     }
 
     env->aux_rtc_ctrl = 0xc0000000 | (val & 0x01);
     cpu_rtc_update(env);
+#endif
 }
 
 /* Init procedure, called in platform. */
@@ -303,6 +333,7 @@ cpu_arc_clock_init(ARCCPU *cpu)
 {
     CPUARCState *env = &cpu->env;
 
+#ifndef CONFIG_USER_ONLY
     if (env_archcpu(env)->timer_build & TB_T0) {
         env->cpu_timer[0] =
             timer_new_ns(QEMU_CLOCK_VIRTUAL, &arc_timer0_cb, env);
@@ -317,11 +348,12 @@ cpu_arc_clock_init(ARCCPU *cpu)
         env->cpu_rtc =
             timer_new_ns(QEMU_CLOCK_VIRTUAL, &arc_rtc_cb, env);
     }
+#endif
 
     env->timer[0].last_clk =
-        (qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / T_PERIOD) * T_PERIOD;
+        (cycles_get_count(env) / T_PERIOD) * T_PERIOD;
     env->timer[1].last_clk =
-        (qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / T_PERIOD) * T_PERIOD;
+        (cycles_get_count(env) / T_PERIOD) * T_PERIOD;
 }
 
 void

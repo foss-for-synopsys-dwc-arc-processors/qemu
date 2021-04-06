@@ -22,6 +22,7 @@ linux_user_ss.add(when: 'CONFIG_ARM_COMPATIBLE_SEMIHOSTING', if_true: files('sem
 syscall_nr_generators = {}
 
 subdir('alpha')
+subdir('arc')
 subdir('arm')
 subdir('hppa')
 subdir('i386')

@@ -452,6 +452,8 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr);
 void arc_mmu_disable(CPUARCState *env);
 
+#define MMU_USER_IDX 1
+
 #include "exec/cpu-all.h"
 
 #endif /* !defined (CPU_ARC_H) */

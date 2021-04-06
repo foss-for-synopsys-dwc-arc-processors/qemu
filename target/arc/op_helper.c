@@ -66,10 +66,12 @@ static void set_status32(CPUARCState *env, target_ulong value)
 
     unpack_status32(&env->stat, value);
 
+#ifndef CONFIG_USER_ONLY
     /* Implement HALT functionality.  */
     if (value & 0x01) {
         qemu_system_shutdown_request(SHUTDOWN_CAUSE_GUEST_SHUTDOWN);
     }
+#endif
 }
 
 static void report_aux_reg_error(target_ulong aux)
@@ -103,7 +105,9 @@ void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
     } else {
         arc_raise_exception(env, EXCP_INST_ERROR);
     }
+#ifndef CONFIG_USER_ONLY
     cpu_outl(aux, val);
+#endif
 }
 
 
