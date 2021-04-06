@@ -14,6 +14,7 @@ gen64 = [
 arc_softmmu_ss = ss.source_set()
 arc_softmmu_ss.add(when: 'TARGET_ARCV2', if_true: gen32)
 arc_softmmu_ss.add(when: 'TARGET_ARCV3', if_true: gen64)
+arc_softmmu_ss.add(when: 'CONFIG_USER_ONLY', if_false: files('arc-semi.c'))
 
 arc_softmmu_ss.add(files(
   'translate.c',
@@ -27,8 +28,7 @@ arc_softmmu_ss.add(files(
   'mpu.c',
   'timer.c',
   'irq.c',
-  'cache.c',
-  'arc-semi.c',
+  'cache.c'
 ))
 
 target_arch += {'arc': arc_softmmu_ss}

@@ -25,6 +25,7 @@
 #include "exec/exec-all.h"
 #include "mmu.h"
 
+#ifndef CONFIG_USER_ONLY
 /*
  * In case of exception, this signals the effective region
  * was the default one
@@ -652,6 +653,7 @@ arc_mpu_translate(CPUARCState *env, target_ulong addr,
 
     return MPU_SUCCESS;
 }
+#endif /* CONFIG_USER_ONLY */
 
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
 /* vim: set ts=4 sw=4 et: */
