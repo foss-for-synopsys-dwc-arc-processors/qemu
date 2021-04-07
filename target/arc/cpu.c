@@ -291,9 +291,12 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
         break;
     }
 
-    cpu->isa_config |= (cpu->cfg.byte_order ? BIT(20) : 0) | BIT(21)
-      | (cpu->cfg.dmp_unaligned ? BIT(22) : 0) | BIT(23)
-      | (cpu->cfg.code_density ? (2 << 24) : 0) | BIT(28);
+    cpu->isa_config |= (cpu->cfg.byte_order ? BIT(20) : 0)
+                    | BIT(21)   /* atomic */
+                    | (cpu->cfg.dmp_unaligned ? BIT(22) : 0) /* unaligned */
+                    | BIT(23) /* ll64 */
+                    | (cpu->cfg.code_density ? (2 << 24) : 0)
+                    | BIT(28) /* div_rem */;
 
 #elif defined(TARGET_ARCV3)
     cpu->isa_config = 0x03        /* ver */
@@ -302,9 +305,9 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
                       | ((cpu->cfg.byte_order ? 1 : 0) << 20) /* endian */
                       | (1 << 21) /* atomic=1: LLOCK, LLOCKL, WLFC */
                       | ((cpu->cfg.dmp_unaligned ? 1 : 0) << 23) /* unaliged access */
-                      | (0 << 24) /* 128-bit load/store TBD */
+                      | (1 << 24) /* 128-bit load/store */
                       | (3 << 26) /* Code density instructions */
-                      | (0 << 28); /* 64-bit DIV/REM TBD */
+                      | (1 << 28); /* 64-bit DIV/REM TBD */
 #endif
 
     arc_initializeTIMER(cpu);
