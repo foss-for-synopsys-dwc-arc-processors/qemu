@@ -134,7 +134,21 @@ arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
         reg = env->bta_l2;
         break;
 
+    case AUX_ID_hw_pf_build:
+        reg = 1 << 28;  /* version */
+        break;
+
+    case AUX_ID_hw_pf_ctrl:
+        reg = (0)       /* EN */
+            | (1 << 1)  /* RD_ST */
+            | (1 << 3)  /* WR_ST */
+            | (2 << 5)  /* OUTS */
+            | (1 << 7); /* AG */
+
+        break;
+
     case AUX_ID_unimp_bcr:
+        /* TODO: raise instruction error here */
         reg = 0;
         break;
 
