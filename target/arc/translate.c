@@ -1515,7 +1515,7 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
 
         default:
             arc_debug_opcode(opcode, ctx, "No handle for map opcode");
-            g_assert(!"Semantic not handled: Use -d unimp to list it.");
+            arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
         }
 #undef MAPPING
 #undef CONSTANT
@@ -1535,7 +1535,7 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
 
     } else {
         arc_debug_opcode(opcode, ctx, "No mapping for opcode");
-        g_assert(!"Semantic not found: Use -d unimp to list it.");
+        arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
     }
 
     return ret;
