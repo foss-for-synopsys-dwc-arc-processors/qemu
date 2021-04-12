@@ -680,10 +680,6 @@ elif check_define __arm__ ; then
   cpu="arm"
 elif check_define __aarch64__ ; then
   cpu="aarch64"
-elif check_define __arc__ ; then
-  cpu="arc"
-elif check_define __arc64__ ; then
-  cpu="arc64"
 else
   cpu=$(uname -m)
 fi
