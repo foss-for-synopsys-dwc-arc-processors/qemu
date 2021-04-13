@@ -233,6 +233,7 @@
 #define TARGET_NR_arc_sysfs 247
 #define TARGET_NR_arc_usr_cmpxchg 248
 
+#define TARGET_NR_wait4 260
 #define TARGET_NR_prlimit64 261
 #define TARGET_NR_fanotify_init 262
 #define TARGET_NR_fanotify_mark 263
