@@ -1075,11 +1075,15 @@ const struct arc_flag_class arc_flag_classes[] =
 #define C_AA_ADDR9  (C_AA_ADDR3 + 1)
 #define C_AA21	     (C_AA_ADDR3 + 1)
   { F_CLASS_OPTIONAL | F_CLASS_WB, { F_A9, F_AW9, F_AB9, F_AS9, F_NULL } },
-#define C_AA_ADDR22 (C_AA_ADDR9 + 1)
-#define C_AA8	   (C_AA_ADDR9 + 1)
+#define C_AAB21	     (C_AA21 + 1)
+  { F_CLASS_OPTIONAL | F_CLASS_WB, { F_A9, F_AW9, F_AB9, F_NULL } },
+#define C_AA_ADDR22 (C_AAB21 + 1)
+#define C_AA8	   (C_AAB21 + 1)
   { F_CLASS_OPTIONAL | F_CLASS_WB, { F_A22, F_AW22, F_AB22, F_AS22, F_NULL } },
+#define C_AAB8	   (C_AA8 + 1)
+  { F_CLASS_OPTIONAL | F_CLASS_WB, { F_A22, F_AW22, F_AB22, F_NULL } },
 
-#define C_F	    (C_AA_ADDR22 + 1)
+#define C_F	    (C_AAB8 + 1)
   { F_CLASS_OPTIONAL | F_CLASS_F, { F_FLAG, F_NULL } },
 #define C_FHARD	    (C_F + 1)
   { F_CLASS_OPTIONAL | F_CLASS_F, { F_FFAKE, F_NULL } },
