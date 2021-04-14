@@ -951,6 +951,16 @@ extract_rbb (unsigned long long  insn,
   return value;
 }
 
+/* Extract address writeback mode for 128-bit loads.  */
+
+static long long
+extract_qq (unsigned long long  insn)
+{
+  long long value;
+  value = ((insn & 0x800) >> 11) | ((insn & 0x40) >> (6-1));
+  return value;
+}
+
 /*
  * The operands table.
  *
@@ -1133,7 +1143,18 @@ const struct arc_flag_class arc_flag_classes[] =
   { F_CLASS_OPTIONAL, { F_ASFAKE, F_NULL}, 0},
 
 #define C_NE	    (C_AS + 1)
-  { F_CLASS_REQUIRED, { F_NE, F_NULL}, 0}
+  { F_CLASS_REQUIRED, { F_NE, F_NULL}, 0},
+
+/* The address writeback for 128-bit loads.  */
+#define C_AA_128    (C_NE + 1)
+  { F_CLASS_OPTIONAL | F_CLASS_WB, { F_AA128, F_AA128W, F_AA128B, F_AA128S, F_NULL }, 0},
+
+/* The scattered version of address writeback for 128-bit loads.  */
+#define C_AA_128S    (C_AA_128 + 1)
+  { F_CLASS_OPTIONAL | F_CLASS_WB,
+    { F_AA128, F_AA128W, F_AA128B, F_AA128S, F_NULL },
+    extract_qq
+  }
 };
 
 /* List with special cases instructions and the applicable flags. */
