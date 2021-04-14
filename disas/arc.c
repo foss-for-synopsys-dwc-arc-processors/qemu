@@ -108,8 +108,13 @@ static void print_flags(const struct arc_opcode *opcode,
                 continue;
             }
 
-            value = (insn >> flg_operand->shift) &
-                    ((1 << flg_operand->bits) - 1);
+            if (cl_flags->extract) {
+                value = (*cl_flags->extract)(insn);
+            } else {
+                value = (insn >> flg_operand->shift) &
+                        ((1 << flg_operand->bits) - 1);
+            }
+
             if (value == flg_operand->code) {
                 /* FIXME!: print correctly nt/t flag. */
                 if (!special_flag_p(opcode->name, flg_operand->name)) {
