@@ -329,6 +329,12 @@ struct arc_flag_class {
 
     /* List of valid flags (codes). */
     unsigned flags[256];
+
+    /*
+     * Some special cases needs to use insert/extract functions for
+     * flags as well.
+     */
+    long long int (*extract) (unsigned long long instruction);
 };
 
 extern const struct arc_flag_class arc_flag_classes[];
