@@ -442,7 +442,7 @@ static void archs_initfn(Object *obj)
 #endif
 
 #ifdef TARGET_ARCV3
-static void arc64_initfn(Object *obj)
+static void arc_hs6x_initfn(Object *obj)
 {
     ARCCPU *cpu = ARC_CPU(obj);
     cpu->family = ARC_OPCODE_V3_ARC64;
@@ -462,7 +462,7 @@ static const ARCCPUInfo arc_cpus[] = {
     { .name = "archs", .initfn = archs_initfn },
 #endif
 #ifdef TARGET_ARCV3
-    { .name = "arc64", .initfn = arc64_initfn },
+    { .name = "hs6x", .initfn = arc_hs6x_initfn },
 #endif
     { .name = "any", .initfn = arc_any_initfn },
 };
