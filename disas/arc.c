@@ -401,6 +401,40 @@ int print_insn_arc(bfd_vma memaddr, struct disassemble_info *info)
 
     opcode = arc_find_format(&dis_insn, insn, insn_len, isa_mask);
 
+    if (!opcode) {
+        switch (insn_len) {
+        case 2:
+            (*info->fprintf_func)(info->stream, ".shor\t%#04lx",
+                   insn & 0xffff);
+            break;
+
+        case 4:
+            (*info->fprintf_func)(info->stream, ".word\t%#08lx",
+                                  insn & 0xffffffff);
+            break;
+
+        case 6:
+            (*info->fprintf_func)(info->stream, ".long\t%#08lx",
+                                  insn & 0xffffffff);
+            (*info->fprintf_func)(info->stream, ".long\t%#04lx",
+                                  (insn >> 32) & 0xffff);
+            break;
+
+        case 8:
+            (*info->fprintf_func)(info->stream, ".long\t%#08lx",
+                                  insn & 0xffffffff);
+            (*info->fprintf_func)(info->stream, ".long\t%#08lx",
+                                  insn >> 32);
+            break;
+
+        default:
+            return -1;
+        }
+
+        info->insn_type = dis_noninsn;
+        return insn_len;
+    }
+
     /* If limm is required, read it. */
     if((isa_mask & ARC_OPCODE_V3_ALL) != 0) {
         if (dis_insn.unsigned_limm_p) {
