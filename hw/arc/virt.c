@@ -123,7 +123,7 @@ static void virt_init(MachineState *machine)
 #ifdef TARGET_ARCV2
         cpu = ARC_CPU(cpu_create("archs-" TYPE_ARC_CPU));
 #else
-        cpu = ARC_CPU(cpu_create("arc64-" TYPE_ARC_CPU));
+        cpu = ARC_CPU(cpu_create("hs6x-" TYPE_ARC_CPU));
 #endif
         if (cpu == NULL) {
             fprintf(stderr, "Unable to find CPU definition!\n");
