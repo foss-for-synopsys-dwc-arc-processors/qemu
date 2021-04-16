@@ -87,7 +87,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
     case EXCP_TLB_MISS_D:
         name = "TLB Miss Data";
         break;
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
     case EXCP_IMMU_FAULT:
         name = "Instruction MMU Fault";
         break;

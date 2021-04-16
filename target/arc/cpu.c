@@ -295,7 +295,7 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
       | (cpu->cfg.dmp_unaligned ? BIT(22) : 0) | BIT(23)
       | (cpu->cfg.code_density ? (2 << 24) : 0) | BIT(28);
 
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
     cpu->isa_config = 0x03        /* ver */
                       | (1 << 8)  /* va_size: 48-bit */
                       | (1 << 16) /* pa_size: 48-bit */

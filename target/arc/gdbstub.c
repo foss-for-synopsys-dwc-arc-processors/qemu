@@ -32,7 +32,7 @@
 
 #ifdef TARGET_ARCV2
 #define GDB_GET_REG gdb_get_reg32
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
 #define GDB_GET_REG gdb_get_reg64
 #else
     #error No target is selected.
