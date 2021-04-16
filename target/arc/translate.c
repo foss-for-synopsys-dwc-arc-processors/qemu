@@ -915,6 +915,102 @@ arc_gen_ADDHL(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
     return DISAS_NEXT;
 }
 
+/*
+ * 128-bit load.
+ * FIXME: There is a mixture of decoder stuffs in here.
+ *        The logic must be moved to a decoding layer.
+ */
+int
+arc_gen_LDDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv dest_lo)
+{
+    TCGv dest_hi = NULL;
+
+    /*
+     * The destiantion can be a register or immediate (0).
+     * Look for next register pair if "dest" is a register.
+     * Will raise an exception if "dest" is an odd register.
+     */
+    if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
+        dest_hi = nextReg(dest_lo);
+        if (dest_hi == NULL) {
+            return DISAS_NORETURN;
+        }
+    }
+
+    /*
+     * Address writebacks for 128-bit loads.
+     * ,----.----------.
+     * | aa | mnemonic |
+     * |----+----------|
+     * | 0  | none     |
+     * | 1  | as       |
+     * | 2  | a/aw     |
+     * | 3  | ab       |
+     * `----^----------'
+     */
+    /* A non-register operand cannot be incremented. */
+    if (ctx->insn.aa == 2 || ctx->insn.aa == 3)
+    {
+        if (!(ctx->insn.operands[1].type & ARC_OPERAND_IR)) {
+            arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+            return DISAS_NORETURN;
+      }
+    }
+
+    /* Only defined after possible exception routine codes. */
+    TCGv addr = tcg_temp_local_new();
+    TCGv data_hi = tcg_temp_local_new();
+    TCGv data_lo = tcg_temp_local_new();
+
+    switch (ctx->insn.aa) {
+    case 0:  /* Simple base+offset access. */
+        tcg_gen_add_tl(addr, base, offset);
+        break;
+    case 1:  /* Address scaling. */
+        tcg_gen_shli_tl(offset, offset, 3);
+        tcg_gen_add_tl(addr, base, offset);
+        break;
+    case 2:  /* Pre memory access increment. */
+        tcg_gen_add_tl(addr, base, offset);
+        tcg_gen_mov_tl(base, addr);
+        break;
+    case 3:  /* Post memory access increment. */
+        tcg_gen_mov_tl(addr, base);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    /* Load the data. */
+    if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
+        tcg_gen_qemu_ld_tl(data_lo, addr, ctx->mem_idx, MO_Q);
+        tcg_gen_addi_tl(addr, addr, 8);
+        tcg_gen_qemu_ld_tl(data_hi, addr, ctx->mem_idx, MO_Q);
+    }
+
+    /*
+     * If "dest" and "base" are pointing to the same register,
+     * the register will end up with the loaded data; not the
+     * updated pointer. Therefore the "base" must be updated
+     * before the "dest".
+     */
+    if (ctx->insn.aa == 3) { /* Post-memory access increment. */
+        tcg_gen_add_tl(addr, base, offset);
+        tcg_gen_mov_tl(base, addr);
+    }
+
+    if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
+        tcg_gen_mov_tl(dest_lo, data_lo);
+        tcg_gen_mov_tl(dest_hi, data_hi);
+    }
+
+    tcg_temp_free(data_lo);
+    tcg_temp_free(data_hi);
+    tcg_temp_free(addr);
+
+    return DISAS_NEXT;
+}
+
 #endif
 #ifdef TARGET_ARCV2
 
