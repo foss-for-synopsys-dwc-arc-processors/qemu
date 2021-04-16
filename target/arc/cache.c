@@ -150,6 +150,10 @@ target_ulong arc_cache_aux_get(const struct arc_aux_reg_detail *aux_reg_detail,
               (7 << 12) | /* Cache capacity */
               (1 << 8)  | /* Cache Associativiy */
               (4 << 0);   /* Version number */
+
+#ifdef TARGET_ARCV3
+	reg |= (1 << 30); /* Hardware prefetcher */
+#endif
         break;
 
 /*
