@@ -107,7 +107,7 @@ target_ulong arc_cache_aux_get(const struct arc_aux_reg_detail *aux_reg_detail,
  *   Cache Associativiy: 0010b - Four-way set associative
  *   Version number: 4 - ARCv2
  */
-    case AUX_ID_i_cache_build:
+    case AUX_ID_ic_build:
         reg = (0 << 22) | /* D */
               (2 << 20) | /* FL */
               (3 << 16) | /* BBSixe*/
@@ -144,7 +144,7 @@ target_ulong arc_cache_aux_get(const struct arc_aux_reg_detail *aux_reg_detail,
  *   Cache Associativiy: 0001b - Two-way set associative
  *   Version number: 4 - ARCv2 with fixed number of cycles
  */
-    case AUX_ID_d_cache_build:
+    case AUX_ID_dc_build:
         reg = (2 << 20) | /* FL */
               (2 << 16) | /* BSize */
               (7 << 12) | /* Cache capacity */
