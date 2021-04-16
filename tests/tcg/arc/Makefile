@@ -85,6 +85,8 @@ TESTCASES += check_vsub.tst
 TESTCASES += check_mpyd.tst
 TESTCASES += check_bi.tst
 TESTCASES += check_bih.tst
+# arc64
+#TESTCASES += check_lddl.tst
 
 all: $(TESTCASES)
 OBJECTS = ivt.o
