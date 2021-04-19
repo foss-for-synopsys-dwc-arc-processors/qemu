@@ -30,9 +30,9 @@
 #define REG_ADDR(reg, processor_type) \
     arc_aux_reg_address_for((reg), (processor_type))
 
-#ifdef TARGET_ARCV2
+#if defined(TARGET_ARCV2)
 #define GDB_GET_REG gdb_get_reg32
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
 #define GDB_GET_REG gdb_get_reg64
 #else
     #error No target is selected.
