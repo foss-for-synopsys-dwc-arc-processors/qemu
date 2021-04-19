@@ -30,10 +30,10 @@
 #include "qemu/host-utils.h"
 
 #define CACHE_ENTRY_SIZE (TARGET_LONG_BITS / 8)
-#ifdef TARGET_ARCV2
+#if defined(TARGET_ARCV2)
 #define TARGET_LONG_LOAD(ENV, ADDR) cpu_ldl_data(ENV, ADDR)
 #define TARGET_LONG_STORE(ENV, ADDR, VALUE) cpu_stl_data(ENV, ADDR, VALUE)
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
 #define TARGET_LONG_LOAD(ENV, ADDR) cpu_ldq_data(ENV, ADDR)
 #define TARGET_LONG_STORE(ENV, ADDR, VALUE) cpu_stq_data(ENV, ADDR, VALUE)
 #else

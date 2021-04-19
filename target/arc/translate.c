@@ -756,9 +756,9 @@ arc_gen_SR(DisasCtxt *ctx, TCGv src2, TCGv src1)
 {
     int ret = DISAS_NEXT;
 
-#ifdef TARGET_ARCV2
+#if defined(TARGET_ARCV2)
     writeAuxReg(src2, src1);
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
     TCGv temp = tcg_temp_local_new();
     tcg_gen_andi_tl(temp, src1, 0xffffffff);
     writeAuxReg(src2, src1);
