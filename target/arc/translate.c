@@ -218,7 +218,8 @@ static int arc_gen_INVALID(const DisasContext *ctx)
 {
     qemu_log_mask(LOG_UNIMP,
                   "invalid inst @:%08x\n", ctx->cpc);
-    return DISAS_NEXT;
+    arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+    return DISAS_NORETURN;
 }
 
 /*
