@@ -67,10 +67,10 @@ enum exception_code_list {
     EXCP_MEMORY_ERROR,
     EXCP_INST_ERROR,
     EXCP_MACHINE_CHECK,
-#ifdef TARGET_ARCV2
+#if defined(TARGET_ARCV2)
     EXCP_TLB_MISS_I,
     EXCP_TLB_MISS_D,
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
     EXCP_IMMU_FAULT,
     EXCP_DMMU_FAULT,
 #else
@@ -252,9 +252,9 @@ typedef struct CPUARCState {
     uint32_t causecode;
     uint32_t param;
 
-#ifdef TARGET_ARCV2
+#if defined(TARGET_ARCV2)
     struct arc_mmu mmu;       /* mmu.h */
-#elif TARGET_ARCV3
+#elif defined(TARGET_ARCV3)
     struct arc_mmuv6 mmu;       /* mmu.h */
 #endif
     ARCMPU mpu;               /* mpu.h */
