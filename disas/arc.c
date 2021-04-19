@@ -204,11 +204,14 @@ static void print_operands(const struct arc_opcode *opcode,
 
             assert(value >= 0 && value < 64);
             rname = get_register_name(value);
-            (*info->fprintf_func)(info->stream, "%s", rname);
-            if (operand->flags & ARC_OPERAND_TRUNCATE) {
+            /* A single register. */
+            if ((operand->flags & ARC_OPERAND_TRUNCATE) == 0) {
+                (*info->fprintf_func)(info->stream, "%s", rname);
+            } else { /* A register pair, e.g. "r1r0". */
                 /* Make sure we print only legal register pairs. */
                 if ((value & 0x01) == 0) {
-                    rname = get_register_name(value+1);
+                    const char *rpair = get_register_name(value+1);
+                    (*info->fprintf_func)(info->stream, "%s", rpair);
                 }
                 (*info->fprintf_func)(info->stream, "%s", rname);
             }
