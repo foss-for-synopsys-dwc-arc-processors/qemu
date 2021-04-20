@@ -12533,13 +12533,13 @@ arc_gen_ABSL (DisasCtxt *ctx, TCGv src, TCGv dest)
 
 
 
-/* SWAPL
+/* SWAP
  *    Variables: @src, @dest
  *    Functions: getFFlag, setZFlag, setNFlag
 --- code ---
 {
-  tmp1 = (@src << 16);
-  tmp2 = ((@src >> 16) & 65535);
+  tmp1 = (@src << 32);
+  tmp2 = ((@src >> 32) & 0xFFFFFFFF);
   @dest = (tmp1 | tmp2);
   f_flag = getFFlag ();
   if((f_flag == true))
@@ -12553,47 +12553,36 @@ arc_gen_ABSL (DisasCtxt *ctx, TCGv src, TCGv dest)
 int
 arc_gen_SWAPL (DisasCtxt *ctx, TCGv src, TCGv dest)
 {
-  int ret = DISAS_NEXT;
-  TCGv tmp1 = tcg_temp_local_new();
-  TCGv temp_1 = tcg_temp_local_new();
-  TCGv tmp2 = tcg_temp_local_new();
-  int f_flag;
-  tcg_gen_shli_tl(tmp1, src, 16);
-  tcg_gen_shri_tl(temp_1, src, 16);
-  tcg_gen_andi_tl(tmp2, temp_1, 65535);
-  tcg_gen_or_tl(dest, tmp1, tmp2);
-  f_flag = getFFlag ();
-  if ((f_flag == true))
-    {
-    setZFlag(dest);
-  setNFlag(dest);
-;
-    }
-  else
-    {
-  ;
-    }
-  tcg_temp_free(tmp1);
-  tcg_temp_free(temp_1);
-  tcg_temp_free(tmp2);
+    const int ret = DISAS_NEXT;
+    TCGv hi = tcg_temp_local_new();
+    TCGv lo = tcg_temp_local_new();
 
-  return ret;
+    tcg_gen_shli_tl(lo, src, 32);
+    tcg_gen_shri_tl(hi, src, 32);
+    tcg_gen_andi_tl(hi, hi, 0xFFFFFFFF);
+    tcg_gen_or_tl(dest, hi, lo);
+
+    if (getFFlag() == true) {
+        setZFlag(dest);
+        setNFlag(dest);
+    }
+
+    tcg_temp_free(hi);
+    tcg_temp_free(lo);
+
+    return ret;
 }
 
 
 
 
 
-/* SWAPEL
+/* SWAPE
  *    Variables: @src, @dest
  *    Functions: getFFlag, setZFlag, setNFlag
 --- code ---
 {
-  tmp1 = ((@src << 24) & 4278190080);
-  tmp2 = ((@src << 8) & 16711680);
-  tmp3 = ((@src >> 8) & 65280);
-  tmp4 = ((@src >> 24) & 255);
-  @dest = (((tmp1 | tmp2) | tmp3) | tmp4);
+  @dest = tcg_gen_bswap64_tl(@src);
   f_flag = getFFlag ();
   if((f_flag == true))
     {
@@ -12606,52 +12595,16 @@ arc_gen_SWAPL (DisasCtxt *ctx, TCGv src, TCGv dest)
 int
 arc_gen_SWAPEL (DisasCtxt *ctx, TCGv src, TCGv dest)
 {
-  int ret = DISAS_NEXT;
-  TCGv temp_1 = tcg_temp_local_new();
-  TCGv tmp1 = tcg_temp_local_new();
-  TCGv temp_2 = tcg_temp_local_new();
-  TCGv tmp2 = tcg_temp_local_new();
-  TCGv temp_3 = tcg_temp_local_new();
-  TCGv tmp3 = tcg_temp_local_new();
-  TCGv temp_4 = tcg_temp_local_new();
-  TCGv tmp4 = tcg_temp_local_new();
-  TCGv temp_6 = tcg_temp_local_new();
-  TCGv temp_5 = tcg_temp_local_new();
-  int f_flag;
-  tcg_gen_shli_tl(temp_1, src, 24);
-  tcg_gen_andi_tl(tmp1, temp_1, 4278190080);
-  tcg_gen_shli_tl(temp_2, src, 8);
-  tcg_gen_andi_tl(tmp2, temp_2, 16711680);
-  tcg_gen_shri_tl(temp_3, src, 8);
-  tcg_gen_andi_tl(tmp3, temp_3, 65280);
-  tcg_gen_shri_tl(temp_4, src, 24);
-  tcg_gen_andi_tl(tmp4, temp_4, 255);
-  tcg_gen_or_tl(temp_6, tmp1, tmp2);
-  tcg_gen_or_tl(temp_5, temp_6, tmp3);
-  tcg_gen_or_tl(dest, temp_5, tmp4);
-  f_flag = getFFlag ();
-  if ((f_flag == true))
-    {
-    setZFlag(dest);
-  setNFlag(dest);
-;
-    }
-  else
-    {
-  ;
-    }
-  tcg_temp_free(temp_1);
-  tcg_temp_free(tmp1);
-  tcg_temp_free(temp_2);
-  tcg_temp_free(tmp2);
-  tcg_temp_free(temp_3);
-  tcg_temp_free(tmp3);
-  tcg_temp_free(temp_4);
-  tcg_temp_free(tmp4);
-  tcg_temp_free(temp_6);
-  tcg_temp_free(temp_5);
+    const int ret = DISAS_NEXT;
 
-  return ret;
+    tcg_gen_bswap64_tl(dest, src);
+
+    if (getFFlag() == true) {
+        setZFlag(dest);
+        setNFlag(dest);
+    }
+
+    return ret;
 }
 
 
