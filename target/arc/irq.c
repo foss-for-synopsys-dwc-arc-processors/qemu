@@ -56,27 +56,14 @@ uint32_t pack_status32(ARCStatus *status_r)
     uint32_t res = 0x0;
 
     res |= status_r->pstate & PSTATE_MASK;
-    res |= (status_r->RBf & ((1 << RBf_bS)-1)) << RBf_b;
-    res |= (status_r->Zf & ((1 << Zf_bS)-1)) << Zf_b;
-    res |= (status_r->Nf & ((1 << Nf_bS)-1)) << Nf_b;
-    res |= (status_r->Cf & ((1 << Cf_bS)-1)) << Cf_b;
-    res |= (status_r->Vf & ((1 << Vf_bS)-1)) << Vf_b;
-    res |= (status_r->DEf & ((1 << DEf_bS)-1)) << DEf_b;
-    res |= (status_r->Ef  & ((1 << Ef_bS)-1)) << Ef_b;
-    res |= (status_r->IEf & ((1 << IEf_bS)-1)) << IEf_b;
-
-    /* For debug purposes only. */
-    /*
-     * assert((status_r->pstate & ~PSTATE_MASK) == 0);
-     * assert((status_r->RBf & (~((1 << RBf_bS) - 1))) == 0);
-     * assert((status_r->Zf  & (~((1 << Zf_bS)  - 1))) == 0);
-     * assert((status_r->Nf  & (~((1 << Cf_bS)  - 1))) == 0);
-     * assert((status_r->Cf  & (~((1 << Cf_bS)  - 1))) == 0);
-     * assert((status_r->Vf  & (~((1 << Vf_bS)  - 1))) == 0);
-     * assert((status_r->DEf & (~((1 << DEf_bS) - 1))) == 0);
-     * assert((status_r->Ef  & (~((1 << Ef_bS)  - 1))) == 0);
-     * assert((status_r->IEf & (~((1 << IEf_bS) - 1))) == 0);
-     */
+    res = FIELD_DP32(res, STATUS32, RBf, status_r->RBf);
+    res = FIELD_DP32(res, STATUS32, Zf,  status_r->Zf);
+    res = FIELD_DP32(res, STATUS32, Nf,  status_r->Nf);
+    res = FIELD_DP32(res, STATUS32, Cf,  status_r->Cf);
+    res = FIELD_DP32(res, STATUS32, Vf,  status_r->Vf);
+    res = FIELD_DP32(res, STATUS32, DEf, status_r->DEf);
+    res = FIELD_DP32(res, STATUS32, Ef,  status_r->Ef);
+    res = FIELD_DP32(res, STATUS32, IEf, status_r->IEf);
 
     return res;
 }
@@ -85,14 +72,14 @@ uint32_t pack_status32(ARCStatus *status_r)
 void unpack_status32(ARCStatus *status_r, uint32_t value)
 {
     status_r->pstate = value;
-    status_r->RBf = ((value >> RBf_b)&((1 << RBf_bS)-1));
-    status_r->Zf  = ((value >> Zf_b)&((1 << Zf_bS)-1));
-    status_r->Nf  = ((value >> Nf_b)&((1 << Nf_bS)-1));
-    status_r->Cf  = ((value >> Cf_b)&((1 << Cf_bS)-1));
-    status_r->Vf  = ((value >> Vf_b)&((1 << Vf_bS)-1));
-    status_r->DEf = ((value >> DEf_b)&((1 << DEf_bS)-1));
-    status_r->Ef  = ((value >> Ef_b)&((1 << Ef_bS)-1));
-    status_r->IEf = ((value >> IEf_b)&((1 << IEf_bS)-1));
+    status_r->RBf = FIELD_EX32(value, STATUS32, RBf);
+    status_r->Zf  = FIELD_EX32(value, STATUS32, Zf);
+    status_r->Nf  = FIELD_EX32(value, STATUS32, Nf);
+    status_r->Cf  = FIELD_EX32(value, STATUS32, Cf);
+    status_r->Vf  = FIELD_EX32(value, STATUS32, Vf);
+    status_r->DEf = FIELD_EX32(value, STATUS32, DEf);
+    status_r->Ef  = FIELD_EX32(value, STATUS32, Ef);
+    status_r->IEf = FIELD_EX32(value, STATUS32, IEf);
 }
 
 /* Return from fast interrupts. */
