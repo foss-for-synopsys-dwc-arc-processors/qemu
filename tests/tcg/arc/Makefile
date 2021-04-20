@@ -1,10 +1,10 @@
 -include ../../../config-host.mak
 
-CROSS = arc-elf32-
+CROSS = arc64-elf-
 #CROSS = arc-snps-linux-uclibc-
 
-SIM = ../../../arc-softmmu/qemu-system-arc
-SIM_FLAGS = -M arc-sim -m 3G -nographic -no-reboot -monitor none \
+SIM = ../../../arc64-softmmu/qemu-system-arc64
+SIM_FLAGS = -M arc-sim -cpu hs6x -m 3G -nographic -no-reboot -monitor none \
 	-serial stdio -global cpu.mpu-numreg=8 -kernel
 #SIM_FLAGS=-cpu archs
 TST_PATH = $(SRC_PATH)/tests/tcg/arc
@@ -12,8 +12,8 @@ TST_PATH = $(SRC_PATH)/tests/tcg/arc
 CC = $(CROSS)gcc
 LD = $(CROSS)ld
 AS = $(CROSS)as
-CFLAGS  = -mcpu=archs -O2 --specs=qemu.specs
-ASFLAGS = -mcpu=archs
+CFLAGS  = -mcpu=arc64 -ggdb3 --specs=qemu.specs
+ASFLAGS = -mcpu=arc64 -ggdb3
 
 TESTCASES = check_add.tst
 TESTCASES += check_lp.tst
