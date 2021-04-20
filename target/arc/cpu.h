@@ -29,6 +29,8 @@
 #include "target/arc/mpu.h"
 #include "target/arc/cache.h"
 
+#include "hw/registerfields.h"
+
 #define ARC_CPU_TYPE_SUFFIX "-" TYPE_ARC_CPU
 #define ARC_CPU_TYPE_NAME(model) model ARC_CPU_TYPE_SUFFIX
 #define CPU_RESOLVING_TYPE TYPE_ARC_CPU
@@ -115,55 +117,44 @@ enum exception_code_list {
  */
 
 /* Flags in pstate */
-#define Hf_b  (0)
-#define AEf_b (5)
-#define Uf_b  (7)
-#define Lf_b  (12)
-#define DZf_b (13)
-#define SCf_b (14)
-#define ESf_b (15)
-#define ADf_b (19)
-#define USf_b (20)
 
-/* Flags with their on fields */
-#define IEf_b   (31)
-#define IEf_bS  (1)
+FIELD(STATUS32, Hf,  0, 1)
+FIELD(STATUS32, AEf, 5, 1)
+FIELD(STATUS32, Uf,  7, 1)
+FIELD(STATUS32, Lf,  12, 1)
+FIELD(STATUS32, DZf, 13, 1)
+FIELD(STATUS32, SCf, 14, 1)
+FIELD(STATUS32, ESf, 15, 1)
+FIELD(STATUS32, ADf, 19, 1)
+FIELD(STATUS32, USf, 20, 1)
 
-#define Ef_b    (1)
-#define Ef_bS   (4)
+/* Flags with their own fields */
+FIELD(STATUS32, IEf, 31, 1)
+FIELD(STATUS32, Ef,  1,  4)
+FIELD(STATUS32, DEf, 6,  1)
+FIELD(STATUS32, Vf,  8,  1)
+FIELD(STATUS32, Cf,  9,  1)
+FIELD(STATUS32, Nf,  10, 1)
+FIELD(STATUS32, Zf,  11, 1)
+FIELD(STATUS32, RBf, 16, 3)
 
-#define DEf_b   (6)
-#define DEf_bS  (1)
-
-#define Vf_b    (8)
-#define Vf_bS   (1)
-#define Cf_b    (9)
-#define Cf_bS   (1)
-#define Nf_b    (10)
-#define Nf_bS   (1)
-#define Zf_b    (11)
-#define Zf_bS   (1)
-
-#define RBf_b   (16)
-#define RBf_bS  (3)
-
+#define FIELD_MASK(reg, field) R_ ## reg ## _ ## field ## _MASK
 
 #define PSTATE_MASK \
-     ((1 << Hf_b)  \
-    | (1 << AEf_b) \
-    | (1 << Uf_b)  \
-    | (1 << Lf_b)  \
-    | (1 << DZf_b) \
-    | (1 << SCf_b) \
-    | (1 << ESf_b) \
-    | (1 << ADf_b) \
-    | (1 << USf_b))
+     (FIELD_MASK(STATUS32, Hf)  \
+    | FIELD_MASK(STATUS32, AEf) \
+    | FIELD_MASK(STATUS32, Uf)  \
+    | FIELD_MASK(STATUS32, Lf)  \
+    | FIELD_MASK(STATUS32, DZf) \
+    | FIELD_MASK(STATUS32, SCf) \
+    | FIELD_MASK(STATUS32, ESf) \
+    | FIELD_MASK(STATUS32, ADf) \
+    | FIELD_MASK(STATUS32, USf))
 
-#define GET_STATUS_BIT(STAT, BIT) ((STAT.pstate >> BIT##_b) & 0x1)
-#define SET_STATUS_BIT(STAT, BIT, VALUE) { \
-    STAT.pstate &= ~(1 << BIT##_b); \
-    STAT.pstate |= (VALUE << BIT##_b); \
-}
+/* TODO: Replace those all over the code. */
+#define GET_STATUS_BIT(STAT, BIT) ((target_ulong) FIELD_EX32(STAT.pstate, STATUS32, BIT))
+#define SET_STATUS_BIT(STAT, BIT, VALUE) \
+     STAT.pstate = (FIELD_DP32(STAT.pstate, STATUS32, BIT, VALUE))
 
 typedef struct {
     target_ulong pstate;
