@@ -4297,9 +4297,14 @@ arc_gen_LR (DisasCtxt *ctx, TCGv dest, TCGv src)
 
 /* CLRI
  *    Variables: @c
- *    Functions: getRegister, setRegister
+ *    Functions: getRegister, setRegister, inKernelMode
 --- code ---
 {
+  in_kernel_mode = inKernelMode();
+  if(in_kernel_mode != 1)
+    {
+      throwExcpPriviledgeV();
+    }
   status32 = getRegister (R_STATUS32);
   ie = (status32 & 2147483648);
   ie = (ie >> 27);
@@ -4325,6 +4330,12 @@ arc_gen_CLRI (DisasCtxt *ctx, TCGv c)
   TCGv a = tcg_temp_local_new();
   TCGv temp_3 = tcg_temp_local_new();
   TCGv mask = tcg_temp_local_new();
+  TCGv in_kernel_mode = tcg_temp_local_new();
+  inKernelMode(in_kernel_mode);
+  TCGLabel *done_in_kernel_mode = gen_new_label();
+  tcg_gen_brcondi_tl(TCG_COND_EQ, in_kernel_mode, 1, done_in_kernel_mode);
+  throwExcpPriviledgeV();
+  gen_set_label(done_in_kernel_mode);
   getRegister(temp_1, R_STATUS32);
   tcg_gen_mov_tl(status32, temp_1);
   tcg_gen_andi_tl(ie, status32, 2147483648);
@@ -4356,14 +4367,15 @@ arc_gen_CLRI (DisasCtxt *ctx, TCGv c)
 
 /* SETI
  *    Variables: @c
- *    Functions: getRegister, setRegister
+ *    Functions: getRegister, setRegister, inKernelMode
 --- code ---
 {
+  in_kernel_mode = inKernelMode();
+  if(in_kernel_mode != 1)
+    {
+      throwExcpPriviledgeV();
+    }
   status32 = getRegister (R_STATUS32);
-  e_mask = 30;
-  e_mask = ~e_mask;
-  e_value = ((@c & 15) << 1);
-  temp1 = (@c & 32);
   if((temp1 != 0))
     {
       status32 = ((status32 & e_mask) | e_value);
@@ -4406,6 +4418,12 @@ arc_gen_SETI (DisasCtxt *ctx, TCGv c)
   TCGv temp_3 = tcg_temp_local_new();
   TCGv temp_4 = tcg_temp_local_new();
   TCGv temp_10 = tcg_temp_local_new();
+  TCGv in_kernel_mode = tcg_temp_local_new();
+  inKernelMode(in_kernel_mode);
+  TCGLabel *done_in_kernel_mode = gen_new_label();
+  tcg_gen_brcondi_tl(TCG_COND_EQ, in_kernel_mode, 1, done_in_kernel_mode);
+  throwExcpPriviledgeV();
+  gen_set_label(done_in_kernel_mode);
   getRegister(temp_5, R_STATUS32);
   tcg_gen_mov_tl(status32, temp_5);
   tcg_gen_movi_tl(e_mask, 30);
@@ -4456,6 +4474,7 @@ arc_gen_SETI (DisasCtxt *ctx, TCGv c)
   tcg_temp_free(temp_3);
   tcg_temp_free(temp_4);
   tcg_temp_free(temp_10);
+  tcg_temp_free(in_kernel_mode);
 
   return ret;
 }

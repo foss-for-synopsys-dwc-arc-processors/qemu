@@ -278,6 +278,14 @@ void arc_gen_set_register(enum arc_registers reg, TCGv value);
         ret = DISAS_NORETURN; \
     } \
 
+#define inKernelMode(R) { \
+  TCG_GET_STATUS_FIELD_MASKED(R, cpu_pstate, Uf); \
+  tcg_gen_setcondi_tl(TCG_COND_EQ, R, R, 0); \
+}
+/* TODO: This is going to be revisited. */
+#define throwExcpPriviledgeV() \
+    arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);
+
 #define divSigned(R, SRC1, SRC2)            tcg_gen_div_tl(R, SRC1, SRC2)
 #define divUnsigned(R, SRC1, SRC2)          tcg_gen_divu_tl(R, SRC1, SRC2)
 #define divRemainingSigned(R, SRC1, SRC2)   tcg_gen_rem_tl(R, SRC1, SRC2)
