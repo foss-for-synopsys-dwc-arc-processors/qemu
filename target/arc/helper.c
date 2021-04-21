@@ -177,7 +177,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
     }
 
     /* 8. Interrupts are disabled. */
-    env->stat.IEf = 0;
+    SET_STATUS_BIT(env->stat, IEf, 0);
 
     /* 9. The active exception flag is set. */
     SET_STATUS_BIT(env->stat, AEf, 1);
@@ -185,7 +185,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
     /* 10-14. Other flags sets. */
     env->stat.Zf  = GET_STATUS_BIT(env->stat_er, Uf);
     SET_STATUS_BIT(env->stat, Lf, 1);
-    env->stat.DEf = 0;
+    SET_STATUS_BIT(env->stat, DEf, 0);
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
     SET_STATUS_BIT(env->stat, SCf, 0);

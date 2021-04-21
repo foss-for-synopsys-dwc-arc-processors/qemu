@@ -56,14 +56,10 @@ uint32_t pack_status32(ARCStatus *status_r)
     uint32_t res = 0x0;
 
     res |= status_r->pstate & PSTATE_MASK;
-    res = FIELD_DP32(res, STATUS32, RBf, status_r->RBf);
     res = FIELD_DP32(res, STATUS32, Zf,  status_r->Zf);
     res = FIELD_DP32(res, STATUS32, Nf,  status_r->Nf);
     res = FIELD_DP32(res, STATUS32, Cf,  status_r->Cf);
     res = FIELD_DP32(res, STATUS32, Vf,  status_r->Vf);
-    res = FIELD_DP32(res, STATUS32, DEf, status_r->DEf);
-    res = FIELD_DP32(res, STATUS32, Ef,  status_r->Ef);
-    res = FIELD_DP32(res, STATUS32, IEf, status_r->IEf);
 
     return res;
 }
@@ -72,14 +68,10 @@ uint32_t pack_status32(ARCStatus *status_r)
 void unpack_status32(ARCStatus *status_r, uint32_t value)
 {
     status_r->pstate = value;
-    status_r->RBf = FIELD_EX32(value, STATUS32, RBf);
     status_r->Zf  = FIELD_EX32(value, STATUS32, Zf);
     status_r->Nf  = FIELD_EX32(value, STATUS32, Nf);
     status_r->Cf  = FIELD_EX32(value, STATUS32, Cf);
     status_r->Vf  = FIELD_EX32(value, STATUS32, Vf);
-    status_r->DEf = FIELD_EX32(value, STATUS32, DEf);
-    status_r->Ef  = FIELD_EX32(value, STATUS32, Ef);
-    status_r->IEf = FIELD_EX32(value, STATUS32, IEf);
 }
 
 /* Return from fast interrupts. */
@@ -150,8 +142,8 @@ static void arc_rtie_irq(CPUARCState *env)
                   "[IRQ] exit irq:%d U:" TARGET_FMT_ld " AE:" TARGET_FMT_ld
                   " IE:" TARGET_FMT_ld " E:" TARGET_FMT_ld " IRQ_ACT:0x%08x\n",
                   env->icause[tmp], GET_STATUS_BIT(env->stat, Uf),
-                  GET_STATUS_BIT(env->stat, AEf), env->stat.IEf,
-                  env->stat.Ef, env->aux_irq_act);
+                  GET_STATUS_BIT(env->stat, AEf), GET_STATUS_BIT(env->stat, IEf),
+                  GET_STATUS_BIT(env->stat, Ef), env->aux_irq_act);
 
     if (((env->aux_irq_act & 0xffff) == 0) &&
         (env->aux_irq_act & 0x80000000) && (env->aux_irq_ctrl & (1 << 11))) {
@@ -218,7 +210,7 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
 {
     CPUARCState *env = &cpu->env;
 
-    assert(env->stat.DEf == 0);
+    assert(GET_STATUS_BIT(env->stat, DEf) == 0);
     assert(env->stat.is_delay_slot_instruction == 0);
 
     /* Reset RTC state machine -> AUX_RTC_CTRL &= 0x3fffffff */
@@ -226,8 +218,8 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
                   "[IRQ] enter firq:%d U:" TARGET_FMT_ld " AE:" TARGET_FMT_ld
                   " IE:" TARGET_FMT_ld " E:" TARGET_FMT_ld "\n",
                   vector, GET_STATUS_BIT(env->stat, Uf),
-                  GET_STATUS_BIT(env->stat, AEf), env->stat.IEf,
-                  env->stat.Ef);
+                  GET_STATUS_BIT(env->stat, AEf), GET_STATUS_BIT(env->stat, IEf),
+                  GET_STATUS_BIT(env->stat, Ef));
 
     /* Switch SP with AUX_SP. */
     if (GET_STATUS_BIT(env->stat, Uf)) {
@@ -245,12 +237,12 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
     SET_STATUS_BIT(env->stat, Uf, 0);
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
-    env->stat.DEf = 0;
+    SET_STATUS_BIT(env->stat, DEf, 0);
     env->stat.is_delay_slot_instruction = 0;
 
     /* Set .RB to 1 if additional register banks are specified. */
     if (cpu->cfg.rgf_num_banks > 0) {
-        env->stat.RBf = 1;
+        SET_STATUS_BIT(env->stat, RBf, 1);
         /* FIXME! Switch to first register bank. */
     }
 }
@@ -273,7 +265,7 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
 {
     CPUARCState *env = &cpu->env;
 
-    assert(env->stat.DEf == 0);
+    assert(GET_STATUS_BIT(env->stat, DEf) == 0);
     assert(env->stat.is_delay_slot_instruction == 0);
 
     /* Reset RTC state machine -> AUX_RTC_CTRL &= 0x3fffffff */
@@ -281,8 +273,8 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
                   " AE:" TARGET_FMT_ld " IE:" TARGET_FMT_ld
                   " E:" TARGET_FMT_ld "\n",
                   vector, GET_STATUS_BIT(env->stat, Uf),
-                  GET_STATUS_BIT(env->stat, AEf), env->stat.IEf,
-                  env->stat.Ef);
+                  GET_STATUS_BIT(env->stat, AEf), GET_STATUS_BIT(env->stat, IEf),
+                  GET_STATUS_BIT(env->stat, Ef));
 
     /* Early switch to kernel sp if previously in user thread */
     if (GET_STATUS_BIT(env->stat, Uf) && !(env->aux_irq_ctrl & (1 << 11))) {
@@ -349,7 +341,7 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
     SET_STATUS_BIT(env->stat, Lf, 1);
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
-    env->stat.DEf  = 0;
+    SET_STATUS_BIT(env->stat, DEf, 0);
     SET_STATUS_BIT(env->stat, Uf, 0);
 }
 
@@ -514,14 +506,14 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     /* Check if we should execute this interrupt. */
     if (GET_STATUS_BIT(env->stat, Hf)
         /* The interrupts are enabled. */
-        || env->stat.IEf == 0
+        || GET_STATUS_BIT(env->stat, IEf) == 0
         /* We are not in an exception. */
         || GET_STATUS_BIT(env->stat, AEf)
         /* Disable interrupts to happen after MissI exceptions. */
         || env->enabled_interrupts == false
         /* In a delay slot of branch */
         || env->stat.is_delay_slot_instruction
-        || env->stat.DEf
+        || GET_STATUS_BIT(env->stat, DEf)
         || (!(interrupt_request & CPU_INTERRUPT_HARD))) {
         return false;
     }
@@ -545,7 +537,7 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
                 break;
             }
         }
-    } while (!found && ((++priority) <= env->stat.Ef));
+    } while (!found && ((++priority) <= GET_STATUS_BIT(env->stat, Ef)));
 
     /* No valid interrupt has been found. */
     if (!found) {
