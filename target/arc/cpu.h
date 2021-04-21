@@ -119,24 +119,24 @@ enum exception_code_list {
 /* Flags in pstate */
 
 FIELD(STATUS32, Hf,  0, 1)
+FIELD(STATUS32, Ef,  1, 4)
 FIELD(STATUS32, AEf, 5, 1)
+FIELD(STATUS32, DEf, 6, 1)
 FIELD(STATUS32, Uf,  7, 1)
 FIELD(STATUS32, Lf,  12, 1)
 FIELD(STATUS32, DZf, 13, 1)
 FIELD(STATUS32, SCf, 14, 1)
 FIELD(STATUS32, ESf, 15, 1)
+FIELD(STATUS32, RBf, 16, 3)
 FIELD(STATUS32, ADf, 19, 1)
 FIELD(STATUS32, USf, 20, 1)
+FIELD(STATUS32, IEf, 31, 1)
 
 /* Flags with their own fields */
-FIELD(STATUS32, IEf, 31, 1)
-FIELD(STATUS32, Ef,  1,  4)
-FIELD(STATUS32, DEf, 6,  1)
 FIELD(STATUS32, Vf,  8,  1)
 FIELD(STATUS32, Cf,  9,  1)
 FIELD(STATUS32, Nf,  10, 1)
 FIELD(STATUS32, Zf,  11, 1)
-FIELD(STATUS32, RBf, 16, 3)
 
 #define FIELD_MASK(reg, field) R_ ## reg ## _ ## field ## _MASK
 
@@ -149,24 +149,52 @@ FIELD(STATUS32, RBf, 16, 3)
     | FIELD_MASK(STATUS32, SCf) \
     | FIELD_MASK(STATUS32, ESf) \
     | FIELD_MASK(STATUS32, ADf) \
+    | FIELD_MASK(STATUS32, DEf) \
+    | FIELD_MASK(STATUS32, IEf) \
+    | FIELD_MASK(STATUS32, RBf) \
+    | FIELD_MASK(STATUS32, Ef) \
     | FIELD_MASK(STATUS32, USf))
 
 /* TODO: Replace those all over the code. */
-#define GET_STATUS_BIT(STAT, BIT) ((target_ulong) FIELD_EX32(STAT.pstate, STATUS32, BIT))
-#define SET_STATUS_BIT(STAT, BIT, VALUE) \
-     STAT.pstate = (FIELD_DP32(STAT.pstate, STATUS32, BIT, VALUE))
+#define GET_STATUS_BIT(STAT, FIELD) ((target_ulong) FIELD_EX32(STAT.pstate, STATUS32, FIELD))
+#define SET_STATUS_BIT(STAT, FIELD, VALUE) \
+     STAT.pstate = (FIELD_DP32(STAT.pstate, STATUS32, FIELD, VALUE))
+
+
+#define TCG_SET_STATUS_FIELD_BIT(STAT_REG, FIELD) { \
+    assert(R_STATUS32_ ## FIELD ## _LENGTH == 1); \
+    tcg_gen_ori_tl(STAT_REG, STAT_REG, R_STATUS32_ ## FIELD ## _MASK); \
+}
+#define TCG_CLR_STATUS_FIELD_BIT(STAT_REG, FIELD) { \
+    assert(R_STATUS32_ ## FIELD ## _LENGTH == 1); \
+    tcg_gen_andi_tl(STAT_REG, STAT_REG, ~R_STATUS32_ ## FIELD ## _MASK); \
+}
+#define TCG_SET_STATUS_FIELD_VALUE(STAT_REG, FIELD, VALUE) { \
+    TCGv temp = tcg_temp_new(); \
+    tcg_gen_shli_tl(temp, VALUE, R_STATUS32_ ## FIELD ## _SHIFT); \
+    tcg_gen_andi_tl(temp, temp, R_STATUS32_ ## FIELD ## _MASK); \
+    tcg_gen_andi_tl(STAT_REG, STAT_REG, ~R_STATUS32_ ## FIELD ## _MASK); \
+    tcg_gen_or_tl(STAT_REG, STAT_REG, temp); \
+    tcg_temp_free(temp); \
+}
+#define TCG_SET_STATUS_FIELD_IVALUE(STAT_REG, FIELD, IVALUE) { \
+    TCGv temp = tcg_const_tl((IVALUE << R_STATUS32_ ## FIELD ## _SHIFT) \
+                             & R_STATUS32_ ## FIELD ## _MASK); \
+    tcg_gen_andi_tl(STAT_REG, STAT_REG, ~R_STATUS32_ ## FIELD ## _MASK); \
+    tcg_gen_or_tl(STAT_REG, STAT_REG, temp); \
+    tcg_temp_free(temp); \
+}
+#define TCG_GET_STATUS_FIELD_MASKED(RET, STAT_REG, FIELD) { \
+    tcg_gen_andi_tl(RET, STAT_REG, R_STATUS32_ ## FIELD ## _MASK); \
+}
 
 typedef struct {
     target_ulong pstate;
 
-    target_ulong RBf;
-    target_ulong Ef;     /* irq priority treshold. */
     target_ulong Vf;     /*  overflow                */
     target_ulong Cf;     /*  carry                   */
     target_ulong Nf;     /*  negative                */
     target_ulong Zf;     /*  zero                    */
-    target_ulong DEf;
-    target_ulong IEf;
 
     /* Reserved bits */
 

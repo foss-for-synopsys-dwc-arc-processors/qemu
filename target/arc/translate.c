@@ -30,45 +30,25 @@ TCGv    cpu_S1f;
 TCGv    cpu_S2f;
 TCGv    cpu_CSf;
 
-TCGv    cpu_Ef;
-TCGv    cpu_IEf;
+TCGv    cpu_pstate;
 TCGv    cpu_Vf;
 TCGv    cpu_Cf;
 TCGv    cpu_Nf;
 TCGv    cpu_Zf;
-TCGv    cpu_DEf;
 
 TCGv    cpu_is_delay_slot_instruction;
 
-TCGv    cpu_l1_Ef;
-TCGv    cpu_l1_Vf;
-TCGv    cpu_l1_Cf;
-TCGv    cpu_l1_Nf;
-TCGv    cpu_l1_Zf;
-TCGv    cpu_l1_DEf;
-
-TCGv    cpu_l2_Ef;
-TCGv    cpu_l2_Vf;
-TCGv    cpu_l2_Cf;
-TCGv    cpu_l2_Nf;
-TCGv    cpu_l2_Zf;
-TCGv    cpu_l2_DEf;
-
-TCGv    cpu_er_Ef;
+TCGv    cpu_er_pstate;
 TCGv    cpu_er_Vf;
 TCGv    cpu_er_Cf;
 TCGv    cpu_er_Nf;
 TCGv    cpu_er_Zf;
-TCGv    cpu_er_DEf;
 
 TCGv    cpu_eret;
 TCGv    cpu_erbta;
-TCGv    cpu_ecr;
 TCGv    cpu_efa;
 
 TCGv    cpu_bta;
-TCGv    cpu_bta_l1;
-TCGv    cpu_bta_l2;
 
 TCGv    cpu_pc;
 /* replaced by AUX_REG array */
@@ -146,38 +126,26 @@ void arc_translate_init(void)
         NEW_ARC_REG(cpu_S2f, macmod.S2)
         NEW_ARC_REG(cpu_CSf, macmod.CS)
 
+        NEW_ARC_REG(cpu_pstate, stat.pstate)
         NEW_ARC_REG(cpu_Zf, stat.Zf)
         NEW_ARC_REG(cpu_Nf, stat.Nf)
         NEW_ARC_REG(cpu_Cf, stat.Cf)
         NEW_ARC_REG(cpu_Vf, stat.Vf)
-        NEW_ARC_REG(cpu_DEf, stat.DEf)
-        NEW_ARC_REG(cpu_Ef, stat.Ef)
-        NEW_ARC_REG(cpu_IEf, stat.IEf)
 
-        NEW_ARC_REG(cpu_l1_Zf, stat_l1.Zf)
-        NEW_ARC_REG(cpu_l1_Nf, stat_l1.Nf)
-        NEW_ARC_REG(cpu_l1_Cf, stat_l1.Cf)
-        NEW_ARC_REG(cpu_l1_Vf, stat_l1.Vf)
-        NEW_ARC_REG(cpu_l1_DEf, stat_l1.DEf)
-
+        NEW_ARC_REG(cpu_pstate, stat.pstate)
         NEW_ARC_REG(cpu_er_Zf, stat_er.Zf)
         NEW_ARC_REG(cpu_er_Nf, stat_er.Nf)
         NEW_ARC_REG(cpu_er_Cf, stat_er.Cf)
         NEW_ARC_REG(cpu_er_Vf, stat_er.Vf)
-        NEW_ARC_REG(cpu_er_DEf, stat_er.DEf)
 
         NEW_ARC_REG(cpu_eret, eret)
         NEW_ARC_REG(cpu_erbta, erbta)
-        NEW_ARC_REG(cpu_ecr, ecr)
         NEW_ARC_REG(cpu_efa, efa)
         NEW_ARC_REG(cpu_bta, bta)
         NEW_ARC_REG(cpu_lps, lps)
         NEW_ARC_REG(cpu_lpe, lpe)
         NEW_ARC_REG(cpu_pc , pc)
         NEW_ARC_REG(cpu_npc, npc)
-
-        NEW_ARC_REG(cpu_bta_l1, bta_l1)
-        NEW_ARC_REG(cpu_bta_l2, bta_l2)
 
         NEW_ARC_REG(cpu_intvec, intvec)
 
@@ -1440,20 +1408,24 @@ arc_gen_SLEEP(DisasCtxt *ctx, TCGv a)
 
     if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
         TCGv tmp3 = tcg_temp_local_new();
+        TCGv tmp4 = tcg_temp_local_new();
         TCGLabel *done_L = gen_new_label();
 
         tcg_gen_andi_tl(tmp3, a, 0x10);
         tcg_gen_brcondi_tl(TCG_COND_NE, tmp3, 0x10, done_L);
-        tcg_gen_andi_tl(cpu_Ef, a, 0x0f);
-        tcg_gen_movi_tl(cpu_IEf, 1);
+
+        tcg_gen_andi_tl(tmp4, a, 0x0f);
+        TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, Ef, tmp4);
+        TCG_SET_STATUS_FIELD_BIT(cpu_pstate, IEf);
         gen_set_label(done_L);
 
         tcg_temp_free(tmp3);
+        tcg_temp_free(tmp4);
     } else {
         param = ctx->insn.operands[0].value;
         if (param & 0x10) {
-            tcg_gen_movi_tl(cpu_IEf, 1);
-            tcg_gen_movi_tl(cpu_Ef, param & 0x0f);
+            TCG_SET_STATUS_FIELD_BIT(cpu_pstate, IEf);
+            TCG_SET_STATUS_FIELD_IVALUE(cpu_pstate, Ef, param & 0x0f);
         }
     }
     /* FIXME: setup debug registers as well. */
@@ -1583,15 +1555,19 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     tcg_gen_movi_tl(cpu_npc, dc->npc);
 
     if (in_a_delayslot_instruction == true) {
+        TCGv temp_DEf = tcg_temp_local_new();
         dc->base.is_jmp = DISAS_NORETURN;
 
         /* Post execution delayslot logic. */
         TCGLabel *DEf_not_set_label1 = gen_new_label();
-        tcg_gen_brcondi_tl(TCG_COND_NE, cpu_DEf, 1, DEf_not_set_label1);
-        tcg_gen_movi_tl(cpu_DEf, 0);
+        TCG_GET_STATUS_FIELD_MASKED(temp_DEf, cpu_pstate, DEf);
+        tcg_gen_brcondi_tl(TCG_COND_EQ, temp_DEf, 0, DEf_not_set_label1);
+        TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, DEf);
         gen_goto_tb(dc, 1, cpu_bta);
         gen_set_label(DEf_not_set_label1);
         env->stat.is_delay_slot_instruction = 0;
+
+        tcg_temp_free(temp_DEf);
     }
 
     if (dc->base.is_jmp == DISAS_NORETURN) {
@@ -1686,12 +1662,12 @@ void arc_cpu_dump_state(CPUState *cs, FILE *f, int flags)
                  env->stat.Cf ? 'C' : '-',
                  env->stat.Vf ? 'V' : '-',
                  GET_STATUS_BIT(env->stat, Uf)  ? 'U' : '-',
-                 env->stat.DEf ? "DE" : "--",
+                 GET_STATUS_BIT(env->stat, DEf) ? "DE" : "--",
                  GET_STATUS_BIT(env->stat, AEf) ? "AE" : "--",
-                 env->stat.Ef  ? "E" : "--",
+                 GET_STATUS_BIT(env->stat, Ef)  ? "E" : "--",
                  GET_STATUS_BIT(env->stat, DZf) ? "DZ" : "--",
                  GET_STATUS_BIT(env->stat, SCf) ? "SC" : "--",
-                 env->stat.IEf ? "IE" : "--",
+                 GET_STATUS_BIT(env->stat, IEf) ? "IE" : "--",
                  GET_STATUS_BIT(env->stat, Hf)  ? 'H' : '-'
                  );
 

@@ -197,7 +197,7 @@ arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch)
      */
     tcg_gen_mov_tl(cpu_bta, bta);
     /* We are in a delay slot */
-    tcg_gen_mov_tl(cpu_DEf, take_branch);
+    TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, DEf, take_branch);
     gen_set_label(do_not_set_bta_and_de);
 
     tcg_gen_movi_tl(cpu_is_delay_slot_instruction, 1);
@@ -231,7 +231,7 @@ arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch)
     ctx->env->enabled_interrupts = true;
     ctx->base.is_jmp = type;
 
-    tcg_gen_movi_tl(cpu_DEf, 0);
+    TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, DEf);
     tcg_gen_movi_tl(cpu_is_delay_slot_instruction, 0);
 
     /* Restore the pc back */

@@ -88,36 +88,19 @@ extern TCGv     cpu_S1f;
 extern TCGv     cpu_S2f;
 extern TCGv     cpu_CSf;
 
-extern TCGv     cpu_Ef;
-extern TCGv     cpu_IEf;
+extern TCGv     cpu_pstate;
 extern TCGv     cpu_Vf;
 extern TCGv     cpu_Cf;
 extern TCGv     cpu_Nf;
 extern TCGv     cpu_Zf;
-extern TCGv     cpu_DEf;
 
 extern TCGv     cpu_is_delay_slot_instruction;
 
-extern TCGv     cpu_l1_Ef;
-extern TCGv     cpu_l1_Vf;
-extern TCGv     cpu_l1_Cf;
-extern TCGv     cpu_l1_Nf;
-extern TCGv     cpu_l1_Zf;
-extern TCGv     cpu_l1_DEf;
-
-extern TCGv     cpu_l2_Ef;
-extern TCGv     cpu_l2_Vf;
-extern TCGv     cpu_l2_Cf;
-extern TCGv     cpu_l2_Nf;
-extern TCGv     cpu_l2_Zf;
-extern TCGv     cpu_l2_DEf;
-
-extern TCGv     cpu_er_Ef;
+extern TCGv     cpu_er_pstate;
 extern TCGv     cpu_er_Vf;
 extern TCGv     cpu_er_Cf;
 extern TCGv     cpu_er_Nf;
 extern TCGv     cpu_er_Zf;
-extern TCGv     cpu_er_DEf;
 
 extern TCGv     cpu_eret;
 extern TCGv     cpu_erbta;
@@ -131,8 +114,6 @@ extern TCGv     cpu_lpe;
 extern TCGv     cpu_npc;
 
 extern TCGv     cpu_bta;
-extern TCGv     cpu_bta_l1;
-extern TCGv     cpu_bta_l2;
 
 extern TCGv     cpu_r[64];
 
