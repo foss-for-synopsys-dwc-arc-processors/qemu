@@ -44,7 +44,8 @@ module ConstantTables
     "getLF",
     "setLF",
     "hasInterrupts",
-    "NoFurtherLoadsPending"
+    "NoFurtherLoadsPending",
+    "inKernelMode"
   ]
 
 
