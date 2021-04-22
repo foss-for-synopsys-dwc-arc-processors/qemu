@@ -1011,6 +1011,111 @@ arc_gen_LDDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv dest_lo)
     return DISAS_NEXT;
 }
 
+/*
+ * 128-bit store.
+ * FIXME: There is a mixture of decoder stuffs in here.
+ *        The logic must be moved to a decoding layer.
+ */
+int
+arc_gen_STDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv src)
+{
+    /*
+     * Address writebacks for 128-bit loads.
+     * ,----.----------.
+     * | aa | mnemonic |
+     * |----+----------|
+     * | 0  | none     |
+     * | 1  | a/aw     |
+     * | 2  | ab       |
+     * | 3  | as       |
+     * `----^----------'
+     */
+    /* A non-register operand cannot be incremented. */
+    if (ctx->insn.aa == 1 || ctx->insn.aa == 2)
+    {
+        if (!(ctx->insn.operands[1].type & ARC_OPERAND_IR)) {
+            arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+            return DISAS_NORETURN;
+      }
+    }
+
+    TCGv data_hi = NULL;
+    bool  free_data_hi = false;
+
+    /*
+     * The "src" can be a register or immediate.
+     * Look for next register pair if "src" is a register.
+     * Will raise an exception if "src" is an odd register.
+     */
+    if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
+        data_hi = nextReg(src);
+        if (data_hi == NULL) {
+            return DISAS_NORETURN;
+        }
+    } else if (ctx->insn.operands[0].type & ARC_OPERAND_LIMM) {
+        /* Dealing with an immediate to store. */
+        data_hi = tcg_temp_local_new();
+        free_data_hi = true;
+
+        if (ctx->insn.operands[0].type & ARC_OPERAND_SIGNED) {
+            /* Sign extend. */
+            tcg_gen_sari_i64(data_hi, src, 63);
+        } else if (ctx->insn.operands[0].type & ARC_OPERAND_UNSIGNED) {
+            /* Just use "0" for the upper part. */
+            tcg_gen_mov_tl(data_hi, tcg_const_local_tl(0));
+        } else {
+            /* Should not happen. */
+            g_assert_not_reached();
+        }
+    } else {
+        /* The type of operand to store is not as expected. */
+        g_assert_not_reached();
+    }
+
+    /* Only defined after possible exception routine codes. */
+    TCGv data_lo = tcg_temp_local_new();
+    TCGv addr = tcg_temp_local_new();
+    /* Caputre the data before it possibly changes (src = base). */
+    tcg_gen_mov_tl(data_lo, src);
+
+    switch (ctx->insn.aa) {
+    case 0:  /* Simple base+offset access. */
+        tcg_gen_add_tl(addr, base, offset);
+        break;
+    case 1:  /* Pre memory access increment. */
+        tcg_gen_add_tl(addr, base, offset);
+        tcg_gen_mov_tl(base, addr);
+        break;
+    case 2:  /* Post memory access increment. */
+        tcg_gen_mov_tl(addr, base);
+        break;
+    case 3:  /* Address scaling. */
+        tcg_gen_shli_tl(offset, offset, 3);
+        tcg_gen_add_tl(addr, base, offset);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    /* Store the data. */
+    tcg_gen_qemu_st_tl(data_lo, addr, ctx->mem_idx, MO_Q);
+    tcg_gen_addi_tl(addr, addr, 8);
+    tcg_gen_qemu_st_tl(data_hi, addr, ctx->mem_idx, MO_Q);
+
+    if (ctx->insn.aa == 2) { /* Post-memory access increment. */
+        tcg_gen_add_tl(addr, base, offset);
+        tcg_gen_mov_tl(base, addr);
+    }
+
+    if (free_data_hi) {
+        tcg_temp_free(data_hi);
+    }
+    tcg_temp_free(data_lo);
+    tcg_temp_free(addr);
+
+    return DISAS_NEXT;
+}
+
 #endif
 #ifdef TARGET_ARCV2
 
