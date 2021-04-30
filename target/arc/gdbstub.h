@@ -88,6 +88,12 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_TIMER_CNT1,       /* timer 1 counter */
     GDB_AUX_OTHER_REG_TIMER_CTRL1,      /* timer 1 control */
     GDB_AUX_OTHER_REG_TIMER_LIM1,       /* timer 1 limit   */
+    /* mmuv4 */
+    GDB_AUX_OTHER_REG_PID,              /* process identity  */
+    GDB_AUX_OTHER_REG_TLBPD0,           /* page descriptor 0 */
+    GDB_AUX_OTHER_REG_TLBPD1,           /* page descriptor 1 */
+    GDB_AUX_OTHER_REG_TLB_INDEX,        /* tlb index         */
+    GDB_AUX_OTHER_REG_TLB_CMD,          /* tlb command       */
     /* mpu */
     GDB_AUX_OTHER_REG_MPU_BUILD,        /* MPU build           */
     GDB_AUX_OTHER_REG_MPU_EN,           /* MPU enable          */
@@ -145,12 +151,6 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_IRQ_PRIO,         /* priority               */
     /* miscellaneous */
     GDB_AUX_OTHER_REG_BTA,              /* branch target address */
-    /* mmu */
-    GDB_AUX_OTHER_REG_PID,              /* process identity  */
-    GDB_AUX_OTHER_REG_TLBPD0,           /* page descriptor 0 */
-    GDB_AUX_OTHER_REG_TLBPD1,           /* page descriptor 1 */
-    GDB_AUX_OTHER_REG_TLB_INDEX,        /* tlb index         */
-    GDB_AUX_OTHER_REG_TLB_CMD,          /* tlb command       */
 #ifdef TARGET_ARCV3
     /* mmuv6 */
     GDB_AUX_OTHER_REG_MMU_CTRL,         /* mmuv6 control */
