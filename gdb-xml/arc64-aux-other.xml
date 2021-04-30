@@ -172,6 +172,4 @@
   <reg name="mmu_ctrl" bitsize="64" regnum="68" type="mmu_ctrl_type" group="general"/>
   <reg name="mmu_rtp0" bitsize="64" regnum="69" type="mmu_rtp_type"  group="general"/>
   <reg name="mmu_rtp1" bitsize="64" regnum="70" type="mmu_rtp_type"  group="general"/>
-  <reg name="tlbindex" bitsize="64" regnum="71" type="tlbindex_type" group="general"/>
-  <reg name="tlbcmd"   bitsize="64" regnum="72" type="tlbcmd_type"   group="general"/>
 </feature>
