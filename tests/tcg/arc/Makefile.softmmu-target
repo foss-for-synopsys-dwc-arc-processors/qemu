@@ -41,3 +41,6 @@ $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
 %: %.o
 	cd ${BUILD_DIR} && \
 	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT)
+
+guest-tests:
+	echo "BLA" > /tmp/bla

@@ -55,6 +55,9 @@ void arc_cpu_do_interrupt(CPUState *cs)
         return;
     }
 
+    qemu_log_mask(CPU_LOG_INT, "[EXCP] Entering with AE: " TARGET_FMT_ld "\n",
+                  GET_STATUS_BIT(env->stat, AEf));
+
     /* If we take an exception within an exception => fatal Machine Check. */
     if (GET_STATUS_BIT(env->stat, AEf) == 1) {
         cs->exception_index = EXCP_MACHINE_CHECK;
@@ -199,9 +202,6 @@ void arc_cpu_do_interrupt(CPUState *cs)
     qemu_log_mask(CPU_LOG_INT, "[EXCP] isr=0x" TARGET_FMT_lx
                   " vec=0x%x ecr=0x" TARGET_FMT_lx "\n",
                   env->pc, offset, env->ecr);
-
-    /* Make sure that exception code decodes corectly */
-    env->stat.is_delay_slot_instruction = 0;
 
     cs->exception_index = -1;
 }

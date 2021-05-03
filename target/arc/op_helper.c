@@ -182,12 +182,12 @@ void helper_rtie(CPUARCState *env)
         }
 
         qemu_log_mask(CPU_LOG_INT, "[EXCP] RTIE @0x" TARGET_FMT_lx
-                      " ECR:0x" TARGET_FMT_lx "\n",
+                      " ECR:0x" TARGET_FMT_lx " AE: true\n",
                       (target_ulong) env->r[63], (target_ulong) env->ecr);
     } else {
         arc_rtie_interrupts(env);
         qemu_log_mask(CPU_LOG_INT, "[IRQ] RTIE @0x" TARGET_FMT_lx
-                      " STATUS32:0x" TARGET_FMT_lx "\n",
+                      " STATUS32:0x" TARGET_FMT_lx " AE: false\n",
                       (target_ulong) env->r[63],
                       (target_ulong) pack_status32(&env->stat));
     }

@@ -163,11 +163,11 @@ FIELD(STATUS32, Zf,  11, 1)
 
 #define TCG_SET_STATUS_FIELD_BIT(STAT_REG, FIELD) { \
     assert(R_STATUS32_ ## FIELD ## _LENGTH == 1); \
-    tcg_gen_ori_tl(STAT_REG, STAT_REG, R_STATUS32_ ## FIELD ## _MASK); \
+    tcg_gen_ori_tl(STAT_REG, STAT_REG, (R_STATUS32_ ## FIELD ## _MASK)); \
 }
 #define TCG_CLR_STATUS_FIELD_BIT(STAT_REG, FIELD) { \
     assert(R_STATUS32_ ## FIELD ## _LENGTH == 1); \
-    tcg_gen_andi_tl(STAT_REG, STAT_REG, ~R_STATUS32_ ## FIELD ## _MASK); \
+    tcg_gen_andi_tl(STAT_REG, STAT_REG, ~(R_STATUS32_ ## FIELD ## _MASK)); \
 }
 #define TCG_SET_STATUS_FIELD_VALUE(STAT_REG, FIELD, VALUE) { \
     TCGv temp = tcg_temp_new(); \
@@ -195,12 +195,10 @@ typedef struct {
     target_ulong Cf;     /*  carry                   */
     target_ulong Nf;     /*  negative                */
     target_ulong Zf;     /*  zero                    */
-
-    /* Reserved bits */
-
-    /* Next instruction is a delayslot instruction */
-    bool is_delay_slot_instruction;
 } ARCStatus;
+
+uint32_t pack_status32(ARCStatus *status_r);
+void unpack_status32(ARCStatus *status_r, uint32_t value);
 
 /* ARC processor timer module. */
 typedef struct {
@@ -296,6 +294,9 @@ typedef struct CPUARCState {
     const struct arc_boot_info *boot_info;
 
     bool enabled_interrupts;
+    bool in_delayslot_instruction;
+    bool next_insn_is_delayslot;
+
 } CPUARCState;
 
 /*
@@ -439,7 +440,8 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
 #ifdef CONFIG_USER_ONLY
     assert(0); /* Not really supported at the moment. */
 #else
-    *pflags = cpu_mmu_index(env, 0);
+    //*pflags = env->stat.DEf;
+    *pflags = pack_status32(&env->stat);
 #endif
 }
 
