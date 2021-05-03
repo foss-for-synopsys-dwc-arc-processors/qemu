@@ -244,22 +244,27 @@ void arc_mpu_init(struct ARCCPU *cpu)
 /* Checking the sanity of situation before accessing MPU registers */
 static void validate_mpu_regs_access(CPUARCState *env)
 {
+    uintptr_t host_pc = GETPC();
+
     /* MPU registers are only accessible in kernel mode */
     if (is_user_mode(env)) {
-        arc_raise_exception(env, EXCP_PRIVILEGEV);
+        arc_raise_exception(env, host_pc, EXCP_PRIVILEGEV);
     }
     /* No MPU, no getting any */
     else if ((env_archcpu(env))->cfg.has_mpu == false) {
-        arc_raise_exception(env, EXCP_INST_ERROR);
+        arc_raise_exception(env, host_pc, EXCP_INST_ERROR);
     }
 }
 
 /* If 'rgn' is higher than configured region number, throw an exception */
 static inline void validate_region_number(const ARCMPU *mpu, uint8_t rgn)
 {
+    uintptr_t host_pc = GETPC();
+
     if (!(rgn < mpu->reg_bcr.regions)) {
         arc_raise_exception(container_of(mpu, CPUARCState, mpu), /* env */
-                                         EXCP_INST_ERROR);
+                            host_pc,
+                            EXCP_INST_ERROR);
     }
 }
 

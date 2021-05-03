@@ -277,9 +277,6 @@ typedef struct CPUARCState {
     ARCMPU mpu;               /* mpu.h */
     struct arc_cache cache;   /* cache.h */
 
-    /* used for propagatinng "hostpc/return address" to sub-functions */
-    uintptr_t host_pc;
-
     bool      stopped;
 
     /* Fields up to this point are cleared by a CPU reset */
@@ -459,7 +456,7 @@ hwaddr arc_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
 int arc_cpu_gdb_read_register(CPUState *cpu, GByteArray *buf, int reg);
 int arc_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
 
-void QEMU_NORETURN arc_raise_exception(CPUARCState *env, int32_t excp_idx);
+void QEMU_NORETURN arc_raise_exception(CPUARCState *env, uintptr_t host_pc, int32_t excp_idx);
 
 void not_implemented_mmu_init(struct arc_mmu *mmu);
 bool not_implemented_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
