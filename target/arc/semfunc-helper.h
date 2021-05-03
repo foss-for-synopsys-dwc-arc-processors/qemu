@@ -110,9 +110,10 @@ void arc_gen_no_further_loads_pending(const DisasCtxt *ctx, TCGv ret);
 #define NoFurtherLoadsPending(R)    arc_gen_no_further_loads_pending(ctx, R)
 void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define setDebugLD(A)   arc_gen_set_debug(ctx, A)
-void arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch);
 #define executeDelaySlot(bta, take_branch) \
-    arc_gen_execute_delayslot(ctx, bta, take_branch)
+    ctx->env->in_delayslot_instruction = false; \
+    ctx->env->next_insn_is_delayslot = true; \
+    TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, DEf, take_branch);
 
 #define shouldExecuteDelaySlot()    (ctx->insn.d != 0)
 
@@ -148,7 +149,6 @@ void arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch);
     uint16_t delayslot_buffer[2]; \
     uint8_t delayslot_length; \
     ctx->env->pc = ctx->cpc; \
-    ctx->env->stat.is_delay_slot_instruction = 1; \
     delayslot_buffer[0] = cpu_lduw_code(ctx->env, ctx->npc); \
     delayslot_length = arc_insn_length(delayslot_buffer[0], cpu->family); \
     tcg_gen_movi_tl(R, ctx->npc + delayslot_length); \
@@ -159,8 +159,12 @@ void arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch);
 
 #define setPC(NEW_PC)                                   \
     do {                                                \
-        gen_goto_tb(ctx, 1, NEW_PC);                    \
-        ret = ret == DISAS_NEXT ? DISAS_NORETURN : ret; \
+        if(ctx->insn.d == 0) {                          \
+            gen_goto_tb(ctx, 1, NEW_PC);                    \
+            ret = ret == DISAS_NEXT ? DISAS_NORETURN : ret; \
+        } else {                                        \
+            tcg_gen_mov_tl(cpu_bta, NEW_PC);            \
+        }                                               \
     } while (0)
 
 #define setBLINK(BLINK_ADDR) \

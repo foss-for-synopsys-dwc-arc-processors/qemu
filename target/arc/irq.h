@@ -29,8 +29,6 @@ bool arc_rtie_interrupts(CPUARCState *);
 void switchSP(CPUARCState *);
 void arc_initializeIRQ(ARCCPU *);
 void arc_resetIRQ(ARCCPU *);
-uint32_t pack_status32(ARCStatus *);
-void unpack_status32(ARCStatus *, uint32_t);
 
 #if defined(TARGET_ARCV2)
 #define OFFSET_FOR_VECTOR(VECNO) (VECNO << 2)
