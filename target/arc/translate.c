@@ -503,7 +503,8 @@ static bool check_delay_or_execution_slot(const DisasCtxt *ctx)
         TCGv tcg_cause = tcg_const_tl(0x1);
         TCGv tcg_param = tcg_const_tl(0x0);
 
-        tcg_gen_mov_tl(cpu_eret, cpu_pc);
+        tcg_gen_movi_tl(cpu_efa,  ctx->cpc);
+        tcg_gen_movi_tl(cpu_eret, ctx->cpc);
         tcg_gen_mov_tl(cpu_erbta, cpu_bta);
 
         gen_helper_raise_exception(cpu_env, tcg_index, tcg_cause, tcg_param);
@@ -1442,6 +1443,9 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
     enum arc_opcode_map mapping;
     static bool initialized;
 
+    /* TODO: To remove, just for debug purpose. */
+    assert(ctx->cpc != 0);
+
     if (initialized == false) {
         init_constants();
         initialized = true;
@@ -1530,7 +1534,13 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 
     ctx->base.is_jmp = arc_decode(ctx, opcode);
 
-    if (env->in_delayslot_instruction == true) {
+    /*
+     * Either decoder knows that this is a delayslot
+     * or it is a return from exception and at decode time
+     * DEf flag is set as a delayslot.
+     */
+    if(env->in_delayslot_instruction == true
+       || GET_STATUS_BIT(env->stat, DEf)) {
         TCGv temp_DEf = tcg_temp_local_new();
         ctx->base.is_jmp = DISAS_NORETURN;
 
@@ -1644,10 +1654,6 @@ void restore_state_to_opc(CPUARCState *env,
                           target_ulong *data)
 {
     env->pc = data[0];
-    //unpack_status32(&env->stat, data[2] & );
-    env->stat.pstate &= ~(R_STATUS32_DEf_MASK);
-    env->stat.pstate |= data[2] & (R_STATUS32_DEf_MASK);
-    env->in_delayslot_instruction = GET_STATUS_BIT(env->stat, DEf);
 }
 
 void arc_cpu_dump_state(CPUState *cs, FILE *f, int flags)

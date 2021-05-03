@@ -437,8 +437,7 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
 #ifdef CONFIG_USER_ONLY
     assert(0); /* Not really supported at the moment. */
 #else
-    //*pflags = env->stat.DEf;
-    *pflags = pack_status32(&env->stat);
+    *pflags = cpu_mmu_index(env, 0);
 #endif
 }
 
