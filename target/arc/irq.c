@@ -213,7 +213,7 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
     CPUARCState *env = &cpu->env;
 
     assert(GET_STATUS_BIT(env->stat, DEf) == 0);
-    assert(env->stat.is_delay_slot_instruction == 0);
+    assert(env->in_delayslot_instruction == 0);
 
     /* Reset RTC state machine -> AUX_RTC_CTRL &= 0x3fffffff */
     qemu_log_mask(CPU_LOG_INT,
@@ -240,7 +240,7 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
     SET_STATUS_BIT(env->stat, DEf, 0);
-    env->stat.is_delay_slot_instruction = 0;
+    env->in_delayslot_instruction = 0;
 
     /* Set .RB to 1 if additional register banks are specified. */
     if (cpu->cfg.rgf_num_banks > 0) {
@@ -268,7 +268,7 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
     CPUARCState *env = &cpu->env;
 
     assert(GET_STATUS_BIT(env->stat, DEf) == 0);
-    assert(env->stat.is_delay_slot_instruction == 0);
+    assert(env->in_delayslot_instruction == 0);
 
     /* Reset RTC state machine -> AUX_RTC_CTRL &= 0x3fffffff */
     qemu_log_mask(CPU_LOG_INT, "[IRQ] enter irq:%d U:" TARGET_FMT_ld
@@ -511,10 +511,8 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
         || GET_STATUS_BIT(env->stat, IEf) == 0
         /* We are not in an exception. */
         || GET_STATUS_BIT(env->stat, AEf)
-        /* Disable interrupts to happen after MissI exceptions. */
-        || env->enabled_interrupts == false
         /* In a delay slot of branch */
-        || env->stat.is_delay_slot_instruction
+        || env->in_delayslot_instruction
         || GET_STATUS_BIT(env->stat, DEf)
         || (!(interrupt_request & CPU_INTERRUPT_HARD))) {
         return false;

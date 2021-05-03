@@ -36,8 +36,6 @@ TCGv    cpu_Cf;
 TCGv    cpu_Nf;
 TCGv    cpu_Zf;
 
-TCGv    cpu_is_delay_slot_instruction;
-
 TCGv    cpu_er_pstate;
 TCGv    cpu_er_Vf;
 TCGv    cpu_er_Cf;
@@ -149,9 +147,6 @@ void arc_translate_init(void)
 
         NEW_ARC_REG(cpu_intvec, intvec)
 
-        NEW_ARC_REG(cpu_is_delay_slot_instruction,
-                    stat.is_delay_slot_instruction)
-
         NEW_ARC_REG(cpu_lock_lf_var, lock_lf_var)
     };
 
@@ -181,11 +176,14 @@ static void arc_tr_init_disas_context(DisasContextBase *dcbase,
 
     dc->base.is_jmp = DISAS_NEXT;
     dc->mem_idx = dc->base.tb->flags & 1;
-    dc->in_delay_slot = false;
 }
 static void arc_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
 {
     /* place holder for now */
+    /* TODO: Make sure you really need to guard it. */
+    //DisasContext *dc = container_of(dcbase, DisasContext, base);
+    //dc->possible_delayslot_instruction = dc->env->stat.DEf;
+
 }
 
 static void arc_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
@@ -520,12 +518,13 @@ static bool check_enter_leave_nr_regs(const DisasCtxt *ctx,
  */
 static bool check_delay_or_execution_slot(const DisasCtxt *ctx)
 {
-    if (ctx->in_delay_slot) {
+    if (ctx->env->in_delayslot_instruction) {
         TCGv tcg_index = tcg_const_tl(EXCP_INST_ERROR);
         TCGv tcg_cause = tcg_const_tl(0x1);
         TCGv tcg_param = tcg_const_tl(0x0);
 
-        tcg_gen_mov_tl(cpu_eret, cpu_pc);
+        tcg_gen_movi_tl(cpu_efa,  ctx->cpc);
+        tcg_gen_movi_tl(cpu_eret, ctx->cpc);
         tcg_gen_mov_tl(cpu_erbta, cpu_bta);
 
         gen_helper_raise_exception(cpu_env, tcg_index, tcg_cause, tcg_param);
@@ -1738,58 +1737,61 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 {
     ctx->env = env;
 
-    env->enabled_interrupts = false;
-
     const struct arc_opcode *opcode = NULL;
     if (!read_and_decode_context(ctx, &opcode)) {
         ctx->base.is_jmp = arc_gen_INVALID(ctx);
         return;
     }
 
-    ctx->base.is_jmp = arc_decode(ctx, opcode);
-
-    TCGv npc = tcg_const_local_tl(ctx->npc);
-    gen_helper_zol_verify(cpu_env, npc);
-    tcg_temp_free(npc);
-
-    env->enabled_interrupts = true;
-}
-
-static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
-{
-    bool in_a_delayslot_instruction = false;
-    DisasContext *dc = container_of(dcbase, DisasContext, base);
-    CPUARCState *env = cpu->env_ptr;
-
-    /* TODO (issue #62): these must be removed */
-    dc->zero = tcg_const_local_tl(0);
-    dc->one  = tcg_const_local_tl(1);
-
-    if (env->stat.is_delay_slot_instruction == 1) {
-        in_a_delayslot_instruction = true;
+    if(env->next_insn_is_delayslot == true) {
+        env->in_delayslot_instruction = true;
+        env->next_insn_is_delayslot = false;
     }
 
-    dc->cpc = dc->base.pc_next;
-    decode_opc(env, dc);
+    ctx->base.is_jmp = arc_decode(ctx, opcode);
 
-    dc->base.pc_next = dc->npc;
-    tcg_gen_movi_tl(cpu_npc, dc->npc);
-
-    if (in_a_delayslot_instruction == true) {
+    /*
+     * Either decoder knows that this is a delayslot
+     * or it is a return from exception and at decode time
+     * DEf flag is set as a delayslot.
+     */
+    if(env->in_delayslot_instruction == true
+       || GET_STATUS_BIT(env->stat, DEf)) {
         TCGv temp_DEf = tcg_temp_local_new();
-        dc->base.is_jmp = DISAS_NORETURN;
+        ctx->base.is_jmp = DISAS_NORETURN;
 
         /* Post execution delayslot logic. */
         TCGLabel *DEf_not_set_label1 = gen_new_label();
         TCG_GET_STATUS_FIELD_MASKED(temp_DEf, cpu_pstate, DEf);
         tcg_gen_brcondi_tl(TCG_COND_EQ, temp_DEf, 0, DEf_not_set_label1);
         TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, DEf);
-        gen_goto_tb(dc, 1, cpu_bta);
+        gen_goto_tb(ctx, 1, cpu_bta);
         gen_set_label(DEf_not_set_label1);
-        env->stat.is_delay_slot_instruction = 0;
 
         tcg_temp_free(temp_DEf);
+        env->in_delayslot_instruction = false;
     }
+
+    TCGv npc = tcg_const_local_tl(ctx->npc);
+    gen_helper_zol_verify(cpu_env, npc);
+    tcg_temp_free(npc);
+}
+
+static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
+{
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    CPUARCState *env = cpu->env_ptr;
+
+
+    /* TODO (issue #62): these must be removed */
+    dc->zero = tcg_const_local_tl(0);
+    dc->one  = tcg_const_local_tl(1);
+
+    dc->cpc = dc->base.pc_next;
+    decode_opc(env, dc);
+
+    dc->base.pc_next = dc->npc;
+    tcg_gen_movi_tl(cpu_npc, dc->npc);
 
     if (dc->base.is_jmp == DISAS_NORETURN) {
         gen_gotoi_tb(dc, 0, dc->npc);
