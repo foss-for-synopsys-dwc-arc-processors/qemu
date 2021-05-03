@@ -61,6 +61,40 @@ static target_ulong get_identity(CPUARCState *env)
     return res;
 }
 
+
+
+/* TODO: Move this to thread safe data structure. */
+target_ulong jli_base;
+
+target_ulong
+arc_jli_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
+             void *data)
+{
+    switch (aux_reg_detail->id) {
+    case AUX_ID_jli_base:
+        return jli_base;
+        break;
+    default:
+        assert(0);
+        break;
+    }
+}
+
+void
+arc_jli_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
+             target_ulong val, void *data)
+{
+    switch (aux_reg_detail->id) {
+    case AUX_ID_jli_base:
+        jli_base = val & (~3);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+}
+
+
 target_ulong
 arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
                           void *data)
