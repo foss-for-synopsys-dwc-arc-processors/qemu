@@ -4357,6 +4357,7 @@ arc_gen_CLRI (DisasCtxt *ctx, TCGv c)
   tcg_temp_free(a);
   tcg_temp_free(temp_3);
   tcg_temp_free(mask);
+  tcg_temp_free(in_kernel_mode);
 
   return ret;
 }
