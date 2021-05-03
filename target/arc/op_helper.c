@@ -101,6 +101,8 @@ void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
         aux_reg_detail->aux_reg->set_func(aux_reg_detail, val,
                                           (void *) env);
     } else {
+        qemu_log_mask(LOG_UNIMP, "Undefined set_func for aux register with id 0x" TARGET_FMT_lx
+                      "\n", aux);
         arc_raise_exception(env, EXCP_INST_ERROR);
     }
     cpu_outl(aux, val);
@@ -127,6 +129,8 @@ target_ulong helper_lr(CPUARCState *env, target_ulong aux)
         result = aux_reg_detail->aux_reg->get_func(aux_reg_detail,
                                                    (void *) env);
     } else {
+        qemu_log_mask(LOG_UNIMP, "Undefined get_func for aux register with id 0x" TARGET_FMT_lx
+                      "\n", aux);
         arc_raise_exception(env, EXCP_INST_ERROR);
     }
 
