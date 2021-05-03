@@ -152,6 +152,9 @@ static void arc_cpu_reset(DeviceState *dev)
         log_cpu_state(s, 0);
     }
 
+    env->in_delayslot_instruction = false;
+    env->next_insn_is_delayslot = false;
+
     /* Initialize mmu/reset it. */
     arc_mmu_init(env);
 
@@ -165,7 +168,6 @@ static void arc_cpu_reset(DeviceState *dev)
     memset(env->r, 0, sizeof(env->r));
     env->lock_lf_var = 0;
 
-    env->stat.is_delay_slot_instruction = 0;
     /*
      * kernel expects MPY support to check for presence of
      * extension core regs r58/r59.

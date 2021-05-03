@@ -215,9 +215,6 @@ void arc_cpu_do_interrupt(CPUState *cs)
                   " vec=0x%x ecr=0x" TARGET_FMT_lx "\n",
                   env->pc, offset, env->ecr);
 
-    /* Make sure that exception code decodes corectly */
-    env->stat.is_delay_slot_instruction = 0;
-
     cs->exception_index = -1;
 }
 
@@ -292,10 +289,10 @@ void helper_debug(CPUARCState *env)
  * else the cpu_restore_state() will not be helpful and we end up
  * with incorrect registers in env.
  */
-void QEMU_NORETURN arc_raise_exception(CPUARCState *env, int32_t excp_idx)
+void QEMU_NORETURN arc_raise_exception(CPUARCState *env, uintptr_t host_pc, int32_t excp_idx)
 {
     CPUState *cs = env_cpu(env);
-    cpu_restore_state(cs, env->host_pc, true);
+    cpu_restore_state(cs, host_pc, true);
     cs->exception_index = excp_idx;
     env->causecode = env->param = 0x0;
     env->eret  = env->pc;

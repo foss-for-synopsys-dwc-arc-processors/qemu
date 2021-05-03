@@ -86,7 +86,6 @@ static void report_aux_reg_error(target_ulong aux)
 void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
 {
     /* saving return address in case an exception must be raised later */
-    env->host_pc = GETPC();
     ARCCPU *cpu = env_archcpu(env);
     struct arc_aux_reg_detail *aux_reg_detail =
         arc_aux_reg_struct_for_address(aux, cpu->family);
@@ -94,7 +93,7 @@ void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
     g_assert(aux_reg_detail != NULL);
     if (aux_reg_detail == NULL) {
         report_aux_reg_error(aux);
-        arc_raise_exception(env, EXCP_INST_ERROR);
+        arc_raise_exception(env, GETPC(), EXCP_INST_ERROR);
     }
 
     if (aux_reg_detail->aux_reg->set_func != NULL) {
@@ -103,7 +102,7 @@ void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
     } else {
         qemu_log_mask(LOG_UNIMP, "Undefined set_func for aux register with id 0x" TARGET_FMT_lx
                       "\n", aux);
-        arc_raise_exception(env, EXCP_INST_ERROR);
+        arc_raise_exception(env, GETPC(), EXCP_INST_ERROR);
     }
     cpu_outl(aux, val);
 }
@@ -115,14 +114,12 @@ target_ulong helper_lr(CPUARCState *env, target_ulong aux)
     target_ulong result = 0;
 
     /* saving return address in case an exception must be raised later */
-    env->host_pc = GETPC();
-
     struct arc_aux_reg_detail *aux_reg_detail =
         arc_aux_reg_struct_for_address(aux, cpu->family);
 
     if (aux_reg_detail == NULL) {
         report_aux_reg_error(aux);
-        arc_raise_exception(env, EXCP_INST_ERROR);
+        arc_raise_exception(env, GETPC(), EXCP_INST_ERROR);
     }
 
     if (aux_reg_detail->aux_reg->get_func != NULL) {
@@ -131,7 +128,7 @@ target_ulong helper_lr(CPUARCState *env, target_ulong aux)
     } else {
         qemu_log_mask(LOG_UNIMP, "Undefined get_func for aux register with id 0x" TARGET_FMT_lx
                       "\n", aux);
-        arc_raise_exception(env, EXCP_INST_ERROR);
+        arc_raise_exception(env, GETPC(), EXCP_INST_ERROR);
     }
 
     return result;
@@ -182,12 +179,12 @@ void helper_rtie(CPUARCState *env)
         }
 
         qemu_log_mask(CPU_LOG_INT, "[EXCP] RTIE @0x" TARGET_FMT_lx
-                      " ECR:0x" TARGET_FMT_lx "\n",
+                      " ECR:0x" TARGET_FMT_lx " AE: true\n",
                       (target_ulong) env->r[63], (target_ulong) env->ecr);
     } else {
         arc_rtie_interrupts(env);
         qemu_log_mask(CPU_LOG_INT, "[IRQ] RTIE @0x" TARGET_FMT_lx
-                      " STATUS32:0x" TARGET_FMT_lx "\n",
+                      " STATUS32:0x" TARGET_FMT_lx " AE: false\n",
                       (target_ulong) env->r[63],
                       (target_ulong) pack_status32(&env->stat));
     }
@@ -216,7 +213,7 @@ void QEMU_NORETURN helper_raise_exception(CPUARCState *env,
     cs->exception_index = index;
     env->causecode = causecode;
     env->param = param;
-    cpu_loop_exit(cs);
+    cpu_loop_exit_restore(cs, GETPC());
 }
 
 void helper_zol_verify(CPUARCState *env, target_ulong npc)
@@ -363,7 +360,7 @@ arc_status_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
 
     case AUX_ID_erstatus:
         if (is_user_mode(env)) {
-            arc_raise_exception(env, EXCP_PRIVILEGEV);
+            arc_raise_exception(env, GETPC(), EXCP_PRIVILEGEV);
         }
         reg = pack_status32(&env->stat_er);
         break;

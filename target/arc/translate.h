@@ -64,8 +64,6 @@ typedef struct DisasContext {
     uint16_t buffer[2];
     uint8_t  mem_idx;
 
-    bool in_delay_slot;
-
     TCGv     tmp_reg;
     TCGLabel *label;
 
@@ -93,8 +91,6 @@ extern TCGv     cpu_Vf;
 extern TCGv     cpu_Cf;
 extern TCGv     cpu_Nf;
 extern TCGv     cpu_Zf;
-
-extern TCGv     cpu_is_delay_slot_instruction;
 
 extern TCGv     cpu_er_pstate;
 extern TCGv     cpu_er_Vf;
