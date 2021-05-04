@@ -1443,9 +1443,6 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
     enum arc_opcode_map mapping;
     static bool initialized;
 
-    /* TODO: To remove, just for debug purpose. */
-    assert(ctx->cpc != 0);
-
     if (initialized == false) {
         init_constants();
         initialized = true;
