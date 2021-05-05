@@ -404,6 +404,8 @@ struct ARCCPU {
     uint32_t mpy_build;     /* Multiply configuration register. */
     uint32_t isa_config;    /* Instruction Set Configuration Register. */
 
+    uint8_t core_id;        /* Core id holder. */
+
     CPUNegativeOffsetState neg;
     CPUARCState env;
 };

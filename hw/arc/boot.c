@@ -25,7 +25,7 @@
 #include "qemu/error-report.h"
 #include "qemu/units.h"
 
-void arc_cpu_reset(void *opaque)
+void arc_cpu_board_reset(void *opaque)
 {
     ARCCPU *cpu = opaque;
     CPUARCState *env = &cpu->env;
@@ -41,7 +41,7 @@ void arc_cpu_reset(void *opaque)
      * via CPU registers we have to do it here.
      */
 
-    if (info->kernel_cmdline && strlen(info->kernel_cmdline)) {
+    if (info && info->kernel_cmdline && strlen(info->kernel_cmdline)) {
         /*
          * Load "cmdline" far enough from the kernel image.
          * Round by MAX page size for ARC - 16 KiB.
@@ -61,6 +61,7 @@ void arc_cpu_reset(void *opaque)
 void arc_load_kernel(ARCCPU *cpu, struct arc_boot_info *info)
 {
     hwaddr entry;
+    CPUState *cs;
     int elf_machine, kernel_size;
 
     if (!info->kernel_filename) {
@@ -92,8 +93,9 @@ void arc_load_kernel(ARCCPU *cpu, struct arc_boot_info *info)
 
     cpu->env.boot_info = info;
 
-    /* Set CPU's PC to point to the entry-point */
-    cpu->env.pc = entry;
+    CPU_FOREACH(cs) {
+        ARC_CPU(cs)->env.pc = entry;
+    }
 }
 
 

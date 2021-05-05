@@ -30,8 +30,10 @@
 
 static target_ulong get_identity(CPUARCState *env)
 {
-    target_ulong chipid = 0xffff, arcnum = 0, arcver, res;
+    target_ulong chipid = 0xffff;
+    target_ulong arcver, res;
     ARCCPU *cpu = env_archcpu(env);
+    target_ulong arcnum = cpu->core_id;
 
     switch (cpu->family) {
     case ARC_OPCODE_ARC700:

@@ -129,12 +129,13 @@ static void virt_init(MachineState *machine)
             fprintf(stderr, "Unable to find CPU definition!\n");
             exit(1);
         }
+        cpu->core_id = n;
 
        /* Initialize internal devices. */
         cpu_arc_pic_init(cpu);
         cpu_arc_clock_init(cpu);
 
-        qemu_register_reset(arc_cpu_reset, cpu);
+        qemu_register_reset(arc_cpu_board_reset, cpu);
     }
 
     /* Init system DDR */
@@ -155,13 +156,13 @@ static void virt_init(MachineState *machine)
     memory_region_add_subregion(system_memory, VIRT_IO_BASE, system_io);
 
     serial_mm_init(system_io, VIRT_UART0_OFFSET, 2,
-                   cpu->env.irq[VIRT_UART0_IRQ], 115200, serial_hd(0),
+                   ARC_CPU(first_cpu)->env.irq[VIRT_UART0_IRQ], 115200, serial_hd(0),
                    DEVICE_NATIVE_ENDIAN);
 
     for (n = 0; n < VIRT_VIRTIO_NUMBER; n++) {
         sysbus_create_simple("virtio-mmio",
                              VIRT_VIRTIO_BASE + VIRT_VIRTIO_SIZE * n,
-                             cpu->env.irq[VIRT_VIRTIO_IRQ + n]);
+                             ARC_CPU(first_cpu)->env.irq[VIRT_VIRTIO_IRQ + n]);
     }
 
     create_pcie(cpu);
@@ -173,7 +174,7 @@ static void virt_machine_init(MachineClass *mc)
 {
     mc->desc = "ARC Virtual Machine";
     mc->init = virt_init;
-    mc->max_cpus = 1;
+    mc->max_cpus = 255;
     mc->is_default = true;
 }
 

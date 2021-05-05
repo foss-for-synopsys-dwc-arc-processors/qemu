@@ -11,7 +11,7 @@ struct arc_boot_info {
     const char *kernel_cmdline;
 };
 
-void arc_cpu_reset(void *opaque);
+void arc_cpu_board_reset(void *opaque);
 void arc_load_kernel(ARCCPU *cpu, struct arc_boot_info *boot_info);
 
 #endif /* ARC_BOOT_H */
