@@ -97,8 +97,7 @@ void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
     }
 
     if (aux_reg_detail->aux_reg->set_func != NULL) {
-        aux_reg_detail->aux_reg->set_func(aux_reg_detail, val,
-                                          (void *) env);
+        aux_reg_detail->aux_reg->set_func(env, aux_reg_detail, val);
     } else {
         qemu_log_mask(LOG_UNIMP, "Undefined set_func for aux register with id 0x" TARGET_FMT_lx
                       "\n", aux);
@@ -123,8 +122,7 @@ target_ulong helper_lr(CPUARCState *env, target_ulong aux)
     }
 
     if (aux_reg_detail->aux_reg->get_func != NULL) {
-        result = aux_reg_detail->aux_reg->get_func(aux_reg_detail,
-                                                   (void *) env);
+        result = aux_reg_detail->aux_reg->get_func(env, aux_reg_detail);
     } else {
         qemu_log_mask(LOG_UNIMP, "Undefined get_func for aux register with id 0x" TARGET_FMT_lx
                       "\n", aux);
@@ -251,6 +249,50 @@ void helper_set_status32(CPUARCState *env, target_ulong value)
     set_status32(env, value);
 }
 
+target_ulong helper_llock(CPUARCState *env, target_ulong addr)
+{
+    qemu_mutex_lock_iothread();
+    target_ulong ret = cpu_ldl_data(env, addr);
+    ARC_CPU(first_cpu)->env.lf = 1;
+    ARC_CPU(first_cpu)->env.lpa = addr;
+    qemu_mutex_unlock_iothread();
+    return ret;
+}
+target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong value)
+{
+    qemu_mutex_lock_iothread();
+    target_ulong ret = !ARC_CPU(first_cpu)->env.lf;
+    if(ARC_CPU(first_cpu)->env.lf == 1 && ARC_CPU(first_cpu)->env.lpa == addr) {
+        cpu_stl_data(env, addr, value);
+        ARC_CPU(first_cpu)->env.lf = 0;
+    }
+    qemu_mutex_unlock_iothread();
+    return ret;
+}
+
+uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
+{
+    qemu_mutex_lock_iothread();
+    target_ulong ret = cpu_ldl_data(env, addr);
+    ret |= (((uint64_t) cpu_ldl_data(env, addr+4)) << 32);
+    ARC_CPU(first_cpu)->env.lf = 1;
+    ARC_CPU(first_cpu)->env.lpa = addr;
+    qemu_mutex_unlock_iothread();
+    return ret;
+}
+target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
+{
+    qemu_mutex_lock_iothread();
+    target_ulong ret = !ARC_CPU(first_cpu)->env.lf;
+    if(ARC_CPU(first_cpu)->env.lf == 1 && ARC_CPU(first_cpu)->env.lpa == addr) {
+        cpu_stl_data(env, addr, (value & 0xffffffff));
+        cpu_stl_data(env, addr+4, (value >> 32));
+        ARC_CPU(first_cpu)->env.lf = 0;
+    }
+    qemu_mutex_unlock_iothread();
+    return ret;
+}
+
 void helper_set_status32_bit(CPUARCState *env, target_ulong bit,
                              target_ulong value)
 {
@@ -347,10 +389,9 @@ target_ulong helper_mpym(CPUARCState *env, target_ulong b, target_ulong c)
 }
 
 target_ulong
-arc_status_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
-                    void *data)
+arc_status_regs_get(CPUARCState *env,
+                    const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
     target_ulong reg = 0;
 
     switch (aux_reg_detail->id) {
@@ -373,11 +414,10 @@ arc_status_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 void
-arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                    target_ulong val, void *data)
+arc_status_regs_set(CPUARCState *env,
+                    const struct arc_aux_reg_detail *aux_reg_detail,
+                    target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
-
     switch (aux_reg_detail->id) {
 
     case AUX_ID_status32:

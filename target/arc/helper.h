@@ -31,6 +31,11 @@ DEF_HELPER_2(set_status32, void, env, tl)
 DEF_HELPER_1(get_status32, tl, env)
 DEF_HELPER_3(set_status32_bit, void, env, tl, tl)
 
+DEF_HELPER_2(llock, tl, env, tl)
+DEF_HELPER_3(scond, tl, env, tl, tl)
+DEF_HELPER_2(llockd, i64, env, tl)
+DEF_HELPER_3(scondd, tl, env, tl, i64)
+
 DEF_HELPER_FLAGS_3(carry_add_flag, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl)
 DEF_HELPER_FLAGS_3(overflow_add_flag, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl)
 DEF_HELPER_FLAGS_3(overflow_sub_flag, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl)

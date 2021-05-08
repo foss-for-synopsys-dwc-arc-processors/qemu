@@ -69,8 +69,8 @@ static target_ulong get_identity(CPUARCState *env)
 target_ulong jli_base;
 
 target_ulong
-arc_jli_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
-             void *data)
+arc_jli_regs_get(struct CPUARCState *env,
+                 const struct arc_aux_reg_detail *aux_reg_detail)
 {
     switch (aux_reg_detail->id) {
     case AUX_ID_jli_base:
@@ -83,8 +83,9 @@ arc_jli_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 void
-arc_jli_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
-             target_ulong val, void *data)
+arc_jli_regs_set(struct CPUARCState *env,
+                 const struct arc_aux_reg_detail *aux_reg_detail,
+                 target_ulong val)
 {
     switch (aux_reg_detail->id) {
     case AUX_ID_jli_base:
@@ -98,10 +99,9 @@ arc_jli_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
 
 
 target_ulong
-arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
-                          void *data)
+arc_general_regs_get(CPUARCState *env,
+                     const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
     ARCCPU *cpu = env_archcpu(env);
     target_ulong reg = 0;
 
@@ -182,11 +182,10 @@ arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 void
-arc_general_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                     target_ulong val, void *data)
+arc_general_regs_set(CPUARCState *env,
+                     const struct arc_aux_reg_detail *aux_reg_detail,
+                     target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
-
     switch (aux_reg_detail->id) {
     case AUX_ID_lp_start:
         env->lps = val;

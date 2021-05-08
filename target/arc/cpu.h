@@ -28,6 +28,7 @@
 #include "target/arc/mmu-v6.h"
 #include "target/arc/mpu.h"
 #include "target/arc/cache.h"
+#include "target/arc/arconnect.h"
 
 #include "hw/registerfields.h"
 
@@ -244,7 +245,9 @@ typedef struct CPUARCState {
 
     target_ulong npc;    /* required for LP - zero overhead loops. */
 
-    target_ulong lock_lf_var;
+    /* LLOCK, SCOND internal registers */
+    target_ulong lf;
+    target_ulong lpa;
 
 #define TMR_IE  (1 << 0)
 #define TMR_NH  (1 << 1)
@@ -275,6 +278,7 @@ typedef struct CPUARCState {
     struct arc_mmuv6 mmu;       /* mmu.h */
 #endif
     ARCMPU mpu;               /* mpu.h */
+    struct arc_arcconnect_info arconnect;
     struct arc_cache cache;   /* cache.h */
 
     bool      stopped;
@@ -293,6 +297,8 @@ typedef struct CPUARCState {
     bool enabled_interrupts;
     bool in_delayslot_instruction;
     bool next_insn_is_delayslot;
+
+    target_ulong readback;
 
 } CPUARCState;
 

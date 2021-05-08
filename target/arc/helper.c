@@ -29,6 +29,7 @@
 #include "exec/cpu_ldst.h"
 #include "qemu/host-utils.h"
 #include "exec/helper-proto.h"
+#include "qemu/main-loop.h"
 #include "irq.h"
 
 void arc_cpu_do_interrupt(CPUState *cs)
@@ -39,6 +40,8 @@ void arc_cpu_do_interrupt(CPUState *cs)
     uint32_t     vectno;
     const char  *name;
     MemTxResult txres;
+
+    ARC_CPU(first_cpu)->env.lf = 0;
 
     /*
      * NOTE: Special LP_END exception. Immediately return code execution to

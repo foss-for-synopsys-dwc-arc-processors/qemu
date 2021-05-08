@@ -57,8 +57,6 @@ TCGv    cpu_r[64];
 
 TCGv    cpu_intvec;
 
-TCGv    cpu_lock_lf_var;
-
 /* NOTE: Pseudo register required for comparison with lp_end */
 TCGv    cpu_npc;
 
@@ -146,15 +144,11 @@ void arc_translate_init(void)
         NEW_ARC_REG(cpu_npc, npc)
 
         NEW_ARC_REG(cpu_intvec, intvec)
-
-        NEW_ARC_REG(cpu_lock_lf_var, lock_lf_var)
     };
-
 
     for (i = 0; i < ARRAY_SIZE(r32); ++i) {
         *r32[i].ptr = tcg_global_mem_new(cpu_env, r32[i].off, r32[i].name);
     }
-
 
     for (i = 0; i < 64; i++) {
         char name[16];

@@ -22,8 +22,6 @@
 #ifndef ARC_MMU_H
 #define ARC_MMU_H
 
-#include "target/arc/regs.h"
-
 /* PD0 flags */
 #define PD0_VPN 0x7ffff000
 #define PD0_ASID 0x000000ff

@@ -90,7 +90,7 @@ static void arc_sim_init(MachineState *machine)
         cpu_arc_pic_init(cpu);
         cpu_arc_clock_init(cpu);
 
-        qemu_register_reset(arc_cpu_reset, cpu);
+        qemu_register_reset(arc_cpu_board_reset, cpu);
     }
 
     ram = g_new(MemoryRegion, 1);

@@ -302,8 +302,9 @@ void arc_has_interrupts(const DisasCtxt *ctx, TCGv ret);
 #define hasInterrupts(R)    arc_has_interrupts(ctx, R)
 #define doNothing()
 
-#define setLF(VALUE)    tcg_gen_mov_tl(cpu_lock_lf_var, VALUE)
-#define getLF(R)        tcg_gen_mov_tl(R, cpu_lock_lf_var)
+/* TODO: Remove both macros once changed LLOCK and SCOND on ARCv3. */
+#define setLF(V) //gen_helper_set_lock_flag(cpu_env, V)
+#define getLF(R) //tcg_gen_mov_tl(R, cpu_lock_lf_var)
 
 /* Statically inferred return function */
 

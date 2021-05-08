@@ -174,7 +174,7 @@ static void virt_machine_init(MachineClass *mc)
 {
     mc->desc = "ARC Virtual Machine";
     mc->init = virt_init;
-    mc->max_cpus = 255;
+    mc->max_cpus = 64;
     mc->is_default = true;
 }
 
