@@ -32,6 +32,7 @@
 #include "irq.h"
 #include "sysemu/sysemu.h"
 #include "exec/exec-all.h"
+#include "target/arc/arconnect.h"
 
 
 static target_ulong get_status32(CPUARCState *env)
@@ -251,45 +252,53 @@ void helper_set_status32(CPUARCState *env, target_ulong value)
 
 target_ulong helper_llock(CPUARCState *env, target_ulong addr)
 {
-    qemu_mutex_lock_iothread();
+    struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
+    env->arconnect.lpa_lf = entry;
+    qemu_mutex_lock(&entry->mutex);
     target_ulong ret = cpu_ldl_data(env, addr);
-    ARC_CPU(first_cpu)->env.lf = 1;
-    ARC_CPU(first_cpu)->env.lpa = addr;
-    qemu_mutex_unlock_iothread();
+    entry->lpa_lf = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
+    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    qemu_mutex_unlock(&entry->mutex);
     return ret;
 }
 target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong value)
 {
-    qemu_mutex_lock_iothread();
-    target_ulong ret = !ARC_CPU(first_cpu)->env.lf;
-    if(ARC_CPU(first_cpu)->env.lf == 1 && ARC_CPU(first_cpu)->env.lpa == addr) {
+    struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
+    qemu_mutex_lock(&entry->mutex);
+    target_ulong ret = !(entry->lpa_lf & 0x1);
+    addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
+    if(entry->lpa_lf == (addr + 1)) {
         cpu_stl_data(env, addr, value);
-        ARC_CPU(first_cpu)->env.lf = 0;
+        entry->lpa_lf = 0;
     }
-    qemu_mutex_unlock_iothread();
+    qemu_mutex_unlock(&entry->mutex);
     return ret;
 }
 
 uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
 {
-    qemu_mutex_lock_iothread();
+    struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
+    env->arconnect.lpa_lf = entry;
+    qemu_mutex_lock(&entry->mutex);
     target_ulong ret = cpu_ldl_data(env, addr);
     ret |= (((uint64_t) cpu_ldl_data(env, addr+4)) << 32);
-    ARC_CPU(first_cpu)->env.lf = 1;
-    ARC_CPU(first_cpu)->env.lpa = addr;
-    qemu_mutex_unlock_iothread();
+    entry->lpa_lf = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
+    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    qemu_mutex_unlock(&entry->mutex);
     return ret;
 }
 target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
 {
-    qemu_mutex_lock_iothread();
-    target_ulong ret = !ARC_CPU(first_cpu)->env.lf;
-    if(ARC_CPU(first_cpu)->env.lf == 1 && ARC_CPU(first_cpu)->env.lpa == addr) {
+    struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
+    qemu_mutex_lock(&entry->mutex);
+    target_ulong ret = !(entry->lpa_lf & 0x1);
+    addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
+    if(entry->lpa_lf == (addr + 1)) {
         cpu_stl_data(env, addr, (value & 0xffffffff));
         cpu_stl_data(env, addr+4, (value >> 32));
-        ARC_CPU(first_cpu)->env.lf = 0;
+        entry->lpa_lf = 0;
     }
-    qemu_mutex_unlock_iothread();
+    qemu_mutex_unlock(&entry->mutex);
     return ret;
 }
 

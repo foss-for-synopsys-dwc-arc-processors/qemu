@@ -245,10 +245,6 @@ typedef struct CPUARCState {
 
     target_ulong npc;    /* required for LP - zero overhead loops. */
 
-    /* LLOCK, SCOND internal registers */
-    target_ulong lf;
-    target_ulong lpa;
-
 #define TMR_IE  (1 << 0)
 #define TMR_NH  (1 << 1)
 #define TMR_W   (1 << 2)

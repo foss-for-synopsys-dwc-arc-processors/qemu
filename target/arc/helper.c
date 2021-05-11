@@ -41,7 +41,10 @@ void arc_cpu_do_interrupt(CPUState *cs)
     const char  *name;
     MemTxResult txres;
 
-    ARC_CPU(first_cpu)->env.lf = 0;
+    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+    if(entry != NULL) {
+        entry->lpa_lf = 0;
+    }
 
     /*
      * NOTE: Special LP_END exception. Immediately return code execution to

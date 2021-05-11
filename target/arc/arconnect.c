@@ -22,8 +22,11 @@
 #include "qemu/error-report.h"
 #include "target/arc/regs.h"
 #include "target/arc/cpu.h"
+#include "target/arc/arconnect.h"
 
 #define ICI_IRQ 19
+
+struct lpa_lf_entry lpa_lfs[LPA_LFS_SIZE];
 
 enum arconnect_commands {
     CMD_CHECK_CORE_ID = 0x0,
@@ -93,7 +96,13 @@ enum arconnect_commands {
 
 void arc_arconnect_init(ARCCPU *cpu)
 {
+    int i;
     cpu->env.arconnect.intrpt_status = 0;
+    cpu->env.arconnect.lpa_lf = 0;
+    for(i = 0; i < LPA_LFS_SIZE; i++) {
+        lpa_lfs[i].lpa_lf = 0;
+        qemu_mutex_init(&lpa_lfs[i].mutex);
+    }
 }
 
 /* TODO: Find a better way to get cpu for core. */
