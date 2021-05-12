@@ -470,11 +470,6 @@ void arc_sim_open_console(Chardev *chr);
 
 void QEMU_NORETURN arc_raise_exception(CPUARCState *env, uintptr_t host_pc, int32_t excp_idx);
 
-void not_implemented_mmu_init(struct arc_mmu *mmu);
-bool not_implemented_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
-                                  MMUAccessType access_type, int mmu_idx,
-                                  bool probe, uintptr_t retaddr);
-
 void arc_mmu_init(CPUARCState *env);
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
