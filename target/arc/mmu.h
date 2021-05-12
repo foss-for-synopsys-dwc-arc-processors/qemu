@@ -150,6 +150,9 @@ struct CPUARCState;
 void arc_mmu_debug_tlb(struct CPUARCState *env);
 void arc_mmu_debug_tlb_for_vaddr(struct CPUARCState *env, uint32_t vaddr);
 
-uint32_t arc_mmu_page_address_for(uint32_t vaddr);
+bool
+arc_get_physical_addr(struct CPUState *env, hwaddr *paddr, vaddr addr,
+                  enum mmu_access_type rwe, bool probe,
+                  uintptr_t retaddr);
 
 #endif /* ARC_MMU_H */
