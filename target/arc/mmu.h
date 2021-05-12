@@ -106,13 +106,20 @@ struct arc_tlb_e {
                               ENV->mmu.exception.parameter); \
 }
 
+struct mem_exception {
+  int32_t number;
+  uint8_t causecode;
+  uint8_t parameter;
+};
+
+#define SET_MEM_EXCEPTION(EXCP, N, C, P) { \
+  (EXCP).number = N; \
+  (EXCP).causecode = C; \
+  (EXCP).parameter = P; \
+}
+
 struct arc_mmu {
     uint32_t enabled;
-    struct mmu_exception {
-      int32_t number;
-      uint8_t causecode;
-      uint8_t parameter;
-    } exception;
 
     struct arc_tlb_e nTLB[N_SETS][N_WAYS];
 
