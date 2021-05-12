@@ -24,6 +24,7 @@
 
 #include "target/arc/regs.h"
 #include "cpu-qom.h"
+#include "mmu.h"
 
 /* These values are based on ARCv2 ISA PRM for ARC HS processors */
 #define ARC_MPU_VERSION         0x03    /* MPU version supported          */
@@ -59,13 +60,6 @@ enum MPUCauseCode {
     MPU_CAUSE_WRITE = 0x02,
     MPU_CAUSE_RW    = 0x03
 };
-
-/* The exception to be set */
-typedef struct MPUException {
-    uint8_t number;     /* Exception vector number: 0x06 -> EV_ProtV  */
-    uint8_t code;       /* Cause code: fetch, read, write, read/write */
-    uint8_t param;      /* Always 0x04 to represent MPU               */
-} MPUException;
 
 /* MPU Exception Cause Register */
 typedef struct MPUECR {
@@ -105,8 +99,6 @@ typedef struct ARCMPU {
     /* Base and permission registers are paired */
     MPUBaseReg   reg_base[ARC_MPU_MAX_NR_REGIONS];
     MPUPermReg   reg_perm[ARC_MPU_MAX_NR_REGIONS];
-
-    MPUException exception;
 } ARCMPU;
 
 enum ARCMPUVerifyRet {
@@ -128,7 +120,8 @@ extern void arc_mpu_init(struct ARCCPU *cpu);
  */
 extern int
 arc_mpu_translate(struct CPUARCState *env, target_ulong addr,
-                  MMUAccessType access, int mmu_idx);
+                  MMUAccessType access, int mmu_idx,
+                  struct mem_exception *excp);
 
 /*
  * Determines if registers related to "region" are available or not. This
