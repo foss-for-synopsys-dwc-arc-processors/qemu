@@ -228,9 +228,6 @@ void arc_mpu_init(struct ARCCPU *cpu)
 
     mpu->reg_ecr.region    = 0;
     mpu->reg_ecr.violation = 0;
-    mpu->exception.number  = ARC_MPU_ECR_VEC_NUM;
-    mpu->exception.code    = 0;
-    mpu->exception.param   = ARC_MPU_ECR_PARAM;
 
     for (idx = 0; idx < ARC_MPU_MAX_NR_REGIONS; ++idx) {
         mpu->reg_base[idx].valid = false;
@@ -470,17 +467,17 @@ static inline const char *log_violation_to_str(uint8_t violation)
 
 /* Sets the exception data */
 static void set_exception(CPUARCState *env, uint32_t addr,
-                          uint8_t region, MMUAccessType access)
+                          uint8_t region, MMUAccessType access,
+                          struct mem_exception *excp)
 {
     MPUECR *ecr = &env->mpu.reg_ecr;
     ecr->violation = qemu_access_to_violation(access);
     ecr->region = region;
 
     /* this info is used by the caller to trigger the exception */
-    MPUException *excp = &env->mpu.exception;
     excp->number = EXCP_PROTV;
-    excp->code = ecr->violation;
-    excp->param = ARC_MPU_ECR_PARAM;
+    excp->causecode = ecr->violation;
+    excp->parameter = ARC_MPU_ECR_PARAM;
 
     qemu_log_mask(CPU_LOG_MMU,
             "[MPU] exception: region=%hu, addr=0x%08x, violation=%s\n",
@@ -639,14 +636,15 @@ static void update_tlb_page(CPUARCState *env, uint8_t region,
 /* The MPU entry point for any memory access */
 int
 arc_mpu_translate(CPUARCState *env, target_ulong addr,
-                  MMUAccessType access, int mmu_idx)
+                  MMUAccessType access, int mmu_idx,
+                  struct mem_exception *excp)
 {
     ARCMPU *mpu = &env->mpu;
 
     uint8_t region = get_matching_region(mpu, addr);
     const MPUPermissions *perms = get_permission(mpu, region);
     if (!allowed(access, is_user_mode(env), perms)) {
-        set_exception(env, addr, region, access);
+        set_exception(env, addr, region, access, excp);
         return MPU_FAULT;
     }
     update_tlb_page(env, region, addr, mmu_idx);
