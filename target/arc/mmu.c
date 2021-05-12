@@ -561,7 +561,8 @@ arc_mmu_translate(struct CPUARCState *env,
     }
 }
 
-uint32_t arc_mmu_page_address_for(uint32_t vaddr)
+static uint32_t
+arc_mmu_page_address_for(uint32_t vaddr)
 {
     uint32_t ret = VPN(vaddr);
     if (vaddr >= 0x80000000) {
@@ -722,6 +723,53 @@ void arc_mmu_init(CPUARCState *env)
     memset(env->mmu.nTLB, 0, sizeof(env->mmu.nTLB));
 }
 
+
+#ifndef CONFIG_USER_ONLY
+
+bool
+arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
+                  enum mmu_access_type rwe, bool probe,
+                  uintptr_t retaddr)
+{
+    CPUARCState *env = &((ARC_CPU(cs))->env);
+    uintptr_t mmu_idx = cpu_mmu_index(env, true);
+    int action = decide_action(env, addr, mmu_idx);
+    struct mem_exception excp;
+
+    switch (action) {
+    case DIRECT_ACTION:
+        *paddr = addr;
+        return true;
+        break;
+    case MPU_ACTION:
+        /* TODO: Verify if no address translation happens on MPU */
+        *paddr = addr;
+        return true;
+        break;
+    case MMU_ACTION: {
+        if(arc_mmu_translate(env, paddr, addr, rwe, NULL, &excp)) {
+            return true;
+        } else {
+            if(probe) {
+                return false;
+            }
+            raise_mem_exception(cs, addr, retaddr, &excp);
+        }
+        break;
+    }
+    case EXCEPTION_ACTION:
+        if(probe) {
+            return false;
+        }
+        excp.number = EXCP_PROTV;
+        excp.causecode = CAUSE_CODE(rwe);
+        excp.parameter = 0x08;
+        raise_mem_exception(cs, addr, retaddr, &excp);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
 
 /* Softmmu support function for MMU. */
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
