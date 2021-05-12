@@ -99,6 +99,7 @@ void arc_arconnect_init(ARCCPU *cpu)
     int i;
     cpu->env.arconnect.intrpt_status = 0;
     cpu->env.arconnect.lpa_lf = 0;
+    cpu->env.arconnect.locked_mutex = NULL;
     for(i = 0; i < LPA_LFS_SIZE; i++) {
         lpa_lfs[i].lpa_lf = 0;
         qemu_mutex_init(&lpa_lfs[i].mutex);

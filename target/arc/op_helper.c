@@ -253,9 +253,11 @@ void helper_set_status32(CPUARCState *env, target_ulong value)
 target_ulong helper_llock(CPUARCState *env, target_ulong addr)
 {
     struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
-    env->arconnect.lpa_lf = entry;
+    assert((addr & 0x3) == 0);
     qemu_mutex_lock(&entry->mutex);
+    env->arconnect.locked_mutex = &entry->mutex;
     target_ulong ret = cpu_ldl_data(env, addr);
+    env->arconnect.lpa_lf = entry;
     entry->lpa_lf = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
     qemu_mutex_unlock(&entry->mutex);
@@ -264,7 +266,9 @@ target_ulong helper_llock(CPUARCState *env, target_ulong addr)
 target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong value)
 {
     struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
+    assert((addr & 0x3) == 0);
     qemu_mutex_lock(&entry->mutex);
+    env->arconnect.locked_mutex = &entry->mutex;
     target_ulong ret = !(entry->lpa_lf & 0x1);
     addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
     if(entry->lpa_lf == (addr + 1)) {
@@ -278,10 +282,12 @@ target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong valu
 uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
 {
     struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
-    env->arconnect.lpa_lf = entry;
+    assert((addr & 0x7) == 0);
     qemu_mutex_lock(&entry->mutex);
+    env->arconnect.locked_mutex = &entry->mutex;
     target_ulong ret = cpu_ldl_data(env, addr);
     ret |= (((uint64_t) cpu_ldl_data(env, addr+4)) << 32);
+    env->arconnect.lpa_lf = entry;
     entry->lpa_lf = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
     qemu_mutex_unlock(&entry->mutex);
@@ -290,7 +296,9 @@ uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
 target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
 {
     struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(addr)];
+    assert((addr & 0x7) == 0);
     qemu_mutex_lock(&entry->mutex);
+    env->arconnect.locked_mutex = &entry->mutex;
     target_ulong ret = !(entry->lpa_lf & 0x1);
     addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
     if(entry->lpa_lf == (addr + 1)) {

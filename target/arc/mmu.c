@@ -835,7 +835,6 @@ hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
     return paddr;
 }
 
-
 #endif /* ifndef CONFIG_USER_ONLY */
 
 void arc_mmu_disable(CPUARCState *env)

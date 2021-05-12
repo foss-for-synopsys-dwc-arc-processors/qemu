@@ -42,6 +42,9 @@ void arc_cpu_do_interrupt(CPUState *cs)
     MemTxResult txres;
 
     struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+    if(env->arconnect.locked_mutex != NULL) {
+        qemu_mutex_unlock(env->arconnect.locked_mutex);
+    }
     if(entry != NULL) {
         entry->lpa_lf = 0;
     }
