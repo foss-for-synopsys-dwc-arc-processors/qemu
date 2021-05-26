@@ -403,6 +403,12 @@ DEF(0x542, ARC_OPCODE_ARC700,  NONE, aux_cabac_cod_param)
 DEF(0x543, ARC_OPCODE_ARC700,  NONE, aux_cabac_misc0)
 DEF(0x544, ARC_OPCODE_ARC700,  NONE, aux_cabac_misc1)
 DEF(0x545, ARC_OPCODE_ARC700,  NONE, aux_cabac_misc2)
+
+/* ARConnect */
+DEF (0xd0, ARC_OPCODE_ARCALL,  NONE, mcip_bcr)
+DEF(0x600, ARC_OPCODE_ARCV2,   NONE, mcip_cmd)
+DEF(0x601, ARC_OPCODE_ARCV2,   NONE, mcip_wdata)
+DEF(0x602, ARC_OPCODE_ARCV2,   NONE, mcip_readback)
 DEF(0x700, ARC_OPCODE_ARCALL,  NONE, smart_control)
 /*
 DEF (0x701, ARC_OPCODE_ARC700,  NONE, smart_data_0)
