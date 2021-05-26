@@ -131,7 +131,12 @@ static void arc_cpu_set_pc(CPUState *cs, vaddr value)
 
 static bool arc_cpu_has_work(CPUState *cs)
 {
+    ARCCPU *cpu = ARC_CPU(cs);
+    if(cs->halted && cs->interrupt_request & CPU_INTERRUPT_HARD) {
+        qemu_log_mask(LOG_UNIMP, "Will wake up cpuid = %d\n", cpu->core_id);
+    }
     return cs->interrupt_request & CPU_INTERRUPT_HARD;
+
 }
 
 static void arc_cpu_synchronize_from_tb(CPUState *cs, const TranslationBlock *tb)

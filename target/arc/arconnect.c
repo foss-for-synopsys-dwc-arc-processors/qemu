@@ -190,6 +190,7 @@ static void arconnect_intercore_intr_unit_cmd(CPUARCState *env, enum arconnect_c
 
         break;
     default:
+        assert(0);
         break;
     };
 }
@@ -220,7 +221,15 @@ static void arconnect_command_process(CPUARCState *env, uint32_t data)
     case CMD_INTRPT_CHECK_SOURCE:
         arconnect_intercore_intr_unit_cmd(env, cmd, param);
         break;
+
+    case CMD_IDU_ENABLE:
+    case CMD_IDU_DISABLE:
+    case CMD_IDU_SET_MASK:
+        /* TODO: Implement */
+        break;
+
     default:
+        assert(0);
         break;
     };
 }
@@ -243,6 +252,7 @@ arconnect_regs_get(struct CPUARCState *env,
         break;
 
     default:
+        assert(0);
         break;
     }
     return 0;
@@ -257,12 +267,14 @@ arconnect_regs_set(struct CPUARCState *env,
         arconnect_command_process(env, val);
         break;
     case AUX_ID_mcip_wdata:
+        /* TODO: To implement */
         break;
     case AUX_ID_mcip_readback:
         assert(0); /* TODO: raise exception */
         break;
 
     default:
+        assert(0);
         break;
     }
 }

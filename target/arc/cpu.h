@@ -465,6 +465,10 @@ void arc_mmu_init(CPUARCState *env);
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr);
+bool
+arc_get_physical_addr(struct CPUState *env, hwaddr *paddr, vaddr addr,
+                  enum mmu_access_type rwe, bool probe,
+                  uintptr_t retaddr);
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr);
 void arc_mmu_disable(CPUARCState *env);
 
