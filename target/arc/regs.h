@@ -22,6 +22,7 @@
 #define ARC_REGS_H
 
 #include "exec/cpu-defs.h"
+#include "target/arc/cpu.h"
 #include "target/arc/decoder.h"
 
 /*
@@ -91,11 +92,12 @@ struct arc_aux_reg_detail {
     struct arc_aux_reg *aux_reg;
 };
 
-typedef void (*aux_reg_set_func)(const struct arc_aux_reg_detail *aux_reg,
-                                 target_ulong val, void *data);
+typedef void (*aux_reg_set_func)(CPUARCState *env,
+                                 const struct arc_aux_reg_detail *aux_reg,
+                                 target_ulong val);
 typedef target_ulong (*aux_reg_get_func)(
-                                    const struct arc_aux_reg_detail *aux_reg,
-                                    void *data);
+                                    struct CPUARCState *env,
+                                    const struct arc_aux_reg_detail *aux_reg);
 
 struct arc_aux_reg {
     /* pointer to the first element in the list. */
@@ -118,15 +120,18 @@ const char *get_auxreg(const struct arc_opcode *opcode,
                        int value,
                        unsigned isa_mask);
 
-target_ulong __not_implemented_getter(const struct arc_aux_reg_detail *,
-                                      void *);
-void __not_implemented_setter(const struct arc_aux_reg_detail *, target_ulong,
-                              void *);
+target_ulong __not_implemented_getter(struct CPUARCState *,
+                                      const struct arc_aux_reg_detail *);
+void __not_implemented_setter(struct CPUARCState *,
+                              const struct arc_aux_reg_detail *, target_ulong);
 
 #define AUX_REG_GETTER(GET_FUNC) \
-     target_ulong GET_FUNC(const struct arc_aux_reg_detail *a, void *b);
+     target_ulong GET_FUNC(struct CPUARCState *env, \
+                           const struct arc_aux_reg_detail *a);
 #define AUX_REG_SETTER(SET_FUNC) \
-     void SET_FUNC(const struct arc_aux_reg_detail *a, target_ulong b, void *c);
+     void SET_FUNC(struct CPUARCState *env, \
+                   const struct arc_aux_reg_detail *a, \
+                   target_ulong b);
 #define AUX_REG(NAME, GET, SET)
 
 #include "target/arc/regs.def"

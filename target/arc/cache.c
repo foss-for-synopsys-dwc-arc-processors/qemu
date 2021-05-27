@@ -20,15 +20,14 @@
 
 #include "qemu/osdep.h"
 #include "hw/hw.h"
-#include "cpu.h"
+#include "target/arc/cpu.h"
 #include "target/arc/regs.h"
 #include "target/arc/cache.h"
 
-void arc_cache_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                       target_ulong val, void *data)
+void arc_cache_aux_set(CPUARCState *env,
+                       const struct arc_aux_reg_detail *aux_reg_detail,
+                       target_ulong val)
 {
-
-    CPUARCState *env = (CPUARCState *) data;
     struct arc_cache *cache = &env->cache;
 
     switch (aux_reg_detail->id) {
@@ -89,10 +88,9 @@ void arc_cache_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
     return;
 }
 
-target_ulong arc_cache_aux_get(const struct arc_aux_reg_detail *aux_reg_detail,
-                               void *data)
+target_ulong arc_cache_aux_get(CPUARCState *env,
+                               const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
     struct arc_cache *cache = &env->cache;
     uint32_t reg = 0;
 

@@ -19,8 +19,6 @@
 #ifndef __ARC_CACHE_H__
 #define __ARC_CACHE_H__
 
-#include "target/arc/regs.h"
-
 struct arc_cache {
     bool ic_disabled;
     bool dc_disabled;

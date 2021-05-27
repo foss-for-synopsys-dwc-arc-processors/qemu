@@ -22,14 +22,13 @@
 #include "qemu/osdep.h"
 #include "mmu.h"
 #include "target/arc/regs.h"
-#include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
 
 target_ulong
-arc_mmu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
+arc_mmu_aux_get(CPUARCState *env,
+                const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
     struct arc_mmu *mmu = &env->mmu;
     uint32_t reg = 0;
 
@@ -77,10 +76,10 @@ arc_mmu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
 }
 
 void
-arc_mmu_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                target_ulong val, void *data)
+arc_mmu_aux_set(CPUARCState *env,
+                const struct arc_aux_reg_detail *aux_reg_detail,
+                target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
     CPUState *cs = env_cpu(env);
     struct arc_mmu *mmu = &env->mmu;
 
@@ -263,10 +262,10 @@ arc_mmu_lookup_tlb(uint32_t vaddr, uint32_t compare_mask, struct arc_mmu *mmu,
  *  - Requires PD0 and PD1 be setup apriori
  */
 void
-arc_mmu_aux_set_tlbcmd(const struct arc_aux_reg_detail *aux_reg_detail,
-                       target_ulong val, void *data)
+arc_mmu_aux_set_tlbcmd(CPUARCState *env,
+                       const struct arc_aux_reg_detail *aux_reg_detail,
+                       target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
     CPUState *cs = env_cpu(env);
     struct arc_mmu *mmu = &env->mmu;
     uint32_t pd0 = mmu->tlbpd0;

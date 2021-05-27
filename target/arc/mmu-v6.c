@@ -158,7 +158,8 @@ mmuv6_tlb_command(CPUARCState *env, enum MMUv6_TLBCOMMAND command)
 }
 
 target_ulong
-arc_mmuv6_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
+arc_mmuv6_aux_get(struct CPUARCState *env,
+                  const struct arc_aux_reg_detail *aux_reg_detail)
 {
   target_ulong reg = 0;
   switch(aux_reg_detail->id)
@@ -203,10 +204,9 @@ arc_mmuv6_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
 }
 
 void
-arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
-		  target_ulong val, void *data)
+arc_mmuv6_aux_set(struct CPUARCState *env, const struct arc_aux_reg_detail *aux_reg_detail,
+		          target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
     CPUState *cs = env_cpu(env);
 
     switch(aux_reg_detail->id)

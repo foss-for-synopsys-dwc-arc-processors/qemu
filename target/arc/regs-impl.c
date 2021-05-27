@@ -30,8 +30,10 @@
 
 static target_ulong get_identity(CPUARCState *env)
 {
-    target_ulong chipid = 0xffff, arcnum = 0, arcver, res;
+    target_ulong chipid = 0xffff;
+    target_ulong arcver, res;
     ARCCPU *cpu = env_archcpu(env);
+    target_ulong arcnum = cpu->core_id;
 
     switch (cpu->family) {
     case ARC_OPCODE_ARC700:
@@ -62,10 +64,9 @@ static target_ulong get_identity(CPUARCState *env)
 }
 
 target_ulong
-arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
-                          void *data)
+arc_general_regs_get(CPUARCState *env,
+                     const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
     ARCCPU *cpu = env_archcpu(env);
     target_ulong reg = 0;
 
@@ -156,11 +157,10 @@ arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 void
-arc_general_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                     target_ulong val, void *data)
+arc_general_regs_set(CPUARCState *env,
+                     const struct arc_aux_reg_detail *aux_reg_detail,
+                     target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
-
     switch (aux_reg_detail->id) {
     case AUX_ID_lp_start:
         env->lps = val;

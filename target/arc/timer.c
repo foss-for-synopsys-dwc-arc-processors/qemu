@@ -24,8 +24,10 @@
 #include "exec/exec-all.h"
 #include "hw/irq.h"
 #include "hw/arc/cpudevs.h"
-#include "timer.h"
 #include "qemu/main-loop.h"
+#include "target/arc/timer.h"
+#include "target/arc/regs.h"
+
 
 #define TIMER_PERIOD(hz) (1000000000LL / (hz))
 #define TIMEOUT_LIMIT 1000000
@@ -351,10 +353,9 @@ arc_resetTIMER(ARCCPU *cpu)
 
 /* Function implementation for reading/writing aux regs. */
 target_ulong
-aux_timer_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
+aux_timer_get(CPUARCState *env,
+              const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
-
     switch (aux_reg_detail->id) {
     case AUX_ID_control0:
         return env->timer[0].T_Cntrl;
@@ -402,11 +403,10 @@ aux_timer_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
     return 0;
 }
 
-void aux_timer_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                   target_ulong val, void *data)
+void aux_timer_set(CPUARCState *env,
+                   const struct arc_aux_reg_detail *aux_reg_detail,
+                   target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
-
     qemu_log_mask(LOG_UNIMP, "[TMRx] AUX[%s] <= 0x" TARGET_FMT_lx "\n",
                   aux_reg_detail->name, val);
 

@@ -22,8 +22,9 @@
 #ifndef ARC_MPU_H
 #define ARC_MPU_H
 
-#include "target/arc/regs.h"
 #include "cpu-qom.h"
+#include "mmu.h"
+#include "exec/cpu-defs.h"
 
 /* These values are based on ARCv2 ISA PRM for ARC HS processors */
 #define ARC_MPU_VERSION         0x03    /* MPU version supported          */

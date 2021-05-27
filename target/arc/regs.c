@@ -156,23 +156,24 @@ const char *get_auxreg(const struct arc_opcode *opcode,
 }
 
 target_ulong __not_implemented_getter(
-            const struct arc_aux_reg_detail *aux_reg_detail ATTRIBUTE_UNUSED,
-            void *data ATTRIBUTE_UNUSED) {
+            CPUARCState *env ATTRIBUTE_UNUSED,
+            const struct arc_aux_reg_detail *aux_reg_detail ATTRIBUTE_UNUSED) {
        assert("SOME AUX_REG_GETTER NOT IMPLEMENTED " == 0);
 }
 void __not_implemented_setter(
+            CPUARCState *env ATTRIBUTE_UNUSED,
             const struct arc_aux_reg_detail *aux_reg_detail ATTRIBUTE_UNUSED,
-            target_ulong value ATTRIBUTE_UNUSED,
-            void *data ATTRIBUTE_UNUSED) {
+            target_ulong value ATTRIBUTE_UNUSED) {
   assert("SOME AUX_REG_SETTER NOT IMPLEMENTED " == 0);
 }
 
 #define AUX_REG_GETTER(GET_FUNC) \
-    target_ulong GET_FUNC(const struct arc_aux_reg_detail *a, void *b) \
+    target_ulong GET_FUNC(CPUARCState *env, \
+                          const struct arc_aux_reg_detail *a) \
          __attribute__ ((weak, alias("__not_implemented_getter")));
 #define AUX_REG_SETTER(SET_FUNC) \
-    void SET_FUNC(const struct arc_aux_reg_detail *a, target_ulong b, \
-                   void *c) \
+    void SET_FUNC(CPUARCState *env, const struct arc_aux_reg_detail *a, \
+                  target_ulong b) \
                    __attribute__ ((weak, alias("__not_implemented_setter")));
 #define AUX_REG(NAME, GET, SET)
 
