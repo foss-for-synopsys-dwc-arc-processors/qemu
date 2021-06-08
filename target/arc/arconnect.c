@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "qemu/log.h"
 #include "qemu/error-report.h"
+#include "hw/irq.h"
 #include "target/arc/regs.h"
 #include "target/arc/cpu.h"
 #include "target/arc/arconnect.h"
@@ -77,12 +78,12 @@ enum arconnect_commands {
     CMD_IDU_ENABLE = 0x71,
     CMD_IDU_DISABLE,
     CMD_IDU_READ_ENABLE,
-    CMD_IDU_SET_MODE,
-    CMD_IDU_READ_MODE,
-    CMD_IDU_SET_DEST,
+    CMD_IDU_SET_MODE = 0x74,
+    CMD_IDU_READ_MODE = 0x75,
+    CMD_IDU_SET_DEST = 0x76,
     CMD_IDU_READ_DEST,
     CMD_IDU_GEN_CIRQ,
-    CMD_IDU_ACK_CIRQ,
+    CMD_IDU_ACK_CIRQ = 0x79,
     CMD_IDU_CHECK_STATUS,
     CMD_IDU_CHECK_SOURCE,
     CMD_IDU_SET_MASK,
@@ -101,7 +102,7 @@ void arc_arconnect_init(ARCCPU *cpu)
 static ARCCPU *get_cpu_for_core(uint8_t core_id)
 {
     CPUState *cs;
-    CPUARCState *ret = NULL;
+    ARCCPU *ret = NULL;
     CPU_FOREACH(cs) {
         if(ARC_CPU(cs)->core_id == core_id) {
             ret = ARC_CPU(cs);
@@ -149,7 +150,7 @@ static void arconnect_intercore_intr_unit_cmd(CPUARCState *env, enum arconnect_c
 
     case CMD_INTRPT_GENERATE_IRQ:
         {
-          if(param & 0x80 == 0 && (param & 0x1f) != cpu->core_id) {
+          if(((param & 0x80) == 0) && ((param & 0x1f) != cpu->core_id)) {
             uint8_t core_id = param & 0x1f;
             arcon_status_set(env, core_id, cpu->core_id);
             qemu_set_irq(get_cpu_for_core(core_id)->env.irq[MCIP_IRQ], 1);
@@ -203,6 +204,7 @@ static void arconnect_command_process(CPUARCState *env, uint32_t data)
 
     case CMD_CHECK_CORE_ID:
         env->readback = cpu->core_id & 0x1f;
+        break;
 
     case CMD_INTRPT_GENERATE_IRQ:
     case CMD_INTRPT_GENERATE_ACK:
@@ -216,10 +218,18 @@ static void arconnect_command_process(CPUARCState *env, uint32_t data)
     case CMD_IDU_ENABLE:
     case CMD_IDU_DISABLE:
     case CMD_IDU_SET_MASK:
+    case CMD_IDU_SET_DEST:
+    case CMD_IDU_SET_MODE:
+    case CMD_IDU_ACK_CIRQ:
         /* TODO: Implement */
         break;
 
+    case CMD_IDU_READ_MODE:
+        env->readback = 0;
+        break;
+
     default:
+        fprintf(stderr, "ARConnect cmd 0x%x (param 0x%x) not implemented", cmd, param);
         assert(0);
         break;
     };
