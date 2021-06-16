@@ -476,12 +476,10 @@ arc_gen_ADD(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  * {
  *   cc_flag = getCCFlag ();
  *   lb = @b;
- *   lc = @c;
+ *   lc = @c << 1;
  *   if((cc_flag == true))
  *     {
- *       lb = @b;
- *       lc = @c;
- *       @a = (@b + (@c << 1));
+ *       @a = (@b + lc);
  *       if((getFFlag () == true))
  *         {
  *           setZFlag (@a);
@@ -503,33 +501,29 @@ arc_gen_ADD1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     TCGv lc = tcg_temp_local_new();
     TCGv temp_1 = tcg_temp_local_new();
     TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
     TCGv temp_5 = tcg_temp_local_new();
-    TCGv temp_8 = tcg_temp_local_new();
+    TCGv temp_4 = tcg_temp_local_new();
     TCGv temp_7 = tcg_temp_local_new();
+    TCGv temp_6 = tcg_temp_local_new();
     getCCFlag(temp_3);
     tcg_gen_mov_tl(cc_flag, temp_3);
     tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
+    tcg_gen_shli_tl(lc, c, 1);
     TCGLabel *done_1 = gen_new_label();
     tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
-    tcg_gen_shli_tl(temp_4, c, 1);
-    tcg_gen_add_tl(a, b, temp_4);
+    tcg_gen_add_tl(a, b, lc);
     if ((getFFlag () == true)) {
         setZFlag(a);
         setNFlag(a);
-        CarryADD(temp_6, a, lb, lc);
-        tcg_gen_mov_tl(temp_5, temp_6);
-        setCFlag(temp_5);
-        OverflowADD(temp_8, a, lb, lc);
-        tcg_gen_mov_tl(temp_7, temp_8);
-        setVFlag(temp_7);
+        CarryADD(temp_5, a, lb, lc);
+        tcg_gen_mov_tl(temp_4, temp_5);
+        setCFlag(temp_4);
+        OverflowADD(temp_7, a, lb, lc);
+        tcg_gen_mov_tl(temp_6, temp_7);
+        setVFlag(temp_6);
     }
     gen_set_label(done_1);
     tcg_temp_free(temp_3);
@@ -538,11 +532,10 @@ arc_gen_ADD1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_temp_free(lc);
     tcg_temp_free(temp_1);
     tcg_temp_free(temp_2);
-    tcg_temp_free(temp_4);
-    tcg_temp_free(temp_6);
     tcg_temp_free(temp_5);
-    tcg_temp_free(temp_8);
+    tcg_temp_free(temp_4);
     tcg_temp_free(temp_7);
+    tcg_temp_free(temp_6);
 
     return ret;
 }
@@ -557,12 +550,10 @@ arc_gen_ADD1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  * {
  *   cc_flag = getCCFlag ();
  *   lb = @b;
- *   lc = @c;
+ *   lc = @c << 2;
  *   if((cc_flag == true))
  *     {
- *       lb = @b;
- *       lc = @c;
- *       @a = (@b + (@c << 2));
+ *       @a = (@b + lc);
  *       if((getFFlag () == true))
  *         {
  *           setZFlag (@a);
@@ -584,33 +575,29 @@ arc_gen_ADD2(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     TCGv lc = tcg_temp_local_new();
     TCGv temp_1 = tcg_temp_local_new();
     TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
     TCGv temp_5 = tcg_temp_local_new();
-    TCGv temp_8 = tcg_temp_local_new();
+    TCGv temp_4 = tcg_temp_local_new();
     TCGv temp_7 = tcg_temp_local_new();
+    TCGv temp_6 = tcg_temp_local_new();
     getCCFlag(temp_3);
     tcg_gen_mov_tl(cc_flag, temp_3);
     tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
+    tcg_gen_shli_tl(lc, c, 2);
     TCGLabel *done_1 = gen_new_label();
     tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
-    tcg_gen_shli_tl(temp_4, c, 2);
-    tcg_gen_add_tl(a, b, temp_4);
+    tcg_gen_add_tl(a, b, lc);
     if ((getFFlag () == true)) {
         setZFlag(a);
         setNFlag(a);
-        CarryADD(temp_6, a, lb, lc);
-        tcg_gen_mov_tl(temp_5, temp_6);
-        setCFlag(temp_5);
-        OverflowADD(temp_8, a, lb, lc);
-        tcg_gen_mov_tl(temp_7, temp_8);
-        setVFlag(temp_7);
+        CarryADD(temp_5, a, lb, lc);
+        tcg_gen_mov_tl(temp_4, temp_5);
+        setCFlag(temp_4);
+        OverflowADD(temp_7, a, lb, lc);
+        tcg_gen_mov_tl(temp_6, temp_7);
+        setVFlag(temp_6);
     }
     gen_set_label(done_1);
     tcg_temp_free(temp_3);
@@ -619,11 +606,10 @@ arc_gen_ADD2(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_temp_free(lc);
     tcg_temp_free(temp_1);
     tcg_temp_free(temp_2);
-    tcg_temp_free(temp_4);
-    tcg_temp_free(temp_6);
     tcg_temp_free(temp_5);
-    tcg_temp_free(temp_8);
+    tcg_temp_free(temp_4);
     tcg_temp_free(temp_7);
+    tcg_temp_free(temp_6);
 
     return ret;
 }
@@ -638,12 +624,10 @@ arc_gen_ADD2(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  * {
  *   cc_flag = getCCFlag ();
  *   lb = @b;
- *   lc = @c;
+ *   lc = @c << 3;
  *   if((cc_flag == true))
  *     {
- *       lb = @b;
- *       lc = @c;
- *       @a = (@b + (@c << 3));
+ *       @a = (@b + lc);
  *       if((getFFlag () == true))
  *         {
  *           setZFlag (@a);
@@ -665,33 +649,29 @@ arc_gen_ADD3(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     TCGv lc = tcg_temp_local_new();
     TCGv temp_1 = tcg_temp_local_new();
     TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
     TCGv temp_5 = tcg_temp_local_new();
-    TCGv temp_8 = tcg_temp_local_new();
+    TCGv temp_4 = tcg_temp_local_new();
     TCGv temp_7 = tcg_temp_local_new();
+    TCGv temp_6 = tcg_temp_local_new();
     getCCFlag(temp_3);
     tcg_gen_mov_tl(cc_flag, temp_3);
     tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
+    tcg_gen_shli_tl(lc, c, 3);
     TCGLabel *done_1 = gen_new_label();
     tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
-    tcg_gen_shli_tl(temp_4, c, 3);
-    tcg_gen_add_tl(a, b, temp_4);
+    tcg_gen_add_tl(a, b, lc);
     if ((getFFlag () == true)) {
         setZFlag(a);
         setNFlag(a);
-        CarryADD(temp_6, a, lb, lc);
-        tcg_gen_mov_tl(temp_5, temp_6);
-        setCFlag(temp_5);
-        OverflowADD(temp_8, a, lb, lc);
-        tcg_gen_mov_tl(temp_7, temp_8);
-        setVFlag(temp_7);
+        CarryADD(temp_5, a, lb, lc);
+        tcg_gen_mov_tl(temp_4, temp_5);
+        setCFlag(temp_4);
+        OverflowADD(temp_7, a, lb, lc);
+        tcg_gen_mov_tl(temp_6, temp_7);
+        setVFlag(temp_6);
     }
     gen_set_label(done_1);
     tcg_temp_free(temp_3);
@@ -700,11 +680,10 @@ arc_gen_ADD3(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_temp_free(lc);
     tcg_temp_free(temp_1);
     tcg_temp_free(temp_2);
-    tcg_temp_free(temp_4);
-    tcg_temp_free(temp_6);
     tcg_temp_free(temp_5);
-    tcg_temp_free(temp_8);
+    tcg_temp_free(temp_4);
     tcg_temp_free(temp_7);
+    tcg_temp_free(temp_6);
 
     return ret;
 }
