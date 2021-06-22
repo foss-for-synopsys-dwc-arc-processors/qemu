@@ -78,7 +78,9 @@ enum gdb_aux_other_regs {
     /* builds */
     GDB_AUX_OTHER_REG_TIMER_BUILD = 0,  /* timer build                */
     GDB_AUX_OTHER_REG_IRQ_BUILD,        /* irq build                  */
+#ifdef TARGET_ARCV2
     GDB_AUX_OTHER_REG_MPY_BUILD,        /* multiply configuration     */
+#endif
     GDB_AUX_OTHER_REG_VECBASE_BUILD,    /* vector base address config */
     GDB_AUX_OTHER_REG_ISA_CONFIG,       /* isa config                 */
     /* timers */
@@ -88,12 +90,15 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_TIMER_CNT1,       /* timer 1 counter */
     GDB_AUX_OTHER_REG_TIMER_CTRL1,      /* timer 1 control */
     GDB_AUX_OTHER_REG_TIMER_LIM1,       /* timer 1 limit   */
+#ifdef TARGET_ARCV2
     /* mmuv4 */
     GDB_AUX_OTHER_REG_PID,              /* process identity  */
     GDB_AUX_OTHER_REG_TLBPD0,           /* page descriptor 0 */
     GDB_AUX_OTHER_REG_TLBPD1,           /* page descriptor 1 */
     GDB_AUX_OTHER_REG_TLB_INDEX,        /* tlb index         */
     GDB_AUX_OTHER_REG_TLB_CMD,          /* tlb command       */
+#endif
+#ifdef TARGET_ARCV2
     /* mpu */
     GDB_AUX_OTHER_REG_MPU_BUILD,        /* MPU build           */
     GDB_AUX_OTHER_REG_MPU_EN,           /* MPU enable          */
@@ -130,6 +135,7 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_MPU_PERM13,       /* MPU permission 13   */
     GDB_AUX_OTHER_REG_MPU_PERM14,       /* MPU permission 14   */
     GDB_AUX_OTHER_REG_MPU_PERM15,       /* MPU permission 15   */
+#endif
     /* excpetions */
     GDB_AUX_OTHER_REG_ERSTATUS,         /* exception return status  */
     GDB_AUX_OTHER_REG_ERBTA,            /* exception return BTA     */
@@ -156,6 +162,8 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_MMU_CTRL,         /* mmuv6 control */
     GDB_AUX_OTHER_REG_RTP0,             /* region 0 ptr  */
     GDB_AUX_OTHER_REG_RTP1,             /* region 1 ptr  */
+    GDB_AUX_OTHER_REG_TLB_INDEX,        /* tlb index         */
+    GDB_AUX_OTHER_REG_TLB_CMD,          /* tlb command       */
 #endif
 
     GDB_AUX_OTHER_REG_LAST
