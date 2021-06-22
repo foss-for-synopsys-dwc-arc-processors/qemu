@@ -401,7 +401,7 @@ static void arc_cpu_class_init(ObjectClass *oc, void *data)
 #ifdef TARGET_ARCV2
     cc->gdb_core_xml_file = "arc-v2-core.xml";
 #else
-    cc->gdb_core_xml_file = "arc-core-v3.xml";
+    cc->gdb_core_xml_file = "arc-v3_64-core.xml";
 #endif
     cc->gdb_num_core_regs = GDB_REG_LAST;
     cc->gdb_arch_name = arc_gdb_arch_name;

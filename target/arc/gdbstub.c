@@ -417,8 +417,8 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
 #define GDB_TARGET_MINIMAL_XML "arc-v2-aux.xml"
 #define GDB_TARGET_AUX_XML     "arc-v2-other.xml"
 #else
-#define GDB_TARGET_MINIMAL_XML "arc64-aux-minimal.xml"
-#define GDB_TARGET_AUX_XML     "arc64-aux-other.xml"
+#define GDB_TARGET_MINIMAL_XML "arc-v3_64-aux.xml"
+#define GDB_TARGET_AUX_XML     "arc-v3_64-other.xml"
 #endif
 
 void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
