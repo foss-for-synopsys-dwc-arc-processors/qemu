@@ -425,6 +425,8 @@ static TCGv arc_decode_operand(const struct arc_opcode *opcode,
             int64_t limm = operand.value;
             if (operand.type & ARC_OPERAND_LIMM) {
                 limm = ctx->insn.limm;
+                if (operand.type & ARC_OPERAND_ALIGNED32)
+                    limm <<= 2; // Only used by BL_S LIMM instructions
                 tcg_gen_movi_tl(cpu_limm, limm);
                 ret = cpu_r[62];
             } else {
