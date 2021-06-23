@@ -367,10 +367,8 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
 }
 
 /* Function implementation for reading the IRQ related aux regs. */
-target_ulong aux_irq_get(const struct arc_aux_reg_detail *aux_reg_detail,
-                     void *data)
+target_ulong aux_irq_get(struct CPUARCState *env, const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
     ARCCPU *cpu = env_archcpu(env);
     uint32_t tmp;
 
@@ -434,10 +432,9 @@ target_ulong aux_irq_get(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 /* Function implementation for writing the IRQ related aux regs. */
-void aux_irq_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                 target_ulong val, void *data)
+void aux_irq_set(struct CPUARCState *env, const struct arc_aux_reg_detail *aux_reg_detail,
+                 target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
     ARCCPU *cpu = env_archcpu(env);
     const uint32_t irq = env->irq_select;
     ARCIrq *irq_bank = &env->irq_bank[irq];

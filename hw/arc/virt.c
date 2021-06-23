@@ -129,6 +129,7 @@ static void virt_init(MachineState *machine)
             fprintf(stderr, "Unable to find CPU definition!\n");
             exit(1);
         }
+        cpu->core_id = n;
 
        /* Initialize internal devices. */
         cpu_arc_pic_init(cpu);

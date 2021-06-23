@@ -98,8 +98,7 @@ void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
     }
 
     if (aux_reg_detail->aux_reg->set_func != NULL) {
-        aux_reg_detail->aux_reg->set_func(aux_reg_detail, val,
-                                          (void *) env);
+        aux_reg_detail->aux_reg->set_func(env, aux_reg_detail, val);
     } else {
         arc_raise_exception(env, EXCP_INST_ERROR);
     }
@@ -124,8 +123,7 @@ target_ulong helper_lr(CPUARCState *env, target_ulong aux)
     }
 
     if (aux_reg_detail->aux_reg->get_func != NULL) {
-        result = aux_reg_detail->aux_reg->get_func(aux_reg_detail,
-                                                   (void *) env);
+        result = aux_reg_detail->aux_reg->get_func(env, aux_reg_detail);
     } else {
         arc_raise_exception(env, EXCP_INST_ERROR);
     }
@@ -346,10 +344,9 @@ target_ulong helper_mpym(CPUARCState *env, target_ulong b, target_ulong c)
 }
 
 target_ulong
-arc_status_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
-                    void *data)
+arc_status_regs_get(CPUARCState *env,
+                    const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    CPUARCState *env = (CPUARCState *) data;
     target_ulong reg = 0;
 
     switch (aux_reg_detail->id) {
@@ -372,11 +369,10 @@ arc_status_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 void
-arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                    target_ulong val, void *data)
+arc_status_regs_set(CPUARCState *env,
+                    const struct arc_aux_reg_detail *aux_reg_detail,
+                    target_ulong val)
 {
-    CPUARCState *env = (CPUARCState *) data;
-
     switch (aux_reg_detail->id) {
 
     case AUX_ID_status32:

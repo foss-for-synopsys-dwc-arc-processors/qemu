@@ -23,7 +23,8 @@
 #include "mpu.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
-#include "mmu.h"
+#include "target/arc/mmu.h"
+#include "target/arc/regs.h"
 
 /*
  * In case of exception, this signals the effective region
@@ -265,10 +266,10 @@ static inline void validate_region_number(const ARCMPU *mpu, uint8_t rgn)
 
 /* Extern function: Getter for MPU registers */
 target_ulong
-arc_mpu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
+arc_mpu_aux_get(CPUARCState *env, const struct arc_aux_reg_detail *aux_reg_detail)
 {
-    validate_mpu_regs_access((CPUARCState *) data);
-    ARCMPU *mpu = &(((CPUARCState *) data)->mpu);
+    validate_mpu_regs_access(env);
+    ARCMPU *mpu = &(env->mpu);
     uint32_t reg = 0;
 
     switch (aux_reg_detail->id) {
@@ -356,11 +357,11 @@ static void log_mpu_data(const ARCMPU *mpu)
 
 /* Extern function: Setter for MPU registers */
 void
-arc_mpu_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
-                const target_ulong value, void *data)
+arc_mpu_aux_set(struct CPUARCState *env, const struct arc_aux_reg_detail *aux_reg_detail,
+                const target_ulong value)
 {
-    validate_mpu_regs_access((CPUARCState *) data);
-    ARCMPU *mpu = &(((CPUARCState *) data)->mpu);
+    validate_mpu_regs_access(env);
+    ARCMPU *mpu = &(env->mpu);
 
     switch (aux_reg_detail->id) {
     case AUX_ID_mpuen:
@@ -383,7 +384,7 @@ arc_mpu_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
         g_assert_not_reached();
     }
     /* Invalidate the entries in qemu's translation buffer */
-    tlb_flush(env_cpu((CPUARCState *) data));
+    tlb_flush(env_cpu(env));
     /* If MPU is enabled, log its data */
     if (mpu->enabled) {
         log_mpu_data(mpu);

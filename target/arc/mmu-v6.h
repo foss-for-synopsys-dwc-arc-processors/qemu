@@ -21,8 +21,6 @@
 #ifndef ARC64_MMUV3_H
 #define ARC64_MMUV3_H
 
-#include "target/arc/regs.h"
-
 struct arc_mmuv6 {
     struct mmuv6_exception {
       int32_t number;

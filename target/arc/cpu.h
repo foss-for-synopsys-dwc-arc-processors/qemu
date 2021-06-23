@@ -28,6 +28,7 @@
 #include "target/arc/mmu-v6.h"
 #include "target/arc/mpu.h"
 #include "target/arc/cache.h"
+#include "target/arc/arconnect.h"
 
 #define ARC_CPU_TYPE_SUFFIX "-" TYPE_ARC_CPU
 #define ARC_CPU_TYPE_NAME(model) model ARC_CPU_TYPE_SUFFIX
@@ -258,6 +259,7 @@ typedef struct CPUARCState {
     struct arc_mmuv6 mmu;       /* mmu.h */
 #endif
     ARCMPU mpu;               /* mpu.h */
+    struct arc_arcconnect_info arconnect;
     struct arc_cache cache;   /* cache.h */
 
     /* used for propagatinng "hostpc/return address" to sub-functions */
@@ -277,6 +279,8 @@ typedef struct CPUARCState {
     const struct arc_boot_info *boot_info;
 
     bool enabled_interrupts;
+    target_ulong readback;
+
 } CPUARCState;
 
 /*
@@ -386,6 +390,8 @@ struct ARCCPU {
     uint32_t vecbase_build; /* Interrupt Vector Base Address Configuration. */
     uint32_t mpy_build;     /* Multiply configuration register. */
     uint32_t isa_config;    /* Instruction Set Configuration Register. */
+
+    uint8_t core_id;        /* Core id holder. */
 
     CPUNegativeOffsetState neg;
     CPUARCState env;

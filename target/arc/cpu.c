@@ -23,13 +23,16 @@
 #include "exec/exec-all.h"
 #include "migration/vmstate.h"
 #include "exec/log.h"
-#include "mmu.h"
-#include "mpu.h"
 #include "hw/qdev-properties.h"
 #include "irq.h"
 #include "hw/arc/cpudevs.h"
 #include "timer.h"
 #include "gdbstub.h"
+
+#include "target/arc/mmu.h"
+#include "target/arc/mpu.h"
+#include "target/arc/arconnect.h"
+
 
 static const VMStateDescription vms_arc_cpu = {
     .name               = "cpu",
@@ -156,6 +159,9 @@ static void arc_cpu_reset(DeviceState *dev)
     arc_mmu_init(env);
 
     arc_mpu_init(cpu);
+
+    /* ARConnect clear */
+    arc_arconnect_init(cpu);
 
     arc_resetTIMER(cpu);
     arc_resetIRQ(cpu);
