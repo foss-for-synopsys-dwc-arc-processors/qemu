@@ -164,12 +164,11 @@
   <reg name="irq_trigger"          bitsize="64" regnum="62"  type="bool"            group="general"/>
   <reg name="irq_status"           bitsize="64" regnum="63"  type="irq_status_type" group="general"/>
   <reg name="irq_pulse_cancel"     bitsize="64" regnum="64"  type="bool"            group="general"/>
-  <reg name="irq_pending"          bitsize="64" regnum="65"  type="bool"            group="general"/>
-  <reg name="irq_priority"         bitsize="64" regnum="66"  type="uint8"           group="general"/>
+  <reg name="irq_priority"         bitsize="64" regnum="65"  type="uint8"           group="general"/>
   <!-- miscellaneous -->
-  <reg name="bta" bitsize="64" regnum="67" type="code_ptr" group="general"/>
+  <reg name="bta" bitsize="64" regnum="66" type="code_ptr" group="general"/>
   <!-- mmuv6 -->
-  <reg name="mmu_ctrl" bitsize="64" regnum="68" type="mmu_ctrl_type" group="general"/>
-  <reg name="mmu_rtp0" bitsize="64" regnum="69" type="mmu_rtp_type"  group="general"/>
-  <reg name="mmu_rtp1" bitsize="64" regnum="70" type="mmu_rtp_type"  group="general"/>
+  <reg name="mmu_ctrl" bitsize="64" regnum="67" type="mmu_ctrl_type" group="general"/>
+  <reg name="mmu_rtp0" bitsize="64" regnum="68" type="mmu_rtp_type"  group="general"/>
+  <reg name="mmu_rtp1" bitsize="64" regnum="69" type="mmu_rtp_type"  group="general"/>
 </feature>
