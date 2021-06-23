@@ -38,7 +38,7 @@ tn_\name:
   .text
   .global \name
   .type \name, @function
-  .align 8
+  .align 4
 \name:
 .endm
 
