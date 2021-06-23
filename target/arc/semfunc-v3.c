@@ -4971,7 +4971,7 @@ arc_gen_MPYW (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
 /* DIV
  *    Variables: @src2, @src1, @dest
- *    Functions: getCCFlag, divSigned, getFFlag, setZFlag, setNFlag32, setVFlag
+ *    Functions: getCCFlag, divSigned32, getFFlag, setZFlag, setNFlag32, setVFlag
 --- code ---
 {
   cc_flag = getCCFlag ();
@@ -4979,7 +4979,7 @@ arc_gen_MPYW (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
     {
       if(((@src2 != 0) && ((@src1 != 2147483648) || (@src2 != 4294967295))))
         {
-          @dest = divSigned (@src1, @src2);
+          @dest = divSigned32 (@src1, @src2);
           if((getFFlag () == true))
             {
               setZFlag (@dest);
@@ -5025,7 +5025,7 @@ arc_gen_DIV (DisasCtxt *ctx, TCGv src2, TCGv src1, TCGv dest)
   tcg_gen_and_tl(temp_7, temp_3, temp_6);
   tcg_gen_xori_tl(temp_8, temp_7, 1); tcg_gen_andi_tl(temp_8, temp_8, 1);;
   tcg_gen_brcond_tl(TCG_COND_EQ, temp_8, arc_true, else_2);;
-  divSigned(temp_10, src1, src2);
+  divSigned32(temp_10, src1, src2);
   tcg_gen_mov_tl(dest, temp_10);
   if ((getFFlag () == true))
     {
@@ -5065,7 +5065,7 @@ arc_gen_DIV (DisasCtxt *ctx, TCGv src2, TCGv src1, TCGv dest)
 
 /* DIVU
  *    Variables: @src2, @dest, @src1
- *    Functions: getCCFlag, divUnsigned, getFFlag, setZFlag, setNFlag32, setVFlag
+ *    Functions: getCCFlag, divUnsigned32, getFFlag, setZFlag, setNFlag32, setVFlag
 --- code ---
 {
   cc_flag = getCCFlag ();
@@ -5073,7 +5073,7 @@ arc_gen_DIV (DisasCtxt *ctx, TCGv src2, TCGv src1, TCGv dest)
     {
       if((@src2 != 0))
         {
-          @dest = divUnsigned (@src1, @src2);
+          @dest = divUnsigned32 (@src1, @src2);
           if((getFFlag () == true))
             {
               setZFlag (@dest);
@@ -5112,7 +5112,7 @@ arc_gen_DIVU (DisasCtxt *ctx, TCGv src2, TCGv dest, TCGv src1)
   tcg_gen_setcondi_tl(TCG_COND_NE, temp_3, src2, 0);
   tcg_gen_xori_tl(temp_4, temp_3, 1); tcg_gen_andi_tl(temp_4, temp_4, 1);;
   tcg_gen_brcond_tl(TCG_COND_EQ, temp_4, arc_true, else_2);;
-  divUnsigned(temp_6, src1, src2);
+  divUnsigned32(temp_6, src1, src2);
   tcg_gen_mov_tl(dest, temp_6);
   if ((getFFlag () == true))
     {
@@ -5150,7 +5150,7 @@ arc_gen_DIVU (DisasCtxt *ctx, TCGv src2, TCGv dest, TCGv src1)
 
 /* REM
  *    Variables: @src2, @src1, @dest
- *    Functions: getCCFlag, divRemainingSigned, getFFlag, setZFlag, setNFlag32, setVFlag
+ *    Functions: getCCFlag, divRemainingSigned32, getFFlag, setZFlag, setNFlag32, setVFlag
 --- code ---
 {
   cc_flag = getCCFlag ();
@@ -5158,7 +5158,7 @@ arc_gen_DIVU (DisasCtxt *ctx, TCGv src2, TCGv dest, TCGv src1)
     {
       if(((@src2 != 0) && ((@src1 != 2147483648) || (@src2 != 4294967295))))
         {
-          @dest = divRemainingSigned (@src1, @src2);
+          @dest = divRemainingSigned32 (@src1, @src2);
           if((getFFlag () == true))
             {
               setZFlag (@dest);
@@ -5204,7 +5204,7 @@ arc_gen_REM (DisasCtxt *ctx, TCGv src2, TCGv src1, TCGv dest)
   tcg_gen_and_tl(temp_7, temp_3, temp_6);
   tcg_gen_xori_tl(temp_8, temp_7, 1); tcg_gen_andi_tl(temp_8, temp_8, 1);;
   tcg_gen_brcond_tl(TCG_COND_EQ, temp_8, arc_true, else_2);;
-  divRemainingSigned(temp_10, src1, src2);
+  divRemainingSigned32(temp_10, src1, src2);
   tcg_gen_mov_tl(dest, temp_10);
   if ((getFFlag () == true))
     {
@@ -5244,7 +5244,7 @@ arc_gen_REM (DisasCtxt *ctx, TCGv src2, TCGv src1, TCGv dest)
 
 /* REMU
  *    Variables: @src2, @dest, @src1
- *    Functions: getCCFlag, divRemainingUnsigned, getFFlag, setZFlag, setNFlag32, setVFlag
+ *    Functions: getCCFlag, divRemainingUnsigned32, getFFlag, setZFlag, setNFlag32, setVFlag
 --- code ---
 {
   cc_flag = getCCFlag ();
@@ -5252,7 +5252,7 @@ arc_gen_REM (DisasCtxt *ctx, TCGv src2, TCGv src1, TCGv dest)
     {
       if((@src2 != 0))
         {
-          @dest = divRemainingUnsigned (@src1, @src2);
+          @dest = divRemainingUnsigned32 (@src1, @src2);
           if((getFFlag () == true))
             {
               setZFlag (@dest);
@@ -5291,7 +5291,7 @@ arc_gen_REMU (DisasCtxt *ctx, TCGv src2, TCGv dest, TCGv src1)
   tcg_gen_setcondi_tl(TCG_COND_NE, temp_3, src2, 0);
   tcg_gen_xori_tl(temp_4, temp_3, 1); tcg_gen_andi_tl(temp_4, temp_4, 1);;
   tcg_gen_brcond_tl(TCG_COND_EQ, temp_4, arc_true, else_2);;
-  divRemainingUnsigned(temp_6, src1, src2);
+  divRemainingUnsigned32(temp_6, src1, src2);
   tcg_gen_mov_tl(dest, temp_6);
   if ((getFFlag () == true))
     {
