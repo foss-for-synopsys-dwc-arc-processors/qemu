@@ -185,31 +185,6 @@ tn_\name:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; macro:     auxreg_write_read
-; input:     reg      - the register we are talking about
-;            write    - value to write
-;            read     - value expected to be read
-;            test_num - the number of test which will be printed in
-;                       case of error.
-; regs used: r11, r12
-; exampel:   auxreg_write_read mpuen, 0xffffffff, 0x400001f8, 0x12
-;
-; description:
-;   Not always, "write" and "read" values are the same. This true about
-;   the registers who have reserved bits or read as zero in user mode,
-;   etc.
-;   Be careful, what is the result of you writing to to "reg". It may
-;   have consequences like enabling page protection or so.
-.macro auxreg_write_read reg, write, read, test_num=1
-  mov r11, \write
-  sr  r11, [\reg]
-  ; using a different register to reduce the chande of false equality
-  lr  r12, [\reg]
-  assert_eq \read, r12, \test_num
-.endm
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ; Auxilary registers
 .equ REG_IRQ_SELECT, 0x40B
 
