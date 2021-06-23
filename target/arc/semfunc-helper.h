@@ -291,6 +291,36 @@ void arc_gen_set_register(enum arc_registers reg, TCGv value);
 #define divRemainingSigned(R, SRC1, SRC2)   tcg_gen_rem_tl(R, SRC1, SRC2)
 #define divRemainingUnsigned(R, SRC1, SRC2) tcg_gen_remu_tl(R, SRC1, SRC2)
 
+#define DO_IN_32BIT_SIGNED(OP, R, SRC1, SRC2) \
+    TCGv_i32 lr = tcg_temp_new_i32(); \
+    TCGv_i32 lsrc1 = tcg_temp_new_i32(); \
+    TCGv_i32 lsrc2 = tcg_temp_new_i32(); \
+    tcg_gen_trunc_tl_i32(lsrc1, SRC1); \
+    tcg_gen_trunc_tl_i32(lsrc2, SRC2); \
+    OP(lr, lsrc1, lsrc2); \
+    tcg_gen_ext_i32_tl(R, lr); \
+    tcg_temp_free_i32(lr); \
+    tcg_temp_free_i32(lsrc1); \
+    tcg_temp_free_i32(lsrc2);
+
+#define DO_IN_32BIT_UNSIGNED(OP, R, SRC1, SRC2) \
+    TCGv_i32 lr = tcg_temp_new_i32(); \
+    TCGv_i32 lsrc1 = tcg_temp_new_i32(); \
+    TCGv_i32 lsrc2 = tcg_temp_new_i32(); \
+    tcg_gen_trunc_tl_i32(lsrc1, SRC1); \
+    tcg_gen_trunc_tl_i32(lsrc2, SRC2); \
+    OP(lr, lsrc1, lsrc2); \
+    tcg_gen_extu_i32_tl(R, lr); \
+    tcg_temp_free_i32(lr); \
+    tcg_temp_free_i32(lsrc1); \
+    tcg_temp_free_i32(lsrc2);
+
+
+#define divSigned32(R, SRC1, SRC2)   DO_IN_32BIT_SIGNED(   tcg_gen_div_i32, R, SRC1, SRC2)
+#define divUnsigned32(R, SRC1, SRC2) DO_IN_32BIT_UNSIGNED(tcg_gen_divu_i32, R, SRC1, SRC2)
+#define divRemainingSigned32(R, SRC1, SRC2)   DO_IN_32BIT_SIGNED(  tcg_gen_rem_i32, R, SRC1, SRC2)
+#define divRemainingUnsigned32(R, SRC1, SRC2) DO_IN_32BIT_UNSIGNED(tcg_gen_remu_i32, R, SRC1, SRC2)
+
 /* TODO: To implement */
 #define Halt()
 
