@@ -331,8 +331,8 @@ target_ulong helper_repl_mask(target_ulong dest, target_ulong src,
 
 target_ulong helper_mpymu(CPUARCState *env, target_ulong b, target_ulong c)
 {
-    uint64_t _b = (uint64_t) b;
-    uint64_t _c = (uint64_t) c;
+    uint64_t _b = (uint64_t) (b & 0xffffffff);
+    uint64_t _c = (uint64_t) (c & 0xffffffff);
 
     return (uint32_t) ((_b * _c) >> 32);
 }
