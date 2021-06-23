@@ -276,9 +276,11 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_IRQ_PULSE:
         regval = 0; /* write only for clearing the pulse triggered interrupt */
         break;
+#ifdef TARGET_ARCV2
     case GDB_AUX_OTHER_REG_IRQ_PENDING:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_pending, cpu->family));
         break;
+#endif
     case GDB_AUX_OTHER_REG_IRQ_PRIO:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_priority, cpu->family));
         break;
@@ -295,12 +297,6 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
         break;
     case GDB_AUX_OTHER_REG_RTP1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp1, cpu->family));
-        break;
-    case GDB_AUX_OTHER_REG_TLB_INDEX:
-        regval = helper_lr(env, REG_ADDR(AUX_ID_tlbindex, cpu->family));
-        break;
-    case GDB_AUX_OTHER_REG_TLB_CMD:
-        regval = helper_lr(env, REG_ADDR(AUX_ID_tlbcommand, cpu->family));
         break;
 #endif
     default:
@@ -322,13 +318,13 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_MPY_BUILD:
     case GDB_AUX_OTHER_REG_MPU_BUILD:
     case GDB_AUX_OTHER_REG_MPU_ECR:
+    case GDB_AUX_OTHER_REG_IRQ_PENDING:
 #endif
     case GDB_AUX_OTHER_REG_VECBASE_BUILD:
     case GDB_AUX_OTHER_REG_ISA_CONFIG:
     case GDB_AUX_OTHER_REG_ICAUSE:
     case GDB_AUX_OTHER_REG_IRQ_PRIO_PEND:
     case GDB_AUX_OTHER_REG_IRQ_STATUS:
-    case GDB_AUX_OTHER_REG_IRQ_PENDING:
         /* builds/configs/exceptions/irqs cannot be changed */
         break;
     case GDB_AUX_OTHER_REG_TIMER_CNT0:
