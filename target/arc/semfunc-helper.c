@@ -210,6 +210,7 @@ arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch)
     DisasJumpType type = ctx->base.is_jmp;
     ctx->env->enabled_interrupts = false;
 
+
     /*
      * In case we might be in a situation where the delayslot is in a
      * different MMU page. Make a fake exception to interrupt
@@ -217,7 +218,12 @@ arc_gen_execute_delayslot(DisasCtxt *ctx, TCGv bta, TCGv take_branch)
      * The delayslot will then be re-executed in isolation after the
      * branch code has set bta and DEf status flag.
      */
+    /* NOTE: This is going to go away anyway. */
+#if defined(TARGET_ARCV2)
     if ((cpc & PAGE_MASK) < 0x80000000 &&
+#elif defined(TARGET_ARCV3)
+    if (true &&
+#endif
         (cpc & PAGE_MASK) != (ctx->cpc & PAGE_MASK)) {
         ctx->in_delay_slot = false;
         TCGv dpc = tcg_const_local_tl(ctx->npc);
