@@ -5669,16 +5669,16 @@ arc_gen_B_S(DisasCtxt *ctx, TCGv rd)
 --- code ---
 {
   bta = getPCL() + @offset;
+  @a = @a - 1
   if (shouldExecuteDelaySlot() == 1)
   {
       take_branch = true;
-      if (@a == 1)
+      if (@a == 0)
       {
           take_branch = false;
       };
       executeDelaySlot (bta, take_branch);
   };
-  @a = @a - 1
   if(@a != 0) {
     setPC(getPCL () + @offset)
   }
@@ -5695,10 +5695,11 @@ arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset)
 
     getPCL(bta);
     tcg_gen_add_tl(bta, bta, offset);
+    tcg_gen_subi_tl(a, a, 1);
 
     if (shouldExecuteDelaySlot() == 1) {
         TCGv take_branch = tcg_const_local_tl(1);
-        tcg_gen_brcondi_tl(TCG_COND_NE, a, 1, keep_take_branch_1);
+        tcg_gen_brcondi_tl(TCG_COND_NE, a, 0, keep_take_branch_1);
         tcg_temp_free(take_branch);
         tcg_gen_mov_tl(take_branch, tcg_const_local_tl(0));
         gen_set_label(keep_take_branch_1);
@@ -5706,7 +5707,6 @@ arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset)
         tcg_temp_free(take_branch);
     }
 
-    tcg_gen_subi_tl(a, a, 1);
     tcg_gen_brcondi_tl(TCG_COND_EQ, a, 0, do_not_branch);
         setPC(bta);
     gen_set_label(do_not_branch);
