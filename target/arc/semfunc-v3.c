@@ -514,7 +514,7 @@ arc_gen_ADD (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 /*
  * ADD1
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag, setCFlag, CarryADD32,
+ *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag32, setCFlag, CarryADD32,
  *               setVFlag, OverflowADD32, se32to64
  * --- code ---
  * {
@@ -527,7 +527,7 @@ arc_gen_ADD (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  *       if((getFFlag () == true))
  *         {
  *           setZFlag (@a);
- *           setNFlag (@a);
+ *           setNFlag32 (@a);
  *           setCFlag (CarryADD32 (@a, lb, lc));
  *           setVFlag (OverflowADD32 (@a, lb, lc));
  *         };
@@ -563,7 +563,7 @@ arc_gen_ADD1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_gen_andi_tl(a, temp_5, 4294967295);
     if ((getFFlag () == true)) {
         setZFlag(a);
-        setNFlag(a);
+        setNFlag32(a);
         CarryADD32(temp_6, a, lb, lc);
         setCFlag(temp_6);
         OverflowADD32(temp_7, a, lb, lc);
@@ -589,7 +589,7 @@ arc_gen_ADD1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 /*
  * ADD2
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag, setCFlag, CarryADD32,
+ *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag32, setCFlag, CarryADD32,
  *               setVFlag, OverflowADD32, se32to64
  * --- code ---
  * {
@@ -602,7 +602,7 @@ arc_gen_ADD1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  *       if((getFFlag () == true))
  *         {
  *           setZFlag (@a);
- *           setNFlag (@a);
+ *           setNFlag32 (@a);
  *           setCFlag (CarryADD32 (@a, lb, lc));
  *           setVFlag (OverflowADD32 (@a, lb, lc));
  *         };
@@ -638,7 +638,7 @@ arc_gen_ADD2(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_gen_andi_tl(a, temp_5, 4294967295);
     if ((getFFlag () == true)) {
         setZFlag(a);
-        setNFlag(a);
+        setNFlag32(a);
         CarryADD32(temp_6, a, lb, lc);
         setCFlag(temp_6);
         OverflowADD32(temp_7, a, lb, lc);
@@ -665,7 +665,7 @@ arc_gen_ADD2(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 /*
  * ADD3
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag, setCFlag, CarryADD32,
+ *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag32, setCFlag, CarryADD32,
  *               setVFlag, OverflowADD32, se32to64
  * --- code ---
  * {
@@ -678,7 +678,7 @@ arc_gen_ADD2(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  *       if((getFFlag () == true))
  *         {
  *           setZFlag (@a);
- *           setNFlag (@a);
+ *           setNFlag32 (@a);
  *           setCFlag (CarryADD32 (@a, lb, lc));
  *           setVFlag (OverflowADD32 (@a, lb, lc));
  *         };
@@ -714,7 +714,7 @@ arc_gen_ADD3(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_gen_andi_tl(a, temp_5, 4294967295);
     if ((getFFlag () == true)) {
         setZFlag(a);
-        setNFlag(a);
+        setNFlag32(a);
         CarryADD32(temp_6, a, lb, lc);
         setCFlag(temp_6);
         OverflowADD32(temp_7, a, lb, lc);
@@ -3750,7 +3750,7 @@ arc_gen_SEXB (DisasCtxt *ctx, TCGv dest, TCGv src)
   if ((f_flag == true))
     {
     setZFlag(dest);
-  setNFlag32(dest);
+    setNFlag32(dest);
 ;
     }
   else
@@ -9116,7 +9116,7 @@ arc_gen_LP (DisasCtxt *ctx, TCGv rd)
 /*
  * NORM
  *    Variables: @src, @dest
- *    Functions: CRLSB, getFFlag, setZFlag, setNFlag
+ *    Functions: CRLSB, getFFlag, setZFlag, setNFlag32
  * --- code ---
  * {
  *   psrc = @src;
@@ -9125,7 +9125,7 @@ arc_gen_LP (DisasCtxt *ctx, TCGv rd)
  *   if((getFFlag () == true))
  *     {
  *       setZFlag (psrc);
- *       setNFlag (psrc);
+ *       setNFlag32 (psrc);
  *     };
  * }
  */
@@ -9141,7 +9141,7 @@ arc_gen_NORM(DisasCtxt *ctx, TCGv src, TCGv dest)
     tcg_gen_subi_tl(dest, dest, 32);
     if ((getFFlag () == true)) {
         setZFlag(psrc);
-        setNFlag(psrc);
+        setNFlag32(psrc);
     }
     tcg_temp_free(psrc);
 
@@ -9152,7 +9152,7 @@ arc_gen_NORM(DisasCtxt *ctx, TCGv src, TCGv dest)
 /*
  * NORMH
  *    Variables: @src, @dest
- *    Functions: SignExtend16to32, CRLSB, getFFlag, setZFlag, setNFlag
+ *    Functions: SignExtend16to32, CRLSB, getFFlag, setZFlag, setNFlagByNum
  * --- code ---
  * {
  *   psrc = (@src & 65535);
@@ -9161,8 +9161,8 @@ arc_gen_NORM(DisasCtxt *ctx, TCGv src, TCGv dest)
  *   @dest = (@dest - 16);
  *   if((getFFlag () == true))
  *     {
- *       setZFlag (psrc);
- *       setNFlag (psrc);
+ *       setZFlagByNum (psrc, 16);
+ *       setNFlagByNum (psrc, 16);
  *     };
  * }
  */
@@ -9177,8 +9177,8 @@ arc_gen_NORMH(DisasCtxt *ctx, TCGv src, TCGv dest)
     tcg_gen_clrsb_tl(dest, psrc);
     tcg_gen_subi_tl(dest, dest, 16);
     if ((getFFlag () == true)) {
-        setZFlag(psrc);
-        setNFlag(psrc);
+        setZFlagByNum(psrc, 16);
+        setNFlagByNum(psrc, 16);
     }
     tcg_temp_free(psrc);
 
@@ -9204,7 +9204,7 @@ arc_gen_NORMH(DisasCtxt *ctx, TCGv src, TCGv dest)
  *   if((getFFlag () == true))
  *     {
  *       setZFlag (psrc);
- *       setNFlag (psrc);
+ *       setNFlag32 (psrc);
  *     };
  * }
  */
@@ -9236,7 +9236,7 @@ arc_gen_FLS(DisasCtxt *ctx, TCGv src, TCGv dest)
     gen_set_label(done_1);
     if ((getFFlag () == true)) {
         setZFlag(psrc);
-        setNFlag(psrc);
+        setNFlag32(psrc);
     }
     tcg_temp_free(psrc);
     tcg_temp_free(temp_1);
@@ -9255,7 +9255,7 @@ arc_gen_FLS(DisasCtxt *ctx, TCGv src, TCGv dest)
 /*
  * FFS
  *    Variables: @src, @dest
- *    Functions: CTZ, getFFlag, setZFlag, setNFlag
+ *    Functions: CTZ, getFFlag, setZFlag, setNFlag32
  * --- code ---
  * {
  *   psrc = @src;
@@ -9270,7 +9270,7 @@ arc_gen_FLS(DisasCtxt *ctx, TCGv src, TCGv dest)
  *   if((getFFlag () == true))
  *     {
  *       setZFlag (psrc);
- *       setNFlag (psrc);
+ *       setNFlag32 (psrc);
  *     };
  * }
  */
@@ -9300,7 +9300,7 @@ arc_gen_FFS(DisasCtxt *ctx, TCGv src, TCGv dest)
     gen_set_label(done_1);
     if ((getFFlag () == true)) {
         setZFlag(psrc);
-        setNFlag(psrc);
+        setNFlag32(psrc);
     }
     tcg_temp_free(psrc);
     tcg_temp_free(temp_1);
