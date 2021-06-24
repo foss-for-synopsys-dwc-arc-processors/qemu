@@ -8351,7 +8351,7 @@ arc_gen_NORM(DisasCtxt *ctx, TCGv src, TCGv dest)
 /*
  * NORMH
  *    Variables: @src, @dest
- *    Functions: SignExtend16to32, CRLSB, getFFlag, setZFlag, setNFlag
+ *    Functions: SignExtend16to32, CRLSB, getFFlag, setZFlagByNum, setNFlagByNum
  * --- code ---
  * {
  *   psrc = (@src & 65535);
@@ -8360,8 +8360,8 @@ arc_gen_NORM(DisasCtxt *ctx, TCGv src, TCGv dest)
  *   @dest = (@dest - 16);
  *   if((getFFlag () == true))
  *     {
- *       setZFlag (psrc);
- *       setNFlag (psrc);
+ *       setZFlagByNum (psrc, 16);
+ *       setNFlagByNum (psrc, 16);
  *     };
  * }
  */
@@ -8376,8 +8376,8 @@ arc_gen_NORMH(DisasCtxt *ctx, TCGv src, TCGv dest)
     tcg_gen_clrsb_tl(dest, psrc);
     tcg_gen_subi_tl(dest, dest, 16);
     if ((getFFlag () == true)) {
-        setZFlag(psrc);
-        setNFlag(psrc);
+        setZFlagByNum(psrc, 16);
+        setNFlagByNum(psrc, 16);
     }
     tcg_temp_free(psrc);
 
