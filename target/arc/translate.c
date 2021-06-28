@@ -1776,13 +1776,12 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 
     if (dc->base.is_jmp == DISAS_NORETURN) {
         gen_gotoi_tb(dc, 0, dc->npc);
-    } else if (dc->base.is_jmp == DISAS_NEXT) {
-        target_ulong page_start;
+    }
 
-        page_start = dc->base.pc_first & TARGET_PAGE_MASK;
-        if (dc->base.pc_next - page_start >= TARGET_PAGE_SIZE) {
-            dc->base.is_jmp = DISAS_TOO_MANY;
-        }
+    target_ulong page_start;
+    page_start = dc->base.pc_first & TARGET_PAGE_MASK;
+    if (dc->base.pc_next - page_start >= TARGET_PAGE_SIZE - 8) {
+        dc->base.is_jmp = DISAS_TOO_MANY;
     }
 
     /* TODO (issue #62): these must be removed. */
