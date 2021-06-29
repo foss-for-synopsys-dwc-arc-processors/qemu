@@ -1780,7 +1780,12 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 
     target_ulong page_start;
     page_start = dc->base.pc_first & TARGET_PAGE_MASK;
-    if (dc->base.pc_next - page_start >= TARGET_PAGE_SIZE - 8) {
+
+    /* Break TB is dealing with instructions in the boundaries of a page.
+     *   size of 8 is the size of the biggest delayslot capable instruction.
+     */
+    if (dc->base.is_jmp == DISAS_NEXT
+        && dc->base.pc_next - page_start >= TARGET_PAGE_SIZE-8) {
         dc->base.is_jmp = DISAS_TOO_MANY;
     }
 
