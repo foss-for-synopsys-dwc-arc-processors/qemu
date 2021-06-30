@@ -209,7 +209,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
     env->pc = address_space_ldl(cs->as, env->intvec + offset,
                                 MEMTXATTRS_UNSPECIFIED, &txres);
     assert(txres == MEMTX_OK);
-    CPU_PCL(env) = env->pc & 0xfffffffe;
+    CPU_PCL(env) = env->pc & (~((target_ulong) 3));
 
     qemu_log_mask(CPU_LOG_INT, "[EXCP] isr=0x" TARGET_FMT_lx
                   " vec=0x%x ecr=0x" TARGET_FMT_lx "\n",
