@@ -86,7 +86,7 @@ arc_jli_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
 {
     switch (aux_reg_detail->id) {
     case AUX_ID_jli_base:
-        jli_base = val & (~3);
+        jli_base = val & (~((target_ulong) 3));
         break;
     default:
         assert(0);
