@@ -92,6 +92,8 @@ static void arc_rtie_firq(CPUARCState *env)
         switchSP(env);
     }
 
+    assert(CPU_SP(env) >= 0x80000000);
+
     env->stat = env->stat_l1; /* FIXME use status32_p0 reg. */
     /* Keep U-bit in sync. */
     env->aux_irq_act &= ~(GET_STATUS_BIT(env->stat, Uf) << 31);
@@ -569,7 +571,7 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     /* XX. The PC is set with the appropriate exception vector. */
     offset = OFFSET_FOR_VECTOR(vectno);
     env->pc = TARGET_LONG_LOAD(env, env->intvec + offset);
-    CPU_PCL(env) = env->pc & (~1);
+    CPU_PCL(env) = env->pc & (~((target_ulong) 3));
 
     qemu_log_mask(CPU_LOG_INT, "[IRQ] isr=0x" TARGET_FMT_lx
                   " vec=0x%08x, priority=0x%04x\n",
