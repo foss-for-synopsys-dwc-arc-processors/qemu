@@ -31,12 +31,10 @@
     arc_aux_reg_address_for((reg), (processor_type))
 
 #if defined(TARGET_ARCV2)
-#define GDB_GET_REG gdb_get_reg32
-#elif defined(TARGET_ARCV3)
-#define GDB_GET_REG gdb_get_reg64
-#else
-    #error No target is selected.
-#endif
+
+#define GDB_GET_REG            gdb_get_reg32
+#define GDB_TARGET_MINIMAL_XML "arc-v2-aux.xml"
+#define GDB_TARGET_AUX_XML     "arc-v2-other.xml"
 
 int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
 {
@@ -93,9 +91,8 @@ int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
         assert(!"Unsupported register is being written.");
     }
 
-    return 4;
+    return sizeof(regval);
 }
-
 
 static int
 arc_aux_minimal_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
@@ -105,7 +102,7 @@ arc_aux_minimal_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
 
     switch (regnum) {
     case GDB_AUX_MIN_REG_PC:
-        regval = env->pc & ((target_ulong) 0xfffffffffffffffe);
+        regval = env->pc;
         break;
     case GDB_AUX_MIN_REG_LPS:
         regval = helper_lr(env, REG_ADDR(AUX_ID_lp_start, cpu->family));
@@ -122,7 +119,6 @@ arc_aux_minimal_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
     return GDB_GET_REG(mem_buf, regval);
 }
 
-
 static int
 arc_aux_minimal_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
 {
@@ -130,7 +126,7 @@ arc_aux_minimal_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     target_ulong regval = ldl_p(mem_buf);
     switch (regnum) {
     case GDB_AUX_MIN_REG_PC:
-        env->pc = regval & ((target_ulong) 0xfffffffffffffffe);
+        env->pc = regval;
         break;
     case GDB_AUX_MIN_REG_LPS:
         helper_sr(env, regval, REG_ADDR(AUX_ID_lp_start, cpu->family));
@@ -144,9 +140,8 @@ arc_aux_minimal_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     default:
         assert(!"Unsupported minimal auxiliary register is being written.");
     }
-    return 4;
+    return sizeof(regval);
 }
-
 
 static int
 arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
@@ -160,11 +155,9 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_IRQ_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_build, cpu->family));
         break;
-#ifdef TARGET_ARCV2
     case GDB_AUX_OTHER_REG_MPY_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mpy_build, cpu->family));
         break;
-#endif
     case GDB_AUX_OTHER_REG_VECBASE_BUILD:
         regval = cpu->vecbase_build;
         break;
@@ -189,7 +182,6 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_TIMER_LIM1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_limit1, cpu->family));
         break;
-#ifdef TARGET_ARCV2
     /* MMUv4 */
     case GDB_AUX_OTHER_REG_PID:
         regval = helper_lr(env, REG_ADDR(AUX_ID_pid, cpu->family));
@@ -206,8 +198,6 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_TLB_CMD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_tlbcommand, cpu->family));
         break;
-#endif
-#ifdef TARGET_ARCV2
     /* MPU */
     case GDB_AUX_OTHER_REG_MPU_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mpu_build, cpu->family));
@@ -228,7 +218,6 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
         regval = helper_lr(env, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
         break;
     }
-#endif
     /* exceptions */
     case GDB_AUX_OTHER_REG_ERSTATUS:
         regval = helper_lr(env, REG_ADDR(AUX_ID_erstatus, cpu->family));
@@ -276,35 +265,20 @@ arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_IRQ_PULSE:
         regval = 0; /* write only for clearing the pulse triggered interrupt */
         break;
-#ifdef TARGET_ARCV2
     case GDB_AUX_OTHER_REG_IRQ_PENDING:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_pending, cpu->family));
         break;
-#endif
     case GDB_AUX_OTHER_REG_IRQ_PRIO:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_priority, cpu->family));
         break;
     case GDB_AUX_OTHER_REG_BTA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_bta, cpu->family));
         break;
-#ifdef TARGET_ARCV3
-    /* MMUv6 */
-    case GDB_AUX_OTHER_REG_MMU_CTRL:
-        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_ctrl, cpu->family));
-        break;
-    case GDB_AUX_OTHER_REG_RTP0:
-        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp0, cpu->family));
-        break;
-    case GDB_AUX_OTHER_REG_RTP1:
-        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp1, cpu->family));
-        break;
-#endif
     default:
         assert(!"Unsupported other auxiliary register is being read.");
     }
     return GDB_GET_REG(mem_buf, regval);
 }
-
 
 static int
 arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
@@ -314,12 +288,10 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     switch (regnum) {
     case GDB_AUX_OTHER_REG_TIMER_BUILD:
     case GDB_AUX_OTHER_REG_IRQ_BUILD:
-#ifdef TARGET_ARCV2
     case GDB_AUX_OTHER_REG_MPY_BUILD:
     case GDB_AUX_OTHER_REG_MPU_BUILD:
     case GDB_AUX_OTHER_REG_MPU_ECR:
     case GDB_AUX_OTHER_REG_IRQ_PENDING:
-#endif
     case GDB_AUX_OTHER_REG_VECBASE_BUILD:
     case GDB_AUX_OTHER_REG_ISA_CONFIG:
     case GDB_AUX_OTHER_REG_ICAUSE:
@@ -345,7 +317,6 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_TIMER_LIM1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_limit1, cpu->family));
         break;
-#ifdef TARGET_ARCV2
     /* MMUv4 */
     case GDB_AUX_OTHER_REG_PID:
         helper_sr(env, regval, REG_ADDR(AUX_ID_pid, cpu->family));
@@ -362,8 +333,6 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     case GDB_AUX_OTHER_REG_TLB_CMD:
         helper_sr(env, regval, REG_ADDR(AUX_ID_tlbcommand, cpu->family));
         break;
-#endif
-#ifdef TARGET_ARCV2
     /* MPU */
     case GDB_AUX_OTHER_REG_MPU_EN:
         helper_sr(env, regval, REG_ADDR(AUX_ID_mpuen, cpu->family));
@@ -378,7 +347,6 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
         helper_sr(env, regval, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
         break;
     }
-#endif
     /* exceptions */
     case GDB_AUX_OTHER_REG_ERSTATUS:
         helper_sr(env, regval, REG_ADDR(AUX_ID_erstatus, cpu->family));
@@ -426,16 +394,292 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     default:
         assert(!"Unsupported other auxiliary register is being written.");
     }
-    return 4;
+    return sizeof(regval);
 }
 
-#ifdef TARGET_ARCV2
-#define GDB_TARGET_MINIMAL_XML "arc-v2-aux.xml"
-#define GDB_TARGET_AUX_XML     "arc-v2-other.xml"
-#else
+/* End of ARCv2 */
+
+#elif defined(TARGET_ARCV3)
+
+#define GDB_GET_REG            gdb_get_reg64
 #define GDB_TARGET_MINIMAL_XML "arc-v3_64-aux.xml"
 #define GDB_TARGET_AUX_XML     "arc-v3_64-other.xml"
+
+int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
+{
+    ARCCPU *cpu = ARC_CPU(cs);
+    CPUARCState *env = &cpu->env;
+    target_ulong regval = 0;
+
+    switch (n) {
+    case 0 ... 31:
+       regval = env->r[n];
+       break;
+    case GDB_REG_58:
+       regval = env->r[58];
+       break;
+    case GDB_REG_63:
+       regval = env->r[63];
+       break;
+    default:
+       assert(!"Unsupported register is being read.");
+    }
+
+    return GDB_GET_REG(mem_buf, regval);
+}
+
+int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
+{
+    ARCCPU *cpu = ARC_CPU(cs);
+    CPUARCState *env = &cpu->env;
+    target_ulong regval = ldl_p(mem_buf);
+
+    switch (n) {
+    case 0 ... 31:
+        env->r[n] = regval;
+        break;
+    case GDB_REG_58:
+        env->r[58] = regval;
+        break;
+    case GDB_REG_63:
+        env->r[63] = regval;
+        break;
+    default:
+        assert(!"Unsupported register is being written.");
+    }
+
+    return sizeof(regval);
+}
+
+static int
+arc_aux_minimal_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
+{
+    target_ulong regval = 0;
+
+    switch (regnum) {
+    case GDB_AUX_MIN_REG_PC:
+        regval = env->pc;
+        break;
+    case GDB_AUX_MIN_REG_STATUS:
+        regval = pack_status32(&env->stat);
+        break;
+    default:
+        assert(!"Unsupported minimal auxiliary register is being read.");
+    }
+    return GDB_GET_REG(mem_buf, regval);
+}
+
+static int
+arc_aux_minimal_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
+{
+    target_ulong regval = ldl_p(mem_buf);
+    switch (regnum) {
+    case GDB_AUX_MIN_REG_PC:
+        env->pc = regval;
+        break;
+    case GDB_AUX_MIN_REG_STATUS:
+        unpack_status32(&env->stat, regval);
+        break;
+    default:
+        assert(!"Unsupported minimal auxiliary register is being written.");
+    }
+    return sizeof(regval);
+}
+
+static int
+arc_aux_other_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
+{
+    ARCCPU *cpu = env_archcpu(env);
+    target_ulong regval = 0;
+    switch (regnum) {
+    case GDB_AUX_OTHER_REG_TIMER_BUILD:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_timer_build, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_BUILD:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_irq_build, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_VECBASE_BUILD:
+        regval = cpu->vecbase_build;
+        break;
+    case GDB_AUX_OTHER_REG_ISA_CONFIG:
+        regval = cpu->isa_config;
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CNT0:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_count0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CTRL0:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_control0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_LIM0:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_limit0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CNT1:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_count1, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CTRL1:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_control1, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_LIM1:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_limit1, cpu->family));
+        break;
+    /* exceptions */
+    case GDB_AUX_OTHER_REG_ERSTATUS:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_erstatus, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_ERBTA:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_erbta, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_ECR:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_ecr, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_ERET:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_eret, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_EFA:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_efa, cpu->family));
+        break;
+    /* interrupt */
+    case GDB_AUX_OTHER_REG_ICAUSE:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_icause, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_CTRL:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_ctrl, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_ACT:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_act, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_PRIO_PEND:
+        regval = env->irq_priority_pending;
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_HINT:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_hint, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_SELECT:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_irq_select, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_ENABLE:
+        regval = env->irq_bank[env->irq_select & 0xff].enable;
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_TRIGGER:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_irq_trigger, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_STATUS:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_irq_status, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_PULSE:
+        regval = 0; /* write only for clearing the pulse triggered interrupt */
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_PRIO:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_irq_priority, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_BTA:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_bta, cpu->family));
+        break;
+    /* MMUv6 */
+    case GDB_AUX_OTHER_REG_MMU_CTRL:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_ctrl, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_RTP0:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_RTP1:
+        regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp1, cpu->family));
+        break;
+    default:
+        assert(!"Unsupported other auxiliary register is being read.");
+    }
+    return GDB_GET_REG(mem_buf, regval);
+}
+
+
+static int
+arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
+{
+    ARCCPU *cpu = env_archcpu(env);
+    target_ulong regval = ldl_p(mem_buf);
+    switch (regnum) {
+    case GDB_AUX_OTHER_REG_TIMER_BUILD:
+    case GDB_AUX_OTHER_REG_IRQ_BUILD:
+    case GDB_AUX_OTHER_REG_VECBASE_BUILD:
+    case GDB_AUX_OTHER_REG_ISA_CONFIG:
+    case GDB_AUX_OTHER_REG_ICAUSE:
+    case GDB_AUX_OTHER_REG_IRQ_PRIO_PEND:
+    case GDB_AUX_OTHER_REG_IRQ_STATUS:
+        /* builds/configs/exceptions/irqs cannot be changed */
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CNT0:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_count0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CTRL0:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_control0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_LIM0:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_limit0, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CNT1:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_count1, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_CTRL1:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_control1, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_TIMER_LIM1:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_limit1, cpu->family));
+        break;
+    /* exceptions */
+    case GDB_AUX_OTHER_REG_ERSTATUS:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_erstatus, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_ERBTA:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_erbta, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_ECR:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_ecr, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_ERET:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_eret, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_EFA:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_efa, cpu->family));
+        break;
+    /* interrupt */
+    case GDB_AUX_OTHER_REG_IRQ_CTRL:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_ctrl, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_ACT:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_act, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_HINT:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_hint, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_SELECT:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_irq_select, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_ENABLE:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_irq_enable, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_TRIGGER:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_irq_trigger, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_PULSE:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_irq_pulse_cancel, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_IRQ_PRIO:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_irq_priority, cpu->family));
+        break;
+    case GDB_AUX_OTHER_REG_BTA:
+        helper_sr(env, regval, REG_ADDR(AUX_ID_bta, cpu->family));
+        break;
+    default:
+        assert(!"Unsupported other auxiliary register is being written.");
+    }
+    return sizeof(regval);
+}
+
+/* Neither ARCv2 nor ARCv3 */
+#else
+    #error No target is selected.
 #endif
+
 
 void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
 {
