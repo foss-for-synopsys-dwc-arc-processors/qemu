@@ -21,10 +21,8 @@
 #define ARC_GDBSTUB_H
 
 #ifdef TARGET_ARCV2
+
 #define GDB_TARGET_STRING "arc:ARCv2"
-#else
-#define GDB_TARGET_STRING "arc:ARCv3_64"
-#endif
 
 enum gdb_regs {
     GDB_REG_0 = 0,
@@ -62,7 +60,7 @@ enum gdb_regs {
     GDB_REG_58,         /* little_endian? ACCL : ACCH */
     GDB_REG_59,         /* little_endian? ACCH : ACCL */
     GDB_REG_60,         /* LP                         */
-    GDB_REG_63,         /* Immediate                  */
+    GDB_REG_63,         /* PCL                        */
     GDB_REG_LAST
 };
 
@@ -78,9 +76,7 @@ enum gdb_aux_other_regs {
     /* builds */
     GDB_AUX_OTHER_REG_TIMER_BUILD = 0,  /* timer build                */
     GDB_AUX_OTHER_REG_IRQ_BUILD,        /* irq build                  */
-#ifdef TARGET_ARCV2
     GDB_AUX_OTHER_REG_MPY_BUILD,        /* multiply configuration     */
-#endif
     GDB_AUX_OTHER_REG_VECBASE_BUILD,    /* vector base address config */
     GDB_AUX_OTHER_REG_ISA_CONFIG,       /* isa config                 */
     /* timers */
@@ -90,15 +86,12 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_TIMER_CNT1,       /* timer 1 counter */
     GDB_AUX_OTHER_REG_TIMER_CTRL1,      /* timer 1 control */
     GDB_AUX_OTHER_REG_TIMER_LIM1,       /* timer 1 limit   */
-#ifdef TARGET_ARCV2
     /* mmuv4 */
     GDB_AUX_OTHER_REG_PID,              /* process identity  */
     GDB_AUX_OTHER_REG_TLBPD0,           /* page descriptor 0 */
     GDB_AUX_OTHER_REG_TLBPD1,           /* page descriptor 1 */
     GDB_AUX_OTHER_REG_TLB_INDEX,        /* tlb index         */
     GDB_AUX_OTHER_REG_TLB_CMD,          /* tlb command       */
-#endif
-#ifdef TARGET_ARCV2
     /* mpu */
     GDB_AUX_OTHER_REG_MPU_BUILD,        /* MPU build           */
     GDB_AUX_OTHER_REG_MPU_EN,           /* MPU enable          */
@@ -135,7 +128,6 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_MPU_PERM13,       /* MPU permission 13   */
     GDB_AUX_OTHER_REG_MPU_PERM14,       /* MPU permission 14   */
     GDB_AUX_OTHER_REG_MPU_PERM15,       /* MPU permission 15   */
-#endif
     /* excpetions */
     GDB_AUX_OTHER_REG_ERSTATUS,         /* exception return status  */
     GDB_AUX_OTHER_REG_ERBTA,            /* exception return BTA     */
@@ -153,21 +145,104 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_IRQ_TRIGGER,      /* trigger                */
     GDB_AUX_OTHER_REG_IRQ_STATUS,       /* status                 */
     GDB_AUX_OTHER_REG_IRQ_PULSE,        /* pulse cancel           */
-#ifdef TARGET_ARCV2
     GDB_AUX_OTHER_REG_IRQ_PENDING,      /* pending                */
-#endif
     GDB_AUX_OTHER_REG_IRQ_PRIO,         /* priority               */
     /* miscellaneous */
     GDB_AUX_OTHER_REG_BTA,              /* branch target address */
-#ifdef TARGET_ARCV3
+    GDB_AUX_OTHER_REG_LAST
+};
+
+/* ARCv3_64 */
+#else
+
+#define GDB_TARGET_STRING "arc:ARCv3_64"
+
+enum gdb_regs {
+    GDB_REG_0 = 0,
+    GDB_REG_1,
+    GDB_REG_2,
+    GDB_REG_3,
+    GDB_REG_4,
+    GDB_REG_5,
+    GDB_REG_6,
+    GDB_REG_7,
+    GDB_REG_8,
+    GDB_REG_9,
+    GDB_REG_10,
+    GDB_REG_11,
+    GDB_REG_12,
+    GDB_REG_13,
+    GDB_REG_14,
+    GDB_REG_15,
+    GDB_REG_16,
+    GDB_REG_17,
+    GDB_REG_18,
+    GDB_REG_19,
+    GDB_REG_20,
+    GDB_REG_21,
+    GDB_REG_22,
+    GDB_REG_23,
+    GDB_REG_24,
+    GDB_REG_25,
+    GDB_REG_26,
+    GDB_REG_27,         /* FP          */
+    GDB_REG_28,         /* SP          */
+    GDB_REG_29,         /* ILINK       */
+    GDB_REG_30,         /* GP          */
+    GDB_REG_31,         /* BLINK       */
+    GDB_REG_58,         /* ACC0        */
+    GDB_REG_63,         /* PCL         */
+    GDB_REG_LAST
+};
+
+enum gdb_aux_min_regs {
+    GDB_AUX_MIN_REG_PC = 0, /* program counter */
+    GDB_AUX_MIN_REG_STATUS, /* status flag     */
+    GDB_AUX_MIN_REG_LAST
+};
+
+enum gdb_aux_other_regs {
+    /* builds */
+    GDB_AUX_OTHER_REG_TIMER_BUILD = 0,  /* timer build                */
+    GDB_AUX_OTHER_REG_IRQ_BUILD,        /* irq build                  */
+    GDB_AUX_OTHER_REG_VECBASE_BUILD,    /* vector base address config */
+    GDB_AUX_OTHER_REG_ISA_CONFIG,       /* isa config                 */
+    /* timers */
+    GDB_AUX_OTHER_REG_TIMER_CNT0,       /* timer 0 counter */
+    GDB_AUX_OTHER_REG_TIMER_CTRL0,      /* timer 0 control */
+    GDB_AUX_OTHER_REG_TIMER_LIM0,       /* timer 0 limit   */
+    GDB_AUX_OTHER_REG_TIMER_CNT1,       /* timer 1 counter */
+    GDB_AUX_OTHER_REG_TIMER_CTRL1,      /* timer 1 control */
+    GDB_AUX_OTHER_REG_TIMER_LIM1,       /* timer 1 limit   */
+    /* excpetions */
+    GDB_AUX_OTHER_REG_ERSTATUS,         /* exception return status  */
+    GDB_AUX_OTHER_REG_ERBTA,            /* exception return BTA     */
+    GDB_AUX_OTHER_REG_ECR,              /* exception cause register */
+    GDB_AUX_OTHER_REG_ERET,             /* exception return address */
+    GDB_AUX_OTHER_REG_EFA,              /* exception fault address  */
+    /* irq */
+    GDB_AUX_OTHER_REG_ICAUSE,           /* interrupt cause        */
+    GDB_AUX_OTHER_REG_IRQ_CTRL,         /* context saving control */
+    GDB_AUX_OTHER_REG_IRQ_ACT,          /* active                 */
+    GDB_AUX_OTHER_REG_IRQ_PRIO_PEND,    /* priority pending       */
+    GDB_AUX_OTHER_REG_IRQ_HINT,         /* hint                   */
+    GDB_AUX_OTHER_REG_IRQ_SELECT,       /* select                 */
+    GDB_AUX_OTHER_REG_IRQ_ENABLE,       /* enable                 */
+    GDB_AUX_OTHER_REG_IRQ_TRIGGER,      /* trigger                */
+    GDB_AUX_OTHER_REG_IRQ_STATUS,       /* status                 */
+    GDB_AUX_OTHER_REG_IRQ_PULSE,        /* pulse cancel           */
+    GDB_AUX_OTHER_REG_IRQ_PRIO,         /* priority               */
+    /* miscellaneous */
+    GDB_AUX_OTHER_REG_BTA,              /* branch target address */
     /* mmuv6 */
     GDB_AUX_OTHER_REG_MMU_CTRL,         /* mmuv6 control */
     GDB_AUX_OTHER_REG_RTP0,             /* region 0 ptr  */
     GDB_AUX_OTHER_REG_RTP1,             /* region 1 ptr  */
-#endif
 
     GDB_AUX_OTHER_REG_LAST
 };
+
+#endif /* ARCv2 or ARCv3_64 */
 
 /* add auxiliary registers to set of supported registers for GDB */
 void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu);
