@@ -5,7 +5,7 @@
      notice and this notice are preserved.  -->
 
 <!DOCTYPE feature SYSTEM "gdb-target.dtd">
-<feature name="org.gnu.gdb.arc.aux-other">
+<feature name="org.gnu.gdb.arc.other">
   <flags id="timer_build_type" size="8">
     <field name="version" start="0"  end="7"/>
     <field name="t0"      start="8"  end="8"/>
@@ -136,39 +136,39 @@
     <field name="ASID"   start="48" end="63" type="code_ptr"/>
   </struct>
   <!-- build registers -->
-  <reg name="timer_build"   bitsize="64" regnum="40" type="timer_build_type"   group=""/>
-  <reg name="irq_build"     bitsize="64" regnum="41" type="irq_build_type"     group=""/>
-  <reg name="vecbase_build" bitsize="64" regnum="42" type="vecbase_build_type" group=""/>
-  <reg name="isa_config"    bitsize="64" regnum="43" type="isa_config_type"    group=""/>
+  <reg name="timer_build"   bitsize="64" regnum="36" type="timer_build_type"   group=""/>
+  <reg name="irq_build"     bitsize="64" regnum="37" type="irq_build_type"     group=""/>
+  <reg name="vecbase_build" bitsize="64" regnum="38" type="vecbase_build_type" group=""/>
+  <reg name="isa_config"    bitsize="64" regnum="39" type="isa_config_type"    group=""/>
   <!-- timer registers -->
-  <reg name="timer_count0" bitsize="64" regnum="44"                        group="general"/>
-  <reg name="timer_ctrl0"  bitsize="64" regnum="45" type="timer_ctrl_type" group="general"/>
-  <reg name="timer_limit0" bitsize="64" regnum="46"                        group="general"/>
-  <reg name="timer_count1" bitsize="64" regnum="47"                        group="general"/>
-  <reg name="timer_ctrl1"  bitsize="64" regnum="48" type="timer_ctrl_type" group="general"/>
-  <reg name="timer_limit1" bitsize="64" regnum="49"                        group="general"/>
+  <reg name="timer_count0" bitsize="64" regnum="40"                        group="general"/>
+  <reg name="timer_ctrl0"  bitsize="64" regnum="41" type="timer_ctrl_type" group="general"/>
+  <reg name="timer_limit0" bitsize="64" regnum="42"                        group="general"/>
+  <reg name="timer_count1" bitsize="64" regnum="43"                        group="general"/>
+  <reg name="timer_ctrl1"  bitsize="64" regnum="44" type="timer_ctrl_type" group="general"/>
+  <reg name="timer_limit1" bitsize="64" regnum="45"                        group="general"/>
   <!-- exception registers -->
-  <reg name="erstatus" bitsize="32" regnum="50" type="erstatus_type" group="general"/>
-  <reg name="erbta"    bitsize="64" regnum="51" type="code_ptr"      group="general"/>
-  <reg name="ecr"      bitsize="32" regnum="52" type="ecr_type"      group="general"/>
-  <reg name="eret"     bitsize="64" regnum="53" type="code_ptr"      group="general"/>
-  <reg name="efa"      bitsize="64" regnum="54" type="uint64"        group="general"/>
+  <reg name="erstatus" bitsize="32" regnum="46" type="erstatus_type" group="general"/>
+  <reg name="erbta"    bitsize="64" regnum="47" type="code_ptr"      group="general"/>
+  <reg name="ecr"      bitsize="32" regnum="48" type="ecr_type"      group="general"/>
+  <reg name="eret"     bitsize="64" regnum="49" type="code_ptr"      group="general"/>
+  <reg name="efa"      bitsize="64" regnum="50" type="uint64"        group="general"/>
   <!-- irq registers -->
-  <reg name="icause"               bitsize="64" regnum="55"  type="uint8"           group="general"/>
-  <reg name="aux_irq_ctrl"         bitsize="64" regnum="56"  type="irq_ctrl_type"   group="general"/>
-  <reg name="aux_irq_act"          bitsize="64" regnum="57"  type="irq_act_type"    group="general"/>
-  <reg name="irq_priority_pending" bitsize="64" regnum="58"  type="uint16"          group="general"/>
-  <reg name="aux_irq_hint"         bitsize="64" regnum="59"  type="uint8"           group="general"/>
-  <reg name="irq_select"           bitsize="64" regnum="60"  type="uint8"           group="general"/>
-  <reg name="irq_enable"           bitsize="64" regnum="61"  type="bool"            group="general"/>
-  <reg name="irq_trigger"          bitsize="64" regnum="62"  type="bool"            group="general"/>
-  <reg name="irq_status"           bitsize="64" regnum="63"  type="irq_status_type" group="general"/>
-  <reg name="irq_pulse_cancel"     bitsize="64" regnum="64"  type="bool"            group="general"/>
-  <reg name="irq_priority"         bitsize="64" regnum="65"  type="uint8"           group="general"/>
+  <reg name="icause"               bitsize="64" regnum="51"  type="uint8"           group="general"/>
+  <reg name="aux_irq_ctrl"         bitsize="64" regnum="52"  type="irq_ctrl_type"   group="general"/>
+  <reg name="aux_irq_act"          bitsize="64" regnum="53"  type="irq_act_type"    group="general"/>
+  <reg name="irq_priority_pending" bitsize="64" regnum="54"  type="uint16"          group="general"/>
+  <reg name="aux_irq_hint"         bitsize="64" regnum="55"  type="uint8"           group="general"/>
+  <reg name="irq_select"           bitsize="64" regnum="56"  type="uint8"           group="general"/>
+  <reg name="irq_enable"           bitsize="64" regnum="57"  type="bool"            group="general"/>
+  <reg name="irq_trigger"          bitsize="64" regnum="58"  type="bool"            group="general"/>
+  <reg name="irq_status"           bitsize="64" regnum="59"  type="irq_status_type" group="general"/>
+  <reg name="irq_pulse_cancel"     bitsize="64" regnum="60"  type="bool"            group="general"/>
+  <reg name="irq_priority"         bitsize="64" regnum="61"  type="uint8"           group="general"/>
   <!-- miscellaneous -->
-  <reg name="bta" bitsize="64" regnum="66" type="code_ptr" group="general"/>
+  <reg name="bta" bitsize="64" regnum="62" type="code_ptr" group="general"/>
   <!-- mmuv6 -->
-  <reg name="mmu_ctrl" bitsize="64" regnum="67" type="mmu_ctrl_type" group="general"/>
-  <reg name="mmu_rtp0" bitsize="64" regnum="68" type="mmu_rtp_type"  group="general"/>
-  <reg name="mmu_rtp1" bitsize="64" regnum="69" type="mmu_rtp_type"  group="general"/>
+  <reg name="mmu_ctrl" bitsize="64" regnum="63" type="mmu_ctrl_type" group="general"/>
+  <reg name="mmu_rtp0" bitsize="64" regnum="64" type="mmu_rtp_type"  group="general"/>
+  <reg name="mmu_rtp1" bitsize="64" regnum="65" type="mmu_rtp_type"  group="general"/>
 </feature>
