@@ -128,32 +128,6 @@ arc_aux_reg_struct_for_address(int address, int isa_mask)
     return NULL;
 }
 
-const char *get_auxreg(const struct arc_opcode *opcode,
-                       int value,
-                       unsigned isa_mask)
-{
-    unsigned int i;
-    const struct arc_aux_reg_detail *auxr = &arc_aux_regs_detail[0];
-
-    if (opcode->insn_class != AUXREG) {
-        return NULL;
-    }
-
-    for (i = 0; i < ARRAY_SIZE(arc_aux_regs); i++, auxr++) {
-        if (!(auxr->cpu & isa_mask)) {
-            continue;
-        }
-
-        if (auxr->subclass != NONE) {
-            return NULL;
-        }
-
-        if (auxr->address == value) {
-            return auxr->name;
-        }
-    }
-    return NULL;
-}
 
 target_ulong __not_implemented_getter(
             const struct arc_aux_reg_detail *aux_reg_detail ATTRIBUTE_UNUSED,

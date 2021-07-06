@@ -253,11 +253,24 @@ static bool read_and_decode_context(DisasContext *ctx,
         g_assert_not_reached();
     }
 
+
+    //qemu_log_mask(LOG_UNIMP, "-- 0x%016lx --\n", insn);
+    //qemu_log_mask(LOG_UNIMP, "Tree Decoded format at 0x" TARGET_FMT_lx " (0x" TARGET_FMT_lx ") - %d - %s\n",
+    //              ctx->cpc, insn, opcode_id, opcode_name_str[opcode_id]);
+
     /*
      * Now, we have read the entire opcode, decode it and place the
      * relevant info into opcode and ctx->insn.
      */
+
+
+    //opcode_id = OPCODE_INVALID;
     *opcode_p = arc_find_format(&ctx->insn, insn, length, cpu->family);
+
+    //if(opcode_id != OPCODE_INVALID)
+    //  qemu_log_mask(LOG_UNIMP, "Linear decoder format at 0x" TARGET_FMT_lx " (0x%08lx) - %d - %s\n",
+    //                ctx->cpc, insn, opcode_id, opcode_name_str[opcode_id]);
+
 
     if (*opcode_p == NULL) {
         return false;
@@ -327,16 +340,20 @@ const char number_of_ops_semfunc[MAP_LAST + 1] = {
 
 static enum arc_opcode_map arc_map_opcode(const struct arc_opcode *opcode)
 {
+    switch(opcode->mnemonic) {
 #define SEMANTIC_FUNCTION(...)
 #define CONSTANT(...)
-#define MAPPING(MNEMONIC, NAME, ...)         \
-    if (strcmp(opcode->name, #MNEMONIC) == 0) \
-        return MAP_##MNEMONIC##_##NAME;
+#define MAPPING(INSN_NAME, NAME, ...)         \
+    case MNEMONIC_##INSN_NAME: \
+        return MAP_##INSN_NAME##_##NAME;
 #include "target/arc/semfunc_mapping.def"
 #include "target/arc/extra_mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
+    default:
+        assert("This should not happen" == 0);
+    }
 
     return MAP_NONE;
 }
