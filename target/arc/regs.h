@@ -22,7 +22,7 @@
 #define ARC_REGS_H
 
 #include "exec/cpu-defs.h"
-#include "target/arc/decoder.h"
+#include "decoder.h"
 
 /*
  * BCRs (Build configuration registers) are very special AUX regs
@@ -113,10 +113,6 @@ extern const char *arc_aux_reg_name[ARC_AUX_REGS_DETAIL_LAST];
 void arc_aux_regs_init(void);
 int arc_aux_reg_address_for(enum arc_aux_reg_enum, int);
 struct arc_aux_reg_detail *arc_aux_reg_struct_for_address(int, int);
-
-const char *get_auxreg(const struct arc_opcode *opcode,
-                       int value,
-                       unsigned isa_mask);
 
 target_ulong __not_implemented_getter(const struct arc_aux_reg_detail *,
                                       void *);
