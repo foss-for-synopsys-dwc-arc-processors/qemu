@@ -1,26 +1,34 @@
-/* Decoder for the ARC.
-   Copyright (C) 2017 Free Software Foundation, Inc.
+/*
+ * Decoder for the ARC.
+ * Copyright 2020 Free Software Foundation, Inc.
+ *
+ * QEMU ARCv2 Decoder.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2, or (at your option) any later
+ * version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see <http://www.gnu.org/licenses/>.
+ */
 
-   You should have received a copy of the GNU General Public License
-   along with GAS or GDB; see the file COPYING3.  If not, write to
-   the Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
-   MA 02110-1301, USA.  */
-
-#ifndef ARC_DECODER_V3_H
-#define ARC_DECODER_V3_H
+#ifndef ARC_DECODER_V2_H
+#define ARC_DECODER_V2_H
 
 #include "arc-common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef MAX_INSN_ARGS
-#define MAX_INSN_ARGS	     16
+#define MAX_INSN_ARGS     16
 #endif
 
 #ifndef MAX_INSN_FLGS
-#define MAX_INSN_FLGS	     10
+#define MAX_INSN_FLGS     10
 #endif
 
 /* Mnemonic enum */
@@ -31,7 +39,7 @@ extern "C" {
   MNEMONIC_##NAME,
 enum insn_mnemonic {
     MNEMONIC_INVALID = -1,
-    #include "opcodes-v3.def"
+    #include "target/arc/opcodes.def"
     MNEMONIC_SIZE
 };
 #undef OPCODE
@@ -47,7 +55,7 @@ enum insn_mnemonic {
 #define MNEMONIC(...)
 enum opcode {
     OPCODE_INVALID = -1,
-    #include "opcodes-v3.def"
+    #include "opcodes.def"
     OPCODE_SIZE
 };
 #undef OPCODE
@@ -65,7 +73,7 @@ extern const char *opcode_name_str[OPCODE_SIZE];
 #define MNEMONIC(...)
 enum operands {
     OPERANDS_LIST_INVALID = -1,
-    #include "opcodes-v3.def"
+    #include "opcodes.def"
     OPERANDS_LIST_SIZE
 };
 #undef OPCODE
@@ -81,7 +89,7 @@ enum operands {
 #define MNEMONIC(...)
 enum flags {
     FLAGS_INVALID = -1,
-    #include "opcodes-v3.def"
+    #include "opcodes.def"
     FLAGS_SIZE
 };
 #undef OPCODE
@@ -289,7 +297,8 @@ const struct arc_opcode *arc_find_format(insn_t *insnd,
 #define ARC_OPERAND_IS_FAKE(op)                     \
     ((operand->flags & ARC_OPERAND_FAKE)            \
      && !(operand->flags & ARC_OPERAND_BRAKET))
-/* Flags class.  */
+
+/* Flags class. */
 typedef enum {
     F_CLASS_NONE = 0,
 
@@ -299,97 +308,103 @@ typedef enum {
      */
     F_CLASS_OPTIONAL = (1 << 0),
 
-  /* Exactly one from from the set of flags must appear in the
-     instruction.  */
-  F_CLASS_REQUIRED = (1 << 1),
+    /*
+     * Exactly one from from the set of flags must appear in the
+     * instruction.
+     */
+    F_CLASS_REQUIRED = (1 << 1),
 
-  /* The conditional code can be extended over the standard variants
-     via .extCondCode pseudo-op.  */
-  F_CLASS_EXTEND = (1 << 2),
+    /*
+     * The conditional code can be extended over the standard variants
+     * via .extCondCode pseudo-op.
+     */
+    F_CLASS_EXTEND = (1 << 2),
 
-  /* Condition code flag.  */
-  F_CLASS_COND = (1 << 3),
+    /* Condition code flag. */
+    F_CLASS_COND = (1 << 3),
 
-  /* Write back mode.  */
-  F_CLASS_WB = (1 << 4),
+    /* Write back mode. */
+    F_CLASS_WB = (1 << 4),
 
-  /* Data size.  */
-  F_CLASS_ZZ = (1 << 5),
+    /* Data size. */
+    F_CLASS_ZZ = (1 << 5),
 
-  /* Implicit flag.  */
-  F_CLASS_IMPLICIT = (1 << 6),
+    /* Implicit flag. */
+    F_CLASS_IMPLICIT = (1 << 6),
 
-  F_CLASS_F = (1 << 7),
+    F_CLASS_F = (1 << 7),
 
-  F_CLASS_DI = (1 << 8),
+    F_CLASS_DI = (1 << 8),
 
-  F_CLASS_X = (1 << 9),
-  F_CLASS_D = (1 << 10),
+    F_CLASS_X = (1 << 9),
+    F_CLASS_D = (1 << 10),
 
 } flag_class_t;
 
-/* The operands table is an array of struct arc_operand.  */
+
+/* The operands table is an array of struct arc_operand. */
 struct arc_operand {
-  /* The number of bits in the operand.  */
+    /* The number of bits in the operand. */
     unsigned int bits;
 
-  /* How far the operand is left shifted in the instruction.  */
+    /* How far the operand is left shifted in the instruction. */
     unsigned int shift;
 
-  /* One bit syntax flags.  */
+    /* One bit syntax flags. */
     unsigned int flags;
 
-  /* Extraction function.  This is used by the disassembler.  To
-     extract this operand type from an instruction, check this field.
-
-     If it is NULL, compute
-	 op = ((i) >> o->shift) & ((1 << o->bits) - 1);
-	 if ((o->flags & ARC_OPERAND_SIGNED) != 0
-	     && (op & (1 << (o->bits - 1))) != 0)
-	   op -= 1 << o->bits;
-     (i is the instruction, o is a pointer to this structure, and op
-     is the result; this assumes twos complement arithmetic).
-
-     If this field is not NULL, then simply call it with the
-     instruction value.	 It will return the value of the operand.  If
-     the INVALID argument is not NULL, *INVALID will be set to
-     TRUE if this operand type can not actually be extracted from
-     this operand (i.e., the instruction does not match).  If the
-     operand is valid, *INVALID will not be changed.  */
+    /*
+     * Extraction function. This is used by the disassembler. To
+     * extract this operand type from an instruction, check this
+     * field.
+     *
+     * If it is NULL, compute
+     * op = ((i) >> o->shift) & ((1 << o->bits) - 1);
+     * if ((o->flags & ARC_OPERAND_SIGNED) != 0
+     * && (op & (1 << (o->bits - 1))) != 0)
+     * op -= 1 << o->bits;
+     * (i is the instruction, o is a pointer to this structure, and op
+     * is the result; this assumes twos complement arithmetic).
+     *
+     * If this field is not NULL, then simply call it with the
+     * instruction value. It will return the value of the operand.
+     * If the INVALID argument is not NULL, *INVALID will be set to
+     * TRUE if this operand type can not actually be extracted from
+     * this operand (i.e., the instruction does not match). If the
+     * operand is valid, *INVALID will not be changed.
+     */
     long long int (*extract) (unsigned long long instruction,
                               bool *invalid);
 };
 
 extern const struct arc_operand arc_operands[];
 
-/* The flags structure.  */
-struct arc_flag_operand
-{
-  /* The flag name.  */
-  const char *name;
+/* The flags structure. */
+struct arc_flag_operand {
+    /* The flag name. */
+    const char *name;
 
-  /* The flag code.  */
-  unsigned code;
+    /* The flag code. */
+    unsigned code;
 
-  /* The number of bits in the operand.  */
-  unsigned int bits;
+    /* The number of bits in the operand. */
+    unsigned int bits;
 
-  /* How far the operand is left shifted in the instruction.  */
-  unsigned int shift;
+    /* How far the operand is left shifted in the instruction. */
+    unsigned int shift;
 
-  /* Available for disassembler.  */
-  unsigned char favail;
+    /* Available for disassembler. */
+    unsigned char favail;
 };
 
 extern const struct arc_flag_operand arc_flag_operands[];
 
-/* The flag's class structure.  */
-struct arc_flag_class
-{
-    /* Flag class.  */
+/* The flag's class structure. */
+struct arc_flag_class {
+    /* Flag class. */
     flag_class_t flag_class;
 
-    /* List of valid flags (codes).  */
+    /* List of valid flags (codes). */
     unsigned flags[256];
 
     /*
@@ -401,21 +416,17 @@ struct arc_flag_class
 
 extern const struct arc_flag_class arc_flag_classes[];
 
-/* Structure for special cases.  */
-struct arc_flag_special
-{
-  /* Name of special case instruction.  */
-  const char *name;
+/* Structure for special cases. */
+struct arc_flag_special {
+    /* Name of special case instruction. */
+    const char *name;
 
-  /* List of flags applicable for special case instruction.  */
-  unsigned flags[32];
+    /* List of flags applicable for special case instruction. */
+    unsigned flags[32];
 };
 
 extern const struct arc_flag_special arc_flag_special_cases[];
 extern const unsigned arc_num_flag_special;
 
-#ifdef __cplusplus
-}
-#endif
 
-#endif /* ARC_DECODER_V3_H */
+#endif

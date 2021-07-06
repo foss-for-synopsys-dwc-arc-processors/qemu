@@ -1,7 +1,7 @@
 dir = meson.current_source_dir()
 
 gen32 = [
-    dir + '/decoder.c',
+    dir + '/decoder-v2.c',
     dir + '/semfunc.c',
     dir + '/mmu.c',
 ]
