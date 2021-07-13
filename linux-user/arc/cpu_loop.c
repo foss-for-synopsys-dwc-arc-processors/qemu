@@ -75,8 +75,15 @@ void cpu_loop(CPUARCState *env)
             env->pc = env->param;
             CPU_PCL(env) = env->pc & (~1);  
             break;
+#ifdef TARGET_ARCV2
         case EXCP_TLB_MISS_I:
         case EXCP_TLB_MISS_D:
+#elif TARGET_ARCV3
+        case EXCP_IMMU_FAULT:
+        case EXCP_DMMU_FAULT:
+#else
+        #error "TARGET macro not defined!"
+#endif
             signum = TARGET_SIGSEGV;
             sigcode = TARGET_SEGV_MAPERR;
             sigaddr = env->efa;

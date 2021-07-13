@@ -270,6 +270,7 @@ int arc_cpu_memory_rw_debug(CPUState *cs, vaddr addr, uint8_t *buf,
     return cpu_memory_rw_debug(cs, addr, buf, len, is_write);
 }
 
+#ifndef CONFIG_USER_ONLY
 hwaddr arc_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
 {
     ARCCPU *cpu = ARC_CPU(cs);
@@ -277,6 +278,7 @@ hwaddr arc_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
 
     return arc_mmu_debug_translate(env, addr);
 }
+#endif /* CONFIG_USER_ONLY */
 
 void helper_debug(CPUARCState *env)
 {
