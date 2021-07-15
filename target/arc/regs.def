@@ -433,6 +433,3 @@ AUX_REG (mmu_tlb_data0, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 AUX_REG (mmu_tlb_data1, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 AUX_REG (mmu_fault_status, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 AUX_REG (mmu_mem_attr, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
-
-AUX_REG (hw_pf_build, NULL, NULL)
-AUX_REG (hw_pf_ctrl, NULL, NULL)
