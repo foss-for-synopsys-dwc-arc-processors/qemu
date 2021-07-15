@@ -250,7 +250,7 @@ typedef struct CPUARCState {
 
     /* Fields required by exception handling. */
     uint32_t causecode;
-    uint32_t param;
+    uint64_t param;
 
 #if defined(TARGET_ARCV2)
     struct arc_mmu mmu;       /* mmu.h */
