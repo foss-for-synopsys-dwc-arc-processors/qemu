@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2021 Free Software Foundation, Inc.
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE feature SYSTEM "gdb-target.dtd">
+<feature name="org.gnu.gdb.arc.fpu">
+  <vector id="v4b" type="uint8" count="4"/>
+  <vector id="v8b" type="uint8" count="8"/>
+  <union id="single_precision">
+    <field name="f" type="ieee_single"/>
+    <field name="i" type="uint32"/>
+    <field name="b" type="v4b"/>
+  </union>
+  <union id="double_precision">
+    <field name="f" type="ieee_double"/>
+    <field name="i" type="uint64"/>
+    <field name="b" type="v8b"/>
+  </union>
+  <union id="arc_fp">
+    <field name="single" type="single_precision"/>
+    <field name="double" type="double_precision"/>
+  </union>
+  <reg name="f0"  bitsize="64" type="arc_fp" regnum="66" />
+  <reg name="f1"  bitsize="64" type="arc_fp"/>
+  <reg name="f2"  bitsize="64" type="arc_fp"/>
+  <reg name="f3"  bitsize="64" type="arc_fp"/>
+  <reg name="f4"  bitsize="64" type="arc_fp"/>
+  <reg name="f5"  bitsize="64" type="arc_fp"/>
+  <reg name="f6"  bitsize="64" type="arc_fp"/>
+  <reg name="f7"  bitsize="64" type="arc_fp"/>
+  <reg name="f8"  bitsize="64" type="arc_fp"/>
+  <reg name="f9"  bitsize="64" type="arc_fp"/>
+  <reg name="f10" bitsize="64" type="arc_fp"/>
+  <reg name="f11" bitsize="64" type="arc_fp"/>
+  <reg name="f12" bitsize="64" type="arc_fp"/>
+  <reg name="f13" bitsize="64" type="arc_fp"/>
+  <reg name="f14" bitsize="64" type="arc_fp"/>
+  <reg name="f15" bitsize="64" type="arc_fp"/>
+  <reg name="f16" bitsize="64" type="arc_fp"/>
+  <reg name="f17" bitsize="64" type="arc_fp"/>
+  <reg name="f18" bitsize="64" type="arc_fp"/>
+  <reg name="f19" bitsize="64" type="arc_fp"/>
+  <reg name="f20" bitsize="64" type="arc_fp"/>
+  <reg name="f21" bitsize="64" type="arc_fp"/>
+  <reg name="f22" bitsize="64" type="arc_fp"/>
+  <reg name="f23" bitsize="64" type="arc_fp"/>
+  <reg name="f24" bitsize="64" type="arc_fp"/>
+  <reg name="f25" bitsize="64" type="arc_fp"/>
+  <reg name="f26" bitsize="64" type="arc_fp"/>
+  <reg name="f27" bitsize="64" type="arc_fp"/>
+  <reg name="f28" bitsize="64" type="arc_fp"/>
+  <reg name="f29" bitsize="64" type="arc_fp"/>
+  <reg name="f30" bitsize="64" type="arc_fp"/>
+  <reg name="f31" bitsize="64" type="arc_fp"/>
+  <enum id="fp_build_version_enum" size="1">
+    <evalue name="&apos;ARC_V3&apos;" value="4"/>
+  </enum>
+  <enum id="fp_build_fp_regs_enum" size="1">
+    <evalue name="&apos;8&apos;"    value="3"/>
+    <evalue name="&apos;16&apos;"   value="4"/>
+    <evalue name="&apos;32&apos;"   value="5"/>
+  </enum>
+  <flags id="fp_build_type" size="4">
+    <field name="version" start="0"  end="7" type="fp_build_version_enum"/>
+    <field name="hp"      start="8"  end="8"/>
+    <field name="sp"      start="9"  end="9"/>
+    <field name="dp"      start="10" end="10"/>
+    <field name="ds"      start="11" end="11"/>
+    <field name="vf"      start="12" end="12"/>
+    <field name="wv"      start="13" end="13"/>
+    <field name="fp_regs" start="16" end="18" type="fp_build_fp_regs_enum"/>
+    <field name="dd"      start="24" end="24"/>
+  </flags>
+  <enum id="fp_ctrl_round_enum" size="1">
+    <evalue name="&apos;ZERO&apos;"              value="0"/>
+    <evalue name="&apos;NEAREST_EVEN&apos;"      value="1"/>
+    <evalue name="&apos;POSITIVE_INFINITY&apos;" value="2"/>
+    <evalue name="&apos;NEGATIVE_INFINITY&apos;" value="3"/>
+  </enum>
+  <flags id="fp_ctrl_type" size="4">
+    <field name="ive" start="0"  end="0"/>
+    <field name="dze" start="1"  end="1"/>
+    <field name="rm"  start="8"  end="9" type="fp_ctrl_round_enum"/>
+    <field name="de"  start="16" end="16"/>
+    <field name="eo"  start="17" end="17"/>
+  </flags>
+  <flags id="fp_status_type" size="4">
+    <field name="iv"  start="0"  end="0"/>
+    <field name="dz"  start="1"  end="1"/>
+    <field name="of"  start="2"  end="2"/>
+    <field name="uf"  start="3"  end="3"/>
+    <field name="ix"  start="4"  end="4"/>
+    <field name="cal" start="7"  end="7"/>
+    <field name="civ" start="8"  end="8"/>
+    <field name="cdz" start="9"  end="9"/>
+    <field name="cof" start="10" end="10"/>
+    <field name="cuf" start="11" end="11"/>
+    <field name="cix" start="12" end="12"/>
+    <field name="vdz" start="13" end="20"/>
+    <field name="fwe" start="31" end="31"/>
+  </flags>
+  <reg name="fp_build"  bitsize="32" type="fp_build_type"/>
+  <reg name="fp_ctrl"   bitsize="32" type="fp_ctrl_type"/>
+  <reg name="fp_status" bitsize="32" type="fp_status_type"/>
+</feature>
