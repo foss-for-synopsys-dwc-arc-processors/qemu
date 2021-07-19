@@ -404,6 +404,7 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
 #define GDB_GET_REG            gdb_get_reg64
 #define GDB_TARGET_MINIMAL_XML "arc-v3_64-aux.xml"
 #define GDB_TARGET_AUX_XML     "arc-v3_64-other.xml"
+#define GDB_TARGET_FPU_XML     "arc-v3_64-fpu.xml"
 
 int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
 {
@@ -675,6 +676,62 @@ arc_aux_other_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
     return sizeof(regval);
 }
 
+static int
+arc_gdb_get_fpu(CPUARCState *env, GByteArray *mem_buf, int regnum)
+{
+    ARCCPU *cpu = env_archcpu(env);
+    switch (regnum) {
+    case 0 ... 31:
+        return gdb_get_reg64(mem_buf, env->fpr[regnum]);
+    case GDB_FPU_REG_BUILD: {
+        /*
+         * TODO FPU: when fpu module is implemented, this logic should
+         * move there and here we should just call the fpu_getter.
+         */
+        uint32_t reg_bld = 0;
+        if (cpu->cfg.has_fpu) {
+            reg_bld = (4 << 0)  |   /* version: ARCv3 floating point */
+                      (1 << 8)  |   /* hp: half precision */
+                      (1 << 9)  |   /* sp: single precision */
+                      (1 << 10) |   /* dp: double precision */
+                      (1 << 11) |   /* ds: divide and square root */
+                      (1 << 12) |   /* vf: vector floating point */
+                      (1 << 13) |   /* wv: wide vector */
+                      (5 << 16) |   /* fp_regs: 32 */
+                      (0 << 24);    /* dd: no demand driven floating point */
+        }
+        return gdb_get_reg32(mem_buf, reg_bld);
+    }
+    case GDB_FPU_REG_CTRL:
+        return gdb_get_reg32(mem_buf, env->fp_ctrl);
+    case GDB_FPU_REG_STATUS:
+        return gdb_get_reg32(mem_buf, env->fp_status);
+    default:
+        return 0;
+    }
+}
+
+static int
+arc_gdb_set_fpu(CPUARCState *env, uint8_t *mem_buf, int regnum)
+{
+    switch (regnum) {
+    case 0 ... 31:
+        env->fpr[regnum] = ldq_p(mem_buf);
+        return sizeof(uint64_t);
+    case GDB_FPU_REG_BUILD:
+        /* build register cannot be changed. */
+        return 0;
+    case GDB_FPU_REG_CTRL:
+        env->fp_ctrl = ldl_p(mem_buf);
+        return sizeof(uint32_t);
+    case GDB_FPU_REG_STATUS:
+        env->fp_status = ldl_p(mem_buf);
+        return sizeof(uint32_t);
+    default:
+        return 0;
+    }
+}
+
 /* Neither ARCv2 nor ARCv3 */
 #else
     #error No target is selected.
@@ -697,6 +754,13 @@ void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
                              arc_aux_other_gdb_set_reg,
                              GDB_AUX_OTHER_REG_LAST,
                              GDB_TARGET_AUX_XML,
+                             0);
+
+    gdb_register_coprocessor(cs,
+                             arc_gdb_get_fpu,
+                             arc_gdb_set_fpu,
+                             GDB_FPU_REG_LAST,
+                             GDB_TARGET_FPU_XML,
                              0);
 }
 
