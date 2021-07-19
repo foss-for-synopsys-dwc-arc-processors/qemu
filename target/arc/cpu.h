@@ -219,6 +219,11 @@ typedef struct {
 
 typedef struct CPUARCState {
     target_ulong        r[64];
+    uint64_t            fpr[32];      /* assume both F and D extensions. */
+
+    /* floating point auxiliary registers. */
+    uint32_t fp_ctrl;
+    uint32_t fp_status;
 
     ARCStatus stat, stat_l1, stat_er;
 

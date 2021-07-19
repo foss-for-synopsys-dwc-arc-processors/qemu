@@ -242,6 +242,45 @@ enum gdb_aux_other_regs {
     GDB_AUX_OTHER_REG_LAST
 };
 
+enum gdb_fpu_regs {
+    GDB_FPU_REG_F0 = 0,
+    GDB_FPU_REG_F1,
+    GDB_FPU_REG_F2,
+    GDB_FPU_REG_F3,
+    GDB_FPU_REG_F4,
+    GDB_FPU_REG_F5,
+    GDB_FPU_REG_F6,
+    GDB_FPU_REG_F7,
+    GDB_FPU_REG_F8,
+    GDB_FPU_REG_F9,
+    GDB_FPU_REG_F10,
+    GDB_FPU_REG_F11,
+    GDB_FPU_REG_F12,
+    GDB_FPU_REG_F13,
+    GDB_FPU_REG_F14,
+    GDB_FPU_REG_F15,
+    GDB_FPU_REG_F16,
+    GDB_FPU_REG_F17,
+    GDB_FPU_REG_F18,
+    GDB_FPU_REG_F19,
+    GDB_FPU_REG_F20,
+    GDB_FPU_REG_F21,
+    GDB_FPU_REG_F22,
+    GDB_FPU_REG_F23,
+    GDB_FPU_REG_F24,
+    GDB_FPU_REG_F25,
+    GDB_FPU_REG_F26,
+    GDB_FPU_REG_F27,
+    GDB_FPU_REG_F28,
+    GDB_FPU_REG_F29,
+    GDB_FPU_REG_F30,
+    GDB_FPU_REG_F31,
+    GDB_FPU_REG_BUILD,
+    GDB_FPU_REG_CTRL,
+    GDB_FPU_REG_STATUS,
+    GDB_FPU_REG_LAST
+};
+
 #endif /* ARCv2 or ARCv3_64 */
 
 /* add auxiliary registers to set of supported registers for GDB */
