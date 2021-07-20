@@ -268,7 +268,7 @@ typedef struct CPUARCState {
 
     /* TODO: This one in particular. */
     /* Fields required by exception handling. */
-    uint32_t causecode;
+    target_ulong causecode;
     target_ulong param;
 
 #if defined(TARGET_ARCV2)

@@ -44,12 +44,14 @@
 typedef struct DisasContext {
     DisasContextBase base;
 
-    uint64_t cpc;   /*  current pc      */
-    uint64_t npc;   /*  next pc         */
-    uint64_t dpc;   /*  next next pc    */
-    uint64_t pcl;
-    uint64_t lpe;
-    uint64_t lps;
+    target_ulong cpc;   /*  current pc      */
+    target_ulong npc;   /*  next pc         */
+    target_ulong dpc;   /*  next next pc    */
+    target_ulong pcl;
+#if defined(TARGET_ARCV2)
+    target_ulong lpe;
+    target_ulong lps;
+#endif
 
     unsigned ds;    /*  we are within ds*/
 
@@ -104,8 +106,10 @@ extern TCGv     cpu_ecr;
 extern TCGv     cpu_efa;
 
 extern TCGv     cpu_pc;
+#if defined(TARGET_ARCV2)
 extern TCGv     cpu_lps;
 extern TCGv     cpu_lpe;
+#endif
 
 extern TCGv     cpu_npc;
 
@@ -135,8 +139,8 @@ void decode_opc(CPUARCState *env, DisasContext *ctx);
  * causecode:   ECR's cause code filed
  * param:       ECR's parameter field
  */
-void arc_gen_excp(const DisasCtxt *ctx, uint32_t index,
-                  uint32_t causecode, uint32_t param);
+void arc_gen_excp(const DisasCtxt *ctx, target_ulong index,
+                  target_ulong causecode, target_ulong param);
 
 #endif
 
