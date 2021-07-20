@@ -140,8 +140,10 @@ void arc_translate_init(void)
         NEW_ARC_REG(cpu_erbta, erbta)
         NEW_ARC_REG(cpu_efa, efa)
         NEW_ARC_REG(cpu_bta, bta)
+#if defined(TARGET_ARCV2)
         NEW_ARC_REG(cpu_lps, lps)
         NEW_ARC_REG(cpu_lpe, lpe)
+#endif
         NEW_ARC_REG(cpu_pc , pc)
         NEW_ARC_REG(cpu_npc, npc)
 
@@ -215,7 +217,7 @@ static bool arc_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,
 static int arc_gen_INVALID(const DisasContext *ctx)
 {
     qemu_log_mask(LOG_UNIMP,
-                  "invalid inst @:%08x\n", ctx->cpc);
+                  "invalid inst @:" TARGET_FMT_lx "\n", ctx->cpc);
     arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
     return DISAS_NORETURN;
 }
@@ -412,7 +414,7 @@ static void arc_debug_opcode(const struct arc_opcode *opcode,
                              const char *msg)
 {
     qemu_log_mask(LOG_UNIMP,
-                  "%s for %s at pc=0x%08x\n",
+                  "%s for %s at pc=0x" TARGET_FMT_lx "\n",
                   msg, opcode->name, ctx->cpc);
 }
 
@@ -455,9 +457,9 @@ static TCGv arc_decode_operand(const struct arc_opcode *opcode,
 
 /* See translate.h. */
 void arc_gen_excp(const DisasCtxt *ctx,
-                  uint32_t index,
-                  uint32_t causecode,
-                  uint32_t param)
+                  target_ulong index,
+                  target_ulong causecode,
+                  target_ulong param)
 {
     TCGv tcg_index = tcg_const_tl(index);
     TCGv tcg_cause = tcg_const_tl(causecode);
