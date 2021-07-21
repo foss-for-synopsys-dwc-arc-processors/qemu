@@ -572,6 +572,7 @@ uint32_t arc_mmu_page_address_for(uint32_t vaddr)
     return ret;
 }
 
+#ifndef CONFIG_USER_ONLY
 static int
 arc_mmu_get_prot_for_index(uint32_t index, CPUARCState *env)
 {
@@ -601,6 +602,7 @@ arc_mmu_get_prot_for_index(uint32_t index, CPUARCState *env)
 
     return ret;
 }
+#endif
 
 static void QEMU_NORETURN raise_mem_exception(
         CPUState *cs, target_ulong addr, uintptr_t host_pc,
@@ -621,6 +623,7 @@ static void QEMU_NORETURN raise_mem_exception(
     cpu_loop_exit(cs);
 }
 
+#ifndef CONFIG_USER_ONLY
 /* MMU range */
 static const uint32_t MMU_VA_START = 0x00000000;  /* inclusive */
 static const uint32_t MMU_VA_END = 0x80000000;    /* exclusive */
@@ -702,6 +705,7 @@ static int decide_action(const CPUARCState *env,
 
     return table[env->mmu.enabled][env->mpu.enabled][is_mmu_range][is_user];
 }
+#endif
 
 void arc_mmu_init(CPUARCState *env)
 {
