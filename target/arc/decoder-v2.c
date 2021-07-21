@@ -1068,7 +1068,7 @@ const char *opcode_name_str[OPCODE_SIZE] = {
 #define FLAGS_LIST(NAME, COUNT, ...) \
   { __VA_ARGS__ },
 #define MNEMONIC(...)
-static unsigned char flags[FLAGS_SIZE+1][MAX_INSN_FLGS] = {
+static unsigned char flags_arc[FLAGS_SIZE+1][MAX_INSN_FLGS] = {
 #include "target/arc/opcodes.def"
     { 0 }
 };
@@ -1100,7 +1100,7 @@ const char *opcode_enum_strs[OPCODE_SIZE] = {
   .insn_class = CLASS, \
   .subclass = SUBCLASS, \
   .operands = operands[OPERANDS_##OPS], \
-  .flags = flags[FLAGS_##FLGS] \
+  .flags = flags_arc[FLAGS_##FLGS] \
 },
 #define OPERANDS_LIST(...)
 #define FLAGS_LIST(...)

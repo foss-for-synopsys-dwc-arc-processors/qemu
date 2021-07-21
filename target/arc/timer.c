@@ -59,7 +59,9 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
 {
     uint32_t delta;
     uint32_t t_count = T_COUNT(timer);
+#ifndef CONFIG_USER_ONLY
     uint64_t now = cycles_get_count(env);
+#endif
 
     delta = env->timer[timer].T_Limit - t_count;
 
@@ -86,8 +88,8 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
                   t_count, delta, env->timer[timer].T_Cntrl, FREQ_HZ);
 }
 
+#ifndef CONFIG_USER_ONLY
 /* Expire the timer function. Rise an interrupt if required. */
-
 static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
 {
     assert(timer == 1 || timer == 0);
@@ -112,6 +114,7 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
         qemu_irq_raise(env->irq[TIMER0_IRQ + (timer & 0x01)]);
     }
 }
+#endif
 
 /*
  * This callback should occur when the counter is exactly equal to the
@@ -119,6 +122,7 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
  * retriggering the callback before any virtual time has passed.
  */
 
+#ifndef CONFIG_USER_ONLY
 static void arc_timer0_cb(void *opaque)
 {
     CPUARCState *env = (CPUARCState *) opaque;
@@ -143,6 +147,7 @@ static void arc_timer1_cb(void *opaque)
     cpu_arc_timer_expire(env, 1);
     cpu_arc_timer_update(env, 1);
 }
+#endif
 
 /* RTC counter update. */
 static void cpu_rtc_count_update(CPUARCState *env)
@@ -166,11 +171,13 @@ static void cpu_rtc_count_update(CPUARCState *env)
     qemu_log_mask(LOG_UNIMP, "[RTC] RTC count-regs update\n");
 }
 
+#ifndef CONFIG_USER_ONLY
 /* Update the next timeout time as difference between Count and Limit */
 static void cpu_rtc_update(CPUARCState *env)
 {
     uint64_t wait = 0;
-    uint64_t now, next, period;
+    uint64_t now, period;
+    uint64_t next;
 
     assert(env->cpu_rtc);
     now = cycles_get_count(env);
@@ -190,12 +197,12 @@ static void cpu_rtc_update(CPUARCState *env)
     }
 
     next = now + (uint64_t) wait * period;
-#ifndef CONFIG_USER_ONLY
     timer_mod(env->cpu_rtc, next);
-#endif
     qemu_log_mask(LOG_UNIMP, "[RTC] RTC update\n");
 }
+#endif
 
+#ifndef CONFIG_USER_ONLY
 /* RTC call back routine. */
 static void arc_rtc_cb(void *opaque)
 {
@@ -212,6 +219,7 @@ static void arc_rtc_cb(void *opaque)
     env->last_clk_rtc = cycles_get_count(env);
     cpu_rtc_update(env);
 }
+#endif
 
 /* Helper used when resetting the system. */
 static void cpu_arc_count_reset(CPUARCState *env, uint32_t timer)
