@@ -33,11 +33,13 @@
 
 #define FREQ_HZ (env_archcpu(env)->freq_hz)
 
-static uint64_t cycles_get_count(CPUARCState *env)
+#define CYCLES_TO_NS(VAL) (muldiv64(VAL, NANOSECONDS_PER_SECOND, FREQ_HZ))
+#define NS_TO_CYCLE(VAL)  (muldiv64(VAL, FREQ_HZ, NANOSECONDS_PER_SECOND))
+
+static uint64_t get_ns(CPUARCState *env)
 {
 #ifndef CONFIG_USER_ONLY
-    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
-                   FREQ_HZ, NANOSECONDS_PER_SECOND);
+    return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
 #else
     return cpu_get_host_ticks();
 #endif
@@ -46,12 +48,12 @@ static uint64_t cycles_get_count(CPUARCState *env)
 static uint32_t get_t_count(CPUARCState *env, uint32_t t)
 {
 #ifndef CONFIG_USER_ONLY
-    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) - env->timer[t].last_clk,
-                   FREQ_HZ, NANOSECONDS_PER_SECOND);
+    return NS_TO_CYCLE(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) - env->timer[t].last_clk);
 #else
     return cpu_get_host_ticks() - env->timer[t].last_clk;
 #endif
 }
+
 #define T_COUNT(T) (get_t_count(env, T))
 
 /* Update the next timeout time as difference between Count and Limit */
@@ -60,7 +62,7 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
     uint32_t delta;
     uint32_t t_count = T_COUNT(timer);
 #ifndef CONFIG_USER_ONLY
-    uint64_t now = cycles_get_count(env);
+    uint64_t now = get_ns(env);
 #endif
 
     delta = env->timer[timer].T_Limit - t_count;
@@ -77,7 +79,7 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
     }
 
 #ifndef CONFIG_USER_ONLY
-    timer_mod(env->cpu_timer[timer], now + ((uint64_t)delta));
+    timer_mod_ns(env->cpu_timer[timer], now + CYCLES_TO_NS((uint64_t)delta));
 #endif
 
     qemu_log_mask(LOG_UNIMP,
@@ -103,7 +105,7 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
         qemu_mutex_lock_iothread();
     }
     env->timer[timer].T_Cntrl |= TMR_IP;
-    env->timer[timer].last_clk = cycles_get_count(env);
+    env->timer[timer].last_clk = get_ns(env);
     if (unlocked) {
         qemu_mutex_unlock_iothread();
     }
@@ -156,7 +158,7 @@ static void cpu_rtc_count_update(CPUARCState *env)
     uint64_t llreg;
 
     assert((env_archcpu(env)->timer_build & TB_RTC) && env->cpu_rtc);
-    now = cycles_get_count(env);
+    now = get_ns(env);
 
     if (!(env->aux_rtc_ctrl & 0x01)) {
         return;
@@ -180,7 +182,7 @@ static void cpu_rtc_update(CPUARCState *env)
     uint64_t next;
 
     assert(env->cpu_rtc);
-    now = cycles_get_count(env);
+    now = get_ns(env);
 
     if (!(env->aux_rtc_ctrl & 0x01)) {
         return;
@@ -216,7 +218,7 @@ static void arc_rtc_cb(void *opaque)
 
     env->aux_rtc_high = 0;
     env->aux_rtc_low = 0;
-    env->last_clk_rtc = cycles_get_count(env);
+    env->last_clk_rtc = get_ns(env);
     cpu_rtc_update(env);
 }
 #endif
@@ -245,8 +247,7 @@ static void cpu_arc_count_set(CPUARCState *env, uint32_t timer, uint32_t val)
     if (unlocked) {
         qemu_mutex_lock_iothread();
     }
-    env->timer[timer].last_clk = cycles_get_count(env)
-      - muldiv64(val, FREQ_HZ, NANOSECONDS_PER_SECOND);
+    env->timer[timer].last_clk = get_ns(env) - CYCLES_TO_NS(val);
     cpu_arc_timer_update(env, timer);
     if (unlocked) {
         qemu_mutex_unlock_iothread();
@@ -309,7 +310,7 @@ static void arc_rtc_ctrl_set(CPUARCState *env, uint32_t val)
     if (val & 0x02) {
         env->aux_rtc_low = 0;
         env->aux_rtc_high = 0;
-        env->last_clk_rtc = cycles_get_count(env);
+        env->last_clk_rtc = get_ns(env);
     }
     if (!(val & 0x01)) {
         timer_del(env->cpu_rtc);
@@ -317,7 +318,7 @@ static void arc_rtc_ctrl_set(CPUARCState *env, uint32_t val)
 
     /* Restart RTC, update last clock. */
     if ((env->aux_rtc_ctrl & 0x01) == 0 && (val & 0x01)) {
-        env->last_clk_rtc = cycles_get_count(env);
+        env->last_clk_rtc = get_ns(env);
     }
 
     env->aux_rtc_ctrl = 0xc0000000 | (val & 0x01);
@@ -349,8 +350,8 @@ cpu_arc_clock_init(ARCCPU *cpu)
     }
 #endif
 
-    env->timer[0].last_clk = cycles_get_count(env);
-    env->timer[1].last_clk = cycles_get_count(env);
+    env->timer[0].last_clk = get_ns(env);
+    env->timer[1].last_clk = get_ns(env);
 }
 
 void
