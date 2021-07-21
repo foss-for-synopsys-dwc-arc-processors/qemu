@@ -27,17 +27,37 @@
 #include "timer.h"
 #include "qemu/main-loop.h"
 
-#define NANOSECONDS_PER_SECOND 1000000000LL
 #define TIMER_PERIOD(hz) (1000000000LL / (hz))
 #define TIMEOUT_LIMIT 1000000
 
 #define FREQ_HZ (env_archcpu(env)->freq_hz)
 
+static inline uint64_t cycles_to_ns(uint64_t cycles, uint32_t freq_hz)
+{
+#ifndef CONFIG_USER_ONLY
+	const uint32_t nanoseconds_per_second = 1000000000LL;
+
+	return muldiv64(cycles, nanoseconds_per_second, freq_hz);
+#else
+	return cycles;
+#endif
+}
+
+static inline uint64_t ns_to_cycles(uint64_t ns, uint32_t freq_hz)
+{
+#ifndef CONFIG_USER_ONLY
+	const uint32_t nanoseconds_per_second = 1000000000LL;
+
+	return muldiv64(ns, freq_hz, nanoseconds_per_second);
+#else
+	return ns;
+#endif
+}
+
 static uint64_t cycles_get_count(CPUARCState *env)
 {
 #ifndef CONFIG_USER_ONLY
-    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
-                   FREQ_HZ, NANOSECONDS_PER_SECOND);
+    return ns_to_cycles(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL), FREQ_HZ);
 #else
     return cpu_get_host_ticks();
 #endif
@@ -46,8 +66,8 @@ static uint64_t cycles_get_count(CPUARCState *env)
 static uint32_t get_t_count(CPUARCState *env, uint32_t t)
 {
 #ifndef CONFIG_USER_ONLY
-    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) - env->timer[t].last_clk,
-                   FREQ_HZ, NANOSECONDS_PER_SECOND);
+    return ns_to_cycles(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL), FREQ_HZ)
+           - env->timer[t].last_clk;
 #else
     return cpu_get_host_ticks() - env->timer[t].last_clk;
 #endif
@@ -70,12 +90,12 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
      * microseconds is the fastest that really works on the current
      * generation of host machines.
      */
-    if (delta < TIMEOUT_LIMIT) {
-        delta = TIMEOUT_LIMIT;
+    if (delta < ns_to_cycles(TIMEOUT_LIMIT, FREQ_HZ)) {
+        delta = ns_to_cycles(TIMEOUT_LIMIT, FREQ_HZ);
     }
 
 #ifndef CONFIG_USER_ONLY
-    timer_mod(env->cpu_timer[timer], now + ((uint64_t)delta));
+    timer_mod(env->cpu_timer[timer], cycles_to_ns(now + delta, FREQ_HZ));
 #endif
 
     qemu_log_mask(LOG_UNIMP,
@@ -237,8 +257,7 @@ static void cpu_arc_count_set(CPUARCState *env, uint32_t timer, uint32_t val)
     if (unlocked) {
         qemu_mutex_lock_iothread();
     }
-    env->timer[timer].last_clk = cycles_get_count(env)
-      - muldiv64(val, FREQ_HZ, NANOSECONDS_PER_SECOND);
+    env->timer[timer].last_clk = cycles_get_count(env) - val;
     cpu_arc_timer_update(env, timer);
     if (unlocked) {
         qemu_mutex_unlock_iothread();
