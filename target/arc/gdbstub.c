@@ -756,12 +756,14 @@ void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
                              GDB_TARGET_AUX_XML,
                              0);
 
+#if defined(TARGET_ARCV3)
     gdb_register_coprocessor(cs,
                              arc_gdb_get_fpu,
                              arc_gdb_set_fpu,
                              GDB_FPU_REG_LAST,
                              GDB_TARGET_FPU_XML,
                              0);
+#endif
 }
 
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
