@@ -32,7 +32,6 @@
 #define TIMEOUT_LIMIT 1000000
 
 #define FREQ_HZ (env_archcpu(env)->freq_hz)
-#define T_PERIOD (TIMER_PERIOD(FREQ_HZ))
 
 static uint64_t cycles_get_count(CPUARCState *env)
 {
@@ -61,9 +60,8 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
     uint32_t delta;
     uint32_t t_count = T_COUNT(timer);
     uint64_t now = cycles_get_count(env);
-    uint32_t period = T_PERIOD;
 
-    delta = env->timer[timer].T_Limit - t_count - 1;
+    delta = env->timer[timer].T_Limit - t_count;
 
     /*
      * Artificially limit timeout rate to something achievable under
@@ -72,13 +70,12 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
      * microseconds is the fastest that really works on the current
      * generation of host machines.
      */
-    if ((delta * period) < TIMEOUT_LIMIT) {
-        delta = TIMEOUT_LIMIT / period;
+    if (delta < TIMEOUT_LIMIT) {
+        delta = TIMEOUT_LIMIT;
     }
 
-// TODO: This should be changed for usermode
 #ifndef CONFIG_USER_ONLY
-    timer_mod(env->cpu_timer[timer], now + ((uint64_t)delta * period));
+    timer_mod(env->cpu_timer[timer], now + ((uint64_t)delta));
 #endif
 
     qemu_log_mask(LOG_UNIMP,
@@ -104,8 +101,7 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
         qemu_mutex_lock_iothread();
     }
     env->timer[timer].T_Cntrl |= TMR_IP;
-    env->timer[timer].last_clk =
-        (cycles_get_count(env) / T_PERIOD) * T_PERIOD;
+    env->timer[timer].last_clk = cycles_get_count(env);
     if (unlocked) {
         qemu_mutex_unlock_iothread();
     }
@@ -194,7 +190,6 @@ static void cpu_rtc_update(CPUARCState *env)
     }
 
     next = now + (uint64_t) wait * period;
-// TODO: This should be changed for usermode
 #ifndef CONFIG_USER_ONLY
     timer_mod(env->cpu_rtc, next);
 #endif
@@ -242,8 +237,8 @@ static void cpu_arc_count_set(CPUARCState *env, uint32_t timer, uint32_t val)
     if (unlocked) {
         qemu_mutex_lock_iothread();
     }
-    env->timer[timer].last_clk =
-        ((cycles_get_count(env) / T_PERIOD) + val) * T_PERIOD;
+    env->timer[timer].last_clk = cycles_get_count(env)
+      - muldiv64(val, FREQ_HZ, NANOSECONDS_PER_SECOND);
     cpu_arc_timer_update(env, timer);
     if (unlocked) {
         qemu_mutex_unlock_iothread();
@@ -346,10 +341,8 @@ cpu_arc_clock_init(ARCCPU *cpu)
     }
 #endif
 
-    env->timer[0].last_clk =
-        (cycles_get_count(env) / T_PERIOD) * T_PERIOD;
-    env->timer[1].last_clk =
-        (cycles_get_count(env) / T_PERIOD) * T_PERIOD;
+    env->timer[0].last_clk = cycles_get_count(env);
+    env->timer[1].last_clk = cycles_get_count(env);
 }
 
 void
