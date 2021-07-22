@@ -433,7 +433,7 @@ int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
 {
     ARCCPU *cpu = ARC_CPU(cs);
     CPUARCState *env = &cpu->env;
-    target_ulong regval = ldl_p(mem_buf);
+    target_ulong regval = ldq_p(mem_buf);
 
     switch (n) {
     case 0 ... 31:
