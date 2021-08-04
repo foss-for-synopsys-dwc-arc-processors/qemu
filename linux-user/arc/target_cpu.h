@@ -18,10 +18,12 @@ static inline void cpu_clone_regs_parent(CPUARCState *env, unsigned flags)
 
 static inline void cpu_set_tls(CPUARCState *env, target_ulong newtls)
 {
-#if defined(TARGET_ARCv2)
+#if defined(TARGET_ARCV2)
     env->r[25] = newtls;
-#else
+#elif defined(TARGET_ARCV3)
     env->r[30] = newtls;
+#else
+    #error "TARGET macro not defined!"
 #endif
 }
 
