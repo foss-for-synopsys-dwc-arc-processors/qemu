@@ -26,7 +26,6 @@
 #include "hw/sysbus.h"
 
 #define VIRT_RAM_BASE      0x80000000
-#define VIRT_RAM_SIZE      0x80000000
 #define VIRT_IO_BASE       0xf0000000
 #define VIRT_IO_SIZE       0x10000000
 #define VIRT_UART0_OFFSET  0x0
@@ -115,7 +114,7 @@ static void virt_init(MachineState *machine)
     int n;
 
     boot_info.ram_start = VIRT_RAM_BASE;
-    boot_info.ram_size = VIRT_RAM_SIZE;
+    boot_info.ram_size = machine->ram_size;
     boot_info.kernel_filename = machine->kernel_filename;
     boot_info.kernel_cmdline = machine->kernel_cmdline;
 
@@ -141,7 +140,7 @@ static void virt_init(MachineState *machine)
 
     /* Init system DDR */
     system_ram = g_new(MemoryRegion, 1);
-    memory_region_init_ram(system_ram, NULL, "arc.ram", VIRT_RAM_SIZE,
+    memory_region_init_ram(system_ram, NULL, "arc.ram", machine->ram_size,
                            &error_fatal);
     memory_region_add_subregion(system_memory, VIRT_RAM_BASE, system_ram);
 
@@ -177,6 +176,7 @@ static void virt_machine_init(MachineClass *mc)
     mc->init = virt_init;
     mc->max_cpus = 1;
     mc->is_default = true;
+    mc->default_ram_size = 2 * GiB;
 }
 
 DEFINE_MACHINE("virt", virt_machine_init)
