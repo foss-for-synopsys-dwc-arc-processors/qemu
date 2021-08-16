@@ -130,4 +130,15 @@ extern int
 arc_mpu_translate(struct CPUARCState *env, target_ulong addr,
                   MMUAccessType access, int mmu_idx);
 
+/*
+ * Determines if registers related to "region" are available or not. This
+ * is mainly used when those region registers are queried by gdbstub.
+ */
+extern bool
+arc_mpu_is_rgn_reg_available(const struct CPUARCState *env,
+                             const uint8_t region);
+
 #endif /* ARC_MPU_H */
+
+/*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
+/* vim: set ts=4 sw=4 et: */
