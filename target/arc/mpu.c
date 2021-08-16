@@ -655,5 +655,14 @@ arc_mpu_translate(CPUARCState *env, target_ulong addr,
 }
 #endif /* CONFIG_USER_ONLY */
 
+/* See declaration in mpu.h. */
+bool
+arc_mpu_is_rgn_reg_available(const struct CPUARCState *env,
+                             const uint8_t region)
+{
+    return (env->mpu.reg_bcr.version != 0 &&
+            region < env->mpu.reg_bcr.regions);
+}
+
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
 /* vim: set ts=4 sw=4 et: */
