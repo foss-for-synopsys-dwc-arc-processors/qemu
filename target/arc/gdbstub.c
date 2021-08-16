@@ -24,6 +24,7 @@
 #include "target/arc/regs.h"
 #include "irq.h"
 #include "gdbstub.h"
+#include "mpu.h"
 #include "exec/helper-proto.h"
 
 /* gets the register address for a particular processor */
@@ -173,12 +174,22 @@ arc_aux_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
         break;
     case GDB_AUX_REG_MPU_BASE0 ... GDB_AUX_REG_MPU_BASE15: {
         const uint8_t index = regnum - GDB_AUX_REG_MPU_BASE0;
-        regval = helper_lr(env, REG_ADDR(AUX_ID_mpurdb0 + index, cpu->family));
+        if (arc_mpu_is_rgn_reg_available(env, index)) {
+            regval =
+                helper_lr(env, REG_ADDR(AUX_ID_mpurdb0 + index, cpu->family));
+        } else {
+            regval = 0;
+        }
         break;
     }
     case GDB_AUX_REG_MPU_PERM0 ... GDB_AUX_REG_MPU_PERM15: {
         const uint8_t index = regnum - GDB_AUX_REG_MPU_PERM0;
-        regval = helper_lr(env, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
+        if (arc_mpu_is_rgn_reg_available(env, index)) {
+            regval =
+                helper_lr(env, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
+        } else {
+            regval = 0;
+        }
         break;
     }
     /* exceptions */
@@ -316,12 +327,20 @@ arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
         break;
     case GDB_AUX_REG_MPU_BASE0 ... GDB_AUX_REG_MPU_BASE15: {
         const uint8_t index = regnum - GDB_AUX_REG_MPU_BASE0;
-        helper_sr(env, regval, REG_ADDR(AUX_ID_mpurdb0 + index, cpu->family));
+        if (arc_mpu_is_rgn_reg_available(env, index)) {
+            helper_sr(env, regval, REG_ADDR(AUX_ID_mpurdb0 + index, cpu->family));
+        } else {
+            return 0;
+        }
         break;
     }
     case GDB_AUX_REG_MPU_PERM0 ... GDB_AUX_REG_MPU_PERM15: {
         const uint8_t index = regnum - GDB_AUX_REG_MPU_PERM0;
-        helper_sr(env, regval, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
+        if (arc_mpu_is_rgn_reg_available(env, index)) {
+            helper_sr(env, regval, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
+        } else {
+            return 0;
+        }
         break;
     }
     /* exceptions */
