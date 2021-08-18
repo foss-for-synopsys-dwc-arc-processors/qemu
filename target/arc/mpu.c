@@ -664,5 +664,24 @@ arc_mpu_is_rgn_reg_available(const struct CPUARCState *env,
             region < env->mpu.reg_bcr.regions);
 }
 
+/* To be used by the gdbstub in user mode. */
+#ifdef CONFIG_USER_ONLY
+
+/*
+ * Because this file is mostly "ifdef" guarded, the normal
+ * "arc_mpu_aux_get()" is not compiled. As a result, in user
+ * mode, we are faced with a runtime assert that originates
+ * from AUX_REG_GETTER macro in "regs.c". Hence, the do-nothing
+ * function here.
+ */
+target_ulong
+arc_mpu_aux_get(const struct arc_aux_reg_detail *d ATTRIBUTE_UNUSED,
+                void *data ATTRIBUTE_UNUSED)
+{
+    return 0;
+}
+
+#endif /* CONFIG_USER_ONLY */
+
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
 /* vim: set ts=4 sw=4 et: */
