@@ -13,6 +13,7 @@
 #include <linux/if_packet.h>
 #include <linux/in6.h>
 #include <linux/netlink.h>
+#include <linux/falloc.h>
 #include <sched.h>
 #include "qemu.h"
 #include "user-internals.h"
