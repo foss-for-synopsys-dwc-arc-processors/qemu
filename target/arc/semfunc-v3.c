@@ -13714,9 +13714,9 @@ arc_gen_EXL (DisasCtxt *ctx, TCGv b, TCGv c)
   TCGv temp = tcg_temp_local_new();
   TCGv temp_1 = tcg_temp_local_new();
   tcg_gen_mov_tl(temp, b);
-  getMemory(temp_1, c, LONG);
+  getMemory(temp_1, c, LONGLONG);
   tcg_gen_mov_tl(b, temp_1);
-  setMemory(c, LONG, temp);
+  setMemory(c, LONGLONG, temp);
   tcg_temp_free(temp);
   tcg_temp_free(temp_1);
 
