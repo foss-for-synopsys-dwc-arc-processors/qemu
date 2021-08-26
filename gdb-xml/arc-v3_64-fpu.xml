@@ -22,7 +22,7 @@
     <field name="single" type="single_precision"/>
     <field name="double" type="double_precision"/>
   </union>
-  <reg name="f0"  bitsize="64" type="arc_fp" regnum="66" />
+  <reg name="f0"  bitsize="64" type="arc_fp" regnum="66"/>
   <reg name="f1"  bitsize="64" type="arc_fp"/>
   <reg name="f2"  bitsize="64" type="arc_fp"/>
   <reg name="f3"  bitsize="64" type="arc_fp"/>
@@ -103,5 +103,5 @@
   </flags>
   <reg name="fp_build"  bitsize="32" type="fp_build_type"/>
   <reg name="fp_ctrl"   bitsize="32" type="fp_ctrl_type"/>
-  <reg name="fp_status" bitsize="32" type="fp_status_type"/>
+  <reg name="fp_status" bitsize="32" type="fp_status_type" regnum="100"/>
 </feature>
