@@ -267,7 +267,7 @@ typedef struct CPUARCState {
     uint32_t irq_priority_pending; /* AUX register */
     uint32_t icause[16];     /* Banked cause register */
     uint32_t aux_irq_hint;   /* AUX register, used to trigger soft irq */
-    uint32_t aux_user_sp;
+    target_ulong aux_user_sp;
     uint32_t aux_irq_ctrl;
     uint32_t aux_rtc_ctrl;
     uint32_t aux_rtc_low;
