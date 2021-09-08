@@ -605,10 +605,10 @@ bool arc_rtie_interrupts(CPUARCState *env)
 /* Switch between AUX USER SP and CPU's SP. */
 void switchSP(CPUARCState *env)
 {
-    uint32_t tmp;
+    target_ulong tmp;
     qemu_log_mask(CPU_LOG_INT,
                   "[%s] swap: r28 = 0x" TARGET_FMT_lx
-                  "  AUX_USER_SP = 0x%08x\n",
+                  "  AUX_USER_SP = 0x" TARGET_FMT_lx "\n",
                   (env->aux_irq_act & 0xFFFF) ? "IRQ" : "EXCP",
                   CPU_SP(env), env->aux_user_sp);
 
