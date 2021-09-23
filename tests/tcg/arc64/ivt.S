@@ -2,7 +2,7 @@
 
   .section .ivt, "a", @progbits
 #define IVT_ENTRY(name) \
-    .4byte name `\
+    .8byte name `\
     .weak name `\
     .set name, _exit_halt
 
