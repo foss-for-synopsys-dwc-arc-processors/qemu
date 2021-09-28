@@ -1385,7 +1385,6 @@ static void gen_vec_op2h(const DisasCtxt *ctx,
     tcg_temp_free(t0);
 }
 
-
 /*
  * gen_vec_op4h emits instructions to perform the desired operation,
  * defined by OP, on the inputs (B32 and C32) and returns the
@@ -1438,6 +1437,57 @@ static void gen_vec_op4h(const DisasCtxt *ctx,
     tcg_temp_free_i64(c64);
     tcg_temp_free_i64(b64);
     return;
+}
+
+/*
+ * gen_vec_op2h_64 emits instructions to perform the desired
+ * operation, defined by OP, on the inputs (B32 and C32).
+ * Although the inputs are 32-bit vectors, the result will
+ * be expanded to two 32-bit vectors: DEST register and its
+ * pair. This is the only difference with "gen_vec_op2h" and
+ * that is why the OP's signature here has an extra "ctx",
+ * so that the "arc_gen_next_reg()" can use it to find the
+ * next register.
+ *
+ * vector size:     32-bit
+ * vector elements: 2
+ * element size:    16-bit
+ *
+ * (A1, A0) = ((b1, b0) op (c1, c0))
+ */
+static void gen_vec_op2h_64(const DisasCtxt *ctx,
+                            void (*OP)(const DisasCtxt *, TCGv, TCGv, TCGv),
+                            TCGv_i32 dest,
+                            TCGv_i32 b32,
+                            TCGv_i32 c32)
+{
+    bool free_c32 = false;
+
+    /* If no real register for result, then this a nop. Bail out! */
+    if (!(ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
+        return;
+    }
+
+    /*
+     * If the last operand is a u6/s12, say 63, there is no "HI" in it.
+     * Instead, it must be duplicated to form a pair; e.g.: (63, 63).
+     */
+    if (ctx->insn.operands[2].type & ARC_OPERAND_SHIMM) {
+        c32 = dup_shimm_to_i32(ctx->insn.operands[2].value);
+        /*
+         * We only need to free the "c32" instance that has been allocated
+         * in this function.  The original one will be and must be freed in
+         * arc_decode() (see near the end of the fucntion), or else it
+         * will trigger an assert because of a double free.
+         */
+        free_c32 = true;
+    }
+
+    (*OP)(ctx, dest, b32, c32);
+
+    if (free_c32) {
+        tcg_temp_free(c32);
+    }
 }
 
 /*
@@ -1497,6 +1547,35 @@ static void gen_sub16(TCGv_i32 dest, TCGv_i32 t0, TCGv_i32 t1)
     tcg_gen_xor_i32(dest, t0, tmp);        /* step 3 */
     tcg_gen_xori_i32(dest, dest, 0x8000);  /* step 3 */
     tcg_temp_free_i32(tmp);
+}
+
+/*
+ * reg_dest   = b32_lo_16 * c32_lo_16 + accumulator_lo
+ * reg_dest+1 = b32_hi_16 * c32_hi_16 + accumulator_hi
+ */
+static void gen_mac2h(const DisasCtxt *ctx, TCGv_i32 dest,
+                      TCGv_i32 b32, TCGv_i32 c32)
+{
+    TCGv_i32 b_lo, b_hi, c_lo, c_hi;
+
+    b_lo = tcg_temp_new();
+    b_hi = tcg_temp_new();
+    c_lo = tcg_temp_new();
+    c_hi = tcg_temp_new();
+
+    tcg_gen_sextract_i32(b_lo, b32, 0, 16);
+    tcg_gen_sextract_i32(c_lo, c32, 0, 16);
+    tcg_gen_sextract_i32(b_hi, b32, 16, 16);
+    tcg_gen_sextract_i32(c_hi, c32, 16, 16);
+    tcg_gen_mul_i32(b_lo, b_lo, c_lo);
+    tcg_gen_mul_i32(b_hi, b_hi, c_hi);
+    tcg_gen_add_i32(dest, cpu_acclo, b_lo);
+    tcg_gen_add_i32(arc_gen_next_reg(ctx, dest), cpu_acchi, b_hi);
+
+    tcg_temp_free(c_hi);
+    tcg_temp_free(c_lo);
+    tcg_temp_free(b_hi);
+    tcg_temp_free(b_lo);
 }
 
 /*
@@ -1575,6 +1654,19 @@ arc_gen_VSUB4H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
         gen_vec_op4h(ctx, tcg_gen_vec_sub16_i64, dest, b, c);
         gen_cc_epilogue(ctx);
     }
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_VMAC2H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
+{
+    if (!verify_dest_reg_is_even(ctx)) {
+        return DISAS_NORETURN;
+    }
+
+    gen_cc_prologue(ctx);
+    gen_vec_op2h_64(ctx, gen_mac2h, dest, b, c);
+    gen_cc_epilogue(ctx);
     return DISAS_NEXT;
 }
 #endif
