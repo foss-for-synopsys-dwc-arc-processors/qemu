@@ -32,6 +32,7 @@
 #include "sysemu/reset.h"
 #include "sysemu/runstate.h"
 #include "sysemu/sysemu.h"
+#include "semihosting/semihost.h"
 #include "hw/sysbus.h"
 #include "hw/arc/cpudevs.h"
 #include "boot.h"
@@ -102,8 +103,13 @@ static void arc_sim_init(MachineState *machine)
                            1024);
     memory_region_add_subregion(get_system_memory(), 0xf0000000, system_io);
 
-    if (serial_hd(0)) {
-        arc_sim_open_console(serial_hd(0));
+    if (semihosting_enabled()) {
+        if (serial_hd(0)) {
+            arc_sim_open_console(serial_hd(0));
+        }
+    } else {
+        serial_mm_init(get_system_memory(), 0x90000000, 2, cpu->env.irq[20],
+                       115200, serial_hd(0), DEVICE_NATIVE_ENDIAN);
     }
 
     arc_load_kernel(cpu, &boot_info);
