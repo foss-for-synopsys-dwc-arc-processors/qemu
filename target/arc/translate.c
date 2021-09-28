@@ -1578,6 +1578,32 @@ static void gen_mac2h(const DisasCtxt *ctx, TCGv_i32 dest,
     tcg_temp_free(b_lo);
 }
 
+/* unsigned version of gen_mac2h. */
+static void gen_mac2hu(const DisasCtxt *ctx, TCGv_i32 dest,
+                       TCGv_i32 b32, TCGv_i32 c32)
+{
+    TCGv_i32 b_lo, b_hi, c_lo, c_hi;
+
+    b_lo = tcg_temp_new();
+    b_hi = tcg_temp_new();
+    c_lo = tcg_temp_new();
+    c_hi = tcg_temp_new();
+
+    tcg_gen_extract_i32(b_lo, b32, 0, 16);
+    tcg_gen_extract_i32(c_lo, c32, 0, 16);
+    tcg_gen_extract_i32(b_hi, b32, 16, 16);
+    tcg_gen_extract_i32(c_hi, c32, 16, 16);
+    tcg_gen_mul_i32(b_lo, b_lo, c_lo);
+    tcg_gen_mul_i32(b_hi, b_hi, c_hi);
+    tcg_gen_add_i32(dest, cpu_acclo, b_lo);
+    tcg_gen_add_i32(arc_gen_next_reg(ctx, dest), cpu_acchi, b_hi);
+
+    tcg_temp_free(c_hi);
+    tcg_temp_free(c_lo);
+    tcg_temp_free(b_hi);
+    tcg_temp_free(b_lo);
+}
+
 /*
  * Going through every operand, if any of those is a register
  * it is verified to be an even numbered register. Else, an
@@ -1666,6 +1692,19 @@ arc_gen_VMAC2H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
 
     gen_cc_prologue(ctx);
     gen_vec_op2h_64(ctx, gen_mac2h, dest, b, c);
+    gen_cc_epilogue(ctx);
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_VMAC2HU(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
+{
+    if (!verify_dest_reg_is_even(ctx)) {
+        return DISAS_NORETURN;
+    }
+
+    gen_cc_prologue(ctx);
+    gen_vec_op2h_64(ctx, gen_mac2hu, dest, b, c);
     gen_cc_epilogue(ctx);
     return DISAS_NEXT;
 }
