@@ -98,7 +98,8 @@ instruction_error:
   mov    r0, 0x00020001
   mov    r1, 0x00040003
   vmac2h r2, r0, r1
-  compare_64bit r3, r2, 0x08, 0x03
+  compare_64bit  r3,  r2, 0x08, 0x03
+  compare_64bit r59, r58, 0x08, 0x03
 
 ; Test case 2
 ; Negative numbers sign extension, and same source and dest operands.
@@ -108,7 +109,8 @@ instruction_error:
   mov    r0, 0x0001ffff
   mov    r1, 0x87650001
   vmac2h r0, r0, r1
-  compare_64bit r1, r0, 0xffff8765, 0xffffffff
+  compare_64bit  r1,  r0, 0xffff8765, 0xffffffff
+  compare_64bit r59, r58, 0xffff8765, 0xffffffff
 
 ; Test case 3
 ; Bigger numbers
@@ -119,7 +121,8 @@ instruction_error:
   mov    r2, 0x00021234
   mov    r3, 0x87654321
   vmac2h r0, r2, r3
-  compare_64bit r1, r0, 0xffff0eca, 0x4c5f4b4
+  compare_64bit  r1,  r0, 0xffff0eca, 0x4c5f4b4
+  compare_64bit r59, r58, 0xffff0eca, 0x4c5f4b4
 
 ; Test case 4
 ; Bigger numbers
@@ -129,7 +132,8 @@ instruction_error:
   mov    r2, 0x12345678
   mov    r3, 0x87654321
   vmac2h r0, r2, r3
-  compare_64bit r1, r0, 0xf76c9a84, 0x16ac8d78
+  compare_64bit  r1,  r0, 0xf76c9a84, 0x16ac8d78
+  compare_64bit r59, r58, 0xf76c9a84, 0x16ac8d78
 
 ; Test case 5
 ; Use addition
@@ -140,7 +144,8 @@ instruction_error:
   mov    r2, 0xd4fd0032        ; -11011=0xd4fd, 50=0x32
   mov    r3, 0x10f603e9        ; 4342=0x10f6, 1001=0x3e9
   vmac2h r4, r2, r3
-  compare_64bit r5, r4, -111052659, 120162996
+  compare_64bit  r5,  r4, -111052659, 120162996
+  compare_64bit r59, r58, -111052659, 120162996
 
 ; Test case 6
 ; Push the limits
@@ -150,7 +155,8 @@ instruction_error:
   mov    r2, 0xffffffff
   mov    r3, 0xffff0001
   vmac2h r0, r2, r3
-  compare_64bit r1, r0, 0x80000000, 0x7fffffff
+  compare_64bit  r1,  r0, 0x80000000, 0x7fffffff
+  compare_64bit r59, r58, 0x80000000, 0x7fffffff
 
 ; Test case 7
 ; 0 as destination
@@ -159,6 +165,7 @@ instruction_error:
   mov    r2, 0x00021234
   mov    r3, 0x87654321
   vmac2h 0, r2, r3
+  compare_64bit r59, r58, 0xffff0ecc, 0x4c5f4b5
 
 ; Test case 8
 ; using u6
@@ -167,7 +174,8 @@ instruction_error:
   set_accu 0x4, 0x5
   mov    r1, 0xffff0001
   vmac2h r0, r1, 3
-  compare_64bit r1, r0, 1, 8
+  compare_64bit  r1,  r0, 1, 8
+  compare_64bit r59, r58, 1, 8
 
 ; Test case 9
 ; using simm12: positive
@@ -176,7 +184,8 @@ instruction_error:
   set_accu 0x20, 0x30
   mov    r0, 0x19efec8   ; 414=0x19e, -312=0xfec8
   vmac2h r0, r0, 117
-  compare_64bit r1, r0, 48470, -36456
+  compare_64bit  r1,  r0, 48470, -36456
+  compare_64bit r59, r58, 48470, -36456
 
 ; Test case 10
 ; using simm12: negative
@@ -185,7 +194,8 @@ instruction_error:
   set_accu 9, 99
   mov    r2, 0x00010002 
   vmac2h r2, r2, -2
-  compare_64bit r3, r2, 7, 95
+  compare_64bit  r3,  r2, 7, 95
+  compare_64bit r59, r58, 7, 95
 
 ; Test case 11
 ; using limm: -301 -> 0xffff_fed3 -> (0xffff, 0xfed3)
@@ -197,7 +207,8 @@ instruction_error:
   set_accu 4321, -1111
   mov    r3, 0x3039e57b   ; 12345=0x3039, -6789=0xe57b
   vmac2h r2, r3, -301
-  compare_64bit r3, r2, -8024, 2042378
+  compare_64bit  r3,  r2, -8024, 2042378
+  compare_64bit r59, r58, -8024, 2042378
 
 ; Test case 12
 ; vector = limm * u6
@@ -205,20 +216,31 @@ instruction_error:
   prep_test_case
   set_accu -0x1337cafe, 0xdeadbeef
   vmac2h r0, 0x10e1fb2e, 42    ; 4321=0x10e1 -1234=0xfb2e
-  compare_64bit r1, r0, 0xeccaf9ec, 0xdeacf47b
+  compare_64bit  r1,  r0, 0xeccaf9ec, 0xdeacf47b
+  compare_64bit r59, r58, 0xeccaf9ec, 0xdeacf47b
 
 ; Test case 13
 ; Odd-numbered reg as destination -> Raise illegal exception
   prep_test_case
-  set_except_params @test_13_illegal, @test_13_ok
+  set_accu 13, 14
+  mov      r0, 0x13
+  mov      r1, r0
+  set_except_params @test_13_illegal, @test_13_check_no_commit
 test_13_illegal:
   .word  0x01012a1e  ; vmac2h r1, r2, r4
                      ; the stream should read as 0x2a1e_0101
                      ; mem:            1e 2a  01 01
                      ; middle endian:  2a1e   0101
   b      @fail
-test_13_ok:
-  ; Fall through
+test_13_check_no_commit:
+  cmp      r0, 0x13
+  bne      @fail
+  cmp      r0, r1
+  bne      @fail
+  cmp      r59, 13
+  bne      @fail
+  cmp      r58, 14
+  bne      @fail
 
 ; Test case 14
 ; CC: true
@@ -229,7 +251,8 @@ test_13_ok:
   mov      r3, 6
   add.f    0, 0, 0       ; Z=1
   vmac2h.z r2, r2, r3
-  compare_64bit r3, r2, 1, 32
+  compare_64bit  r3,  r2, 1, 32
+  compare_64bit r59, r58, 1, 32
 
 ; Test case 15
 ; CC: false
@@ -238,7 +261,8 @@ test_13_ok:
   mov      r2, 5
   mov      r3, 6
   vmac2h.z r2, r2, r3    ; Z=0 because of PREP_TEST_CASE
-  compare_64bit r3, r2, 6, 5
+  compare_64bit  r3,  r2, 6, 5
+  compare_64bit r59, r58, 1, 2
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; vmac2hu ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -249,7 +273,8 @@ test_13_ok:
   mov     r0, 0x00020001
   mov     r1, 0x00040003
   vmac2hu r2, r0, r1
-  compare_64bit r3, r2, 0x08, 0x03
+  compare_64bit  r3,  r2, 0x08, 0x03
+  compare_64bit r59, r58, 0x08, 0x03
 
 ; Test case 17
 ; Non-zero accumulator and same source and dest operands.
@@ -259,7 +284,8 @@ test_13_ok:
   mov     r0, 0x00110009
   mov     r1, 0x001c0009
   vmac2hu r0, r0, r1
-  compare_64bit r1, r0, 496, 102
+  compare_64bit  r1,  r0, 496, 102
+  compare_64bit r59, r58, 496, 102
 
 ; Test case 18
 ; Bigger numbers.
@@ -269,7 +295,8 @@ test_13_ok:
   mov     r2, 0xfedcba98
   mov     r3, 0x76543210
   vmac2hu r0, r2, r3
-  compare_64bit r1, r0, 0x88015ea8, 0xbf3a3870
+  compare_64bit  r1,  r0, 0x88015ea8, 0xbf3a3870
+  compare_64bit r59, r58, 0x88015ea8, 0xbf3a3870
 
 ; Test case 19
 ; Bigger numbers: enter the would-be-negative range of numbers.
@@ -280,7 +307,8 @@ test_13_ok:
   mov     r2, 0xffeebbbb
   mov     r3, 0xccddbbbb
   vmac2hu r0, r2, r3
-  compare_64bit r1, r0, 0x1123feed, 0x9aaba99
+  compare_64bit  r1,  r0, 0x1123feed, 0x9aaba99
+  compare_64bit r59, r58, 0x1123feed, 0x9aaba99
 
 ; Test case 20
 ; Pushing the limits.
@@ -289,7 +317,8 @@ test_13_ok:
   set_accu 0x1ffff, 0xffffffff
   mov      r0, 0xffff0001
   vmac2hu  r0, r0, r0
-  compare_64bit r1, r0, 0, 0
+  compare_64bit  r1,  r0, 0, 0
+  compare_64bit r59, r58, 0, 0
 
 ; Test case 21
 ; 0 as destination
@@ -298,6 +327,7 @@ test_13_ok:
   mov     r2, 0x00021234
   mov     r3, 0x87654321
   vmac2hu 0, r2, r3
+  compare_64bit r59, r58, 0x10ecc, 0x4c5f4b5
 
 ; Test case 22
 ; using u6
@@ -306,7 +336,8 @@ test_13_ok:
   set_accu 0x4, 0x5
   mov     r1, 0x006403e8
   vmac2hu r0, r1, 3
-  compare_64bit r1, r0, 304, 3005
+  compare_64bit  r1,  r0, 304, 3005
+  compare_64bit r59, r58, 304, 3005
 
 ; Test case 23
 ; using simm12: positive
@@ -315,7 +346,8 @@ test_13_ok:
   set_accu 0x20, 0x30
   mov     r0, 0xffff7fff
   vmac2hu r0, r0, 511
-  compare_64bit r1, r0, 33488417, 16743985
+  compare_64bit  r1,  r0, 33488417, 16743985
+  compare_64bit r59, r58, 33488417, 16743985
 
 ; Test case 24
 ; using simm12: negative
@@ -328,7 +360,8 @@ test_13_ok:
   set_accu 9, 99
   mov     r2, 0x00010002 
   vmac2hu r2, r2, -2048
-  compare_64bit r3, r2, 0xf809, 0x1f063
+  compare_64bit  r3,  r2, 0xf809, 0x1f063
+  compare_64bit r59, r58, 0xf809, 0x1f063
 
 ; Test case 25
 ; using limm: 2211282021 -> 0x83cd_7c65 -> (0x83cd, 0x7c65)
@@ -337,7 +370,8 @@ test_13_ok:
   set_accu 4321, 1111
   mov     r3, 0x30391a85   ; 12345=0x3039, 6789=0x1a85
   vmac2hu r2, r3, 0x83cd7c65
-  compare_64bit r3, r2, 0x18d3d986, 0xce2e6d0
+  compare_64bit  r3,  r2, 0x18d3d986, 0xce2e6d0
+  compare_64bit r59, r58, 0x18d3d986, 0xce2e6d0
 
 ; Test case 26
 ; vector = limm * u6
@@ -345,20 +379,31 @@ test_13_ok:
   prep_test_case
   set_accu 0x1337cafe, 0xdeadbeef
   vmac2hu r0, 0xa8ca223d, 42    ; 43210=0xa8ca 8765=0x223d
-  compare_64bit r1, r0, 0x13537c22, 0xdeb35cf1
+  compare_64bit  r1,  r0, 0x13537c22, 0xdeb35cf1
+  compare_64bit r59, r58, 0x13537c22, 0xdeb35cf1
 
 ; Test case 27
 ; Odd-numbered reg as destination -> Raise illegal exception
   prep_test_case
-  set_except_params @test_27_illegal, @test_27_ok
+  set_accu 27, 28
+  mov      r3, 0x27
+  mov      r4, r3
+  set_except_params @test_27_illegal, @test_27_check_no_commit
 test_27_illegal:
   .word  0x01c32c5f  ; vmac2hu r3, r4, 7
                      ; the stream should read as 0x2c5f_01c3
                      ; mem:            5f 2c  c3 01
                      ; middle endian:  2c5f   01c3
   b      @fail
-test_27_ok:
-  ; Fall through
+test_27_check_no_commit:
+  cmp      r3, 0x27
+  bne      @fail
+  cmp      r3, r4
+  bne      @fail
+  cmp      r59, 27
+  bne      @fail
+  cmp      r58, 28
+  bne      @fail
 
 ; Test case 28
 ; CC: true
@@ -369,7 +414,8 @@ test_27_ok:
   mov       r3, 6
   add.f     0, 0, 0       ; Z=1
   vmac2hu.z r2, r2, r3
-  compare_64bit r3, r2, 1, 32
+  compare_64bit  r3,  r2, 1, 32
+  compare_64bit r59, r58, 1, 32
 
 ; Test case 29
 ; CC: false
@@ -379,6 +425,7 @@ test_27_ok:
   mov       r3, 6
   vmac2hu.z r2, r2, r3    ; Z=0 because of PREP_TEST_CASE
   compare_64bit r3, r2, 6, 5
+  compare_64bit r59, r58, 1, 2
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
