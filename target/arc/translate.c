@@ -1442,31 +1442,31 @@ static void gen_vec_op4h(const DisasCtxt *ctx,
 /*
  * gen_vec_op2h_64 emits instructions to perform the desired
  * operation, defined by OP, on the inputs (B32 and C32).
- * Although the inputs are 32-bit vectors, the result will
- * be expanded to two 32-bit vectors: DEST register and its
- * pair. This is the only difference with "gen_vec_op2h" and
- * that is why the OP's signature here has an extra "ctx",
- * so that the "arc_gen_next_reg()" can use it to find the
- * next register.
+ * The OP is expected to update the accumulators (acch/accl).
+ * Then the DEST and its pair will get the result from the
+ * accumulators.  Although the inputs are 32-bit vectors,
+ * the result will be expanded to two 32-bit vectors: DEST
+ * register and its pair.
+ *
+ * The main differences with "gen_vec_op2h" is:
+ * 1) OP: takes 2 operands and update accumulators.
+ * 2) The value of accumulator is written to dest.
  *
  * vector size:     32-bit
  * vector elements: 2
  * element size:    16-bit
  *
- * (A1, A0) = ((b1, b0) op (c1, c0))
+ * OP: accl += b0 op c0
+ *     acch += b1 op c1
+ * (A1, A0) = (acch, accl)
  */
 static void gen_vec_op2h_64(const DisasCtxt *ctx,
-                            void (*OP)(const DisasCtxt *, TCGv, TCGv, TCGv),
+                            void (*OP)(TCGv, TCGv),
                             TCGv_i32 dest,
                             TCGv_i32 b32,
                             TCGv_i32 c32)
 {
     bool free_c32 = false;
-
-    /* If no real register for result, then this a nop. Bail out! */
-    if (!(ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
-        return;
-    }
 
     /*
      * If the last operand is a u6/s12, say 63, there is no "HI" in it.
@@ -1483,10 +1483,16 @@ static void gen_vec_op2h_64(const DisasCtxt *ctx,
         free_c32 = true;
     }
 
-    (*OP)(ctx, dest, b32, c32);
+    (*OP)(b32, c32);
 
     if (free_c32) {
         tcg_temp_free(c32);
+    }
+
+    /* Update the destination register if any. */
+    if ((ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
+        tcg_gen_mov_tl(dest, cpu_acclo);
+        tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), cpu_acchi);
     }
 }
 
@@ -1550,11 +1556,10 @@ static void gen_sub16(TCGv_i32 dest, TCGv_i32 t0, TCGv_i32 t1)
 }
 
 /*
- * reg_dest   = b32_lo_16 * c32_lo_16 + accumulator_lo
- * reg_dest+1 = b32_hi_16 * c32_hi_16 + accumulator_hi
+ * acclo += b32_lo_16 * c32_lo_16
+ * acchi += b32_hi_16 * c32_hi_16
  */
-static void gen_mac2h(const DisasCtxt *ctx, TCGv_i32 dest,
-                      TCGv_i32 b32, TCGv_i32 c32)
+static void gen_mac2h(TCGv_i32 b32, TCGv_i32 c32)
 {
     TCGv_i32 b_lo, b_hi, c_lo, c_hi;
 
@@ -1569,8 +1574,8 @@ static void gen_mac2h(const DisasCtxt *ctx, TCGv_i32 dest,
     tcg_gen_sextract_i32(c_hi, c32, 16, 16);
     tcg_gen_mul_i32(b_lo, b_lo, c_lo);
     tcg_gen_mul_i32(b_hi, b_hi, c_hi);
-    tcg_gen_add_i32(dest, cpu_acclo, b_lo);
-    tcg_gen_add_i32(arc_gen_next_reg(ctx, dest), cpu_acchi, b_hi);
+    tcg_gen_add_i32(cpu_acclo, cpu_acclo, b_lo);
+    tcg_gen_add_i32(cpu_acchi, cpu_acchi, b_hi);
 
     tcg_temp_free(c_hi);
     tcg_temp_free(c_lo);
@@ -1579,8 +1584,7 @@ static void gen_mac2h(const DisasCtxt *ctx, TCGv_i32 dest,
 }
 
 /* unsigned version of gen_mac2h. */
-static void gen_mac2hu(const DisasCtxt *ctx, TCGv_i32 dest,
-                       TCGv_i32 b32, TCGv_i32 c32)
+static void gen_mac2hu(TCGv_i32 b32, TCGv_i32 c32)
 {
     TCGv_i32 b_lo, b_hi, c_lo, c_hi;
 
@@ -1595,8 +1599,8 @@ static void gen_mac2hu(const DisasCtxt *ctx, TCGv_i32 dest,
     tcg_gen_extract_i32(c_hi, c32, 16, 16);
     tcg_gen_mul_i32(b_lo, b_lo, c_lo);
     tcg_gen_mul_i32(b_hi, b_hi, c_hi);
-    tcg_gen_add_i32(dest, cpu_acclo, b_lo);
-    tcg_gen_add_i32(arc_gen_next_reg(ctx, dest), cpu_acchi, b_hi);
+    tcg_gen_add_i32(cpu_acclo, cpu_acclo, b_lo);
+    tcg_gen_add_i32(cpu_acchi, cpu_acchi, b_hi);
 
     tcg_temp_free(c_hi);
     tcg_temp_free(c_lo);
