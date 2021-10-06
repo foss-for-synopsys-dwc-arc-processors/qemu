@@ -243,7 +243,7 @@ arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
     case AUX_ID_mmu_ttbcr:
         mmu_ttbcr = val;
         break;
-    case AUX_ID_tlbcommand:
+    case AUX_ID_mmuv6_tlbcommand:
         mmuv6_tlb_command(env, val);
         break;
     case AUX_ID_mmu_fault_status:
