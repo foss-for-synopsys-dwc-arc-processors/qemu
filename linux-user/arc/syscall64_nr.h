@@ -44,6 +44,7 @@
 #define TARGET_NR_unlinkat 35
 #define TARGET_NR_symlinkat 36
 #define TARGET_NR_linkat 37
+#define TARGET_NR_renameat 38
 #define TARGET_NR_umount2 39
 #define TARGET_NR_mount 40
 #define TARGET_NR_pivot_root 41
