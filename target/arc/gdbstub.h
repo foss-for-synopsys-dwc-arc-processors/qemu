@@ -154,7 +154,7 @@ enum gdb_aux_regs {
 /* ARCv3_64 */
 #else
 
-#define GDB_TARGET_STRING "arc:ARCv3_64"
+#define GDB_TARGET_STRING "arc64:64"
 
 /* The order here is strictly tied with gdb-xml/arc-v3_64-core.xml. */
 enum gdb_regs {
