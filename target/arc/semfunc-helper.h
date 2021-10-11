@@ -113,7 +113,8 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define executeDelaySlot(bta, take_branch) \
     ctx->env->in_delayslot_instruction = false; \
     ctx->env->next_insn_is_delayslot = true; \
-    TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, DEf, take_branch);
+    TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, DEf, take_branch); \
+    TCG_SET_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
 
 #define shouldExecuteDelaySlot()    (ctx->insn.d != 0)
 

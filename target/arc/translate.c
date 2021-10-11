@@ -1888,24 +1888,21 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 
     ctx->base.is_jmp = arc_decode(ctx, opcode);
 
-    /* This flag is used for to mark delayslot instructions
-     * even when the branch is not taken.
-     * DEf is only set when the branch is taken. This is always
-     * set.
-     */
-    if(env->next_insn_is_delayslot == true) {
-      SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 1);
-    }
-
     /*
      * Either decoder knows that this is a delayslot
      * or it is a return from exception and at decode time
      * DEf flag is set as a delayslot.
+     * The PREVIOUS_IS_DELAYSLOTf flag is used for to mark delayslot
+     * instructions even when the branch is not taken.
+     * DEf is only set when the branch is taken. This is always
+     * set.
      */
     if(env->in_delayslot_instruction == true
        || GET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf)) {
         TCGv temp_DEf = tcg_temp_local_new();
         ctx->base.is_jmp = DISAS_NORETURN;
+
+        TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
 
         /* Post execution delayslot logic. */
         TCGLabel *DEf_not_set_label1 = gen_new_label();
@@ -1917,7 +1914,11 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 
         tcg_temp_free(temp_DEf);
         env->in_delayslot_instruction = false;
-        TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
+
+    }
+
+    if(env->next_insn_is_delayslot == true) {
+      SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 1);
     }
 
     TCGv npc = tcg_const_local_tl(ctx->npc);
