@@ -7326,6 +7326,7 @@ arc_gen_SETLO(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     gen_set_label(else_2);
     tcg_gen_mov_tl(a, arc_false);
     gen_set_label(done_2);
+    gen_set_label(done_cc);
     tcg_temp_free(p_b);
     tcg_temp_free(p_c);
     tcg_temp_free(take_branch);
@@ -7501,6 +7502,7 @@ arc_gen_SETHS(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     gen_set_label(else_2);
     tcg_gen_mov_tl(a, arc_false);
     gen_set_label(done_2);
+    gen_set_label(done_cc);
     tcg_temp_free(p_b);
     tcg_temp_free(p_c);
     tcg_temp_free(take_branch);
