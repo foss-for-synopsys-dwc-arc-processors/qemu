@@ -53,7 +53,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
     if (cs->exception_index == EXCP_LPEND_REACHED
         || cs->exception_index == EXCP_FAKE) {
         env->pc = env->param;
-        CPU_PCL(env) = env->pc & 0xfffffffe;
+        CPU_PCL(env) = env->pc & (~((target_ulong) 3));
         return;
     }
 
@@ -67,7 +67,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
         do_arc_semihosting(env);
         /* Return to the next instruction. */
         env->pc = env->erbta;
-        CPU_PCL(env) = env->pc & 0xfffffffe;
+        CPU_PCL(env) = env->pc & (~((target_ulong) 3));
         return;
     }
 

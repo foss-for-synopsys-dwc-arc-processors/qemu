@@ -171,7 +171,7 @@ void helper_rtie(CPUARCState *env)
     if (GET_STATUS_BIT(env->stat, AEf) || (env->aux_irq_act & 0xFFFF) == 0) {
         assert(GET_STATUS_BIT(env->stat, Uf) == 0);
 
-        CPU_PCL(env) = env->eret;
+        CPU_PCL(env) = env->eret & (~((target_ulong) 3));
         env->pc = env->eret;
 
         env->stat = env->stat_er;

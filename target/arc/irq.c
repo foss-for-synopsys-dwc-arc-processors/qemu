@@ -100,7 +100,7 @@ static void arc_rtie_firq(CPUARCState *env)
 
     /* FIXME! fix current reg bank if RB bit is changed. */
 
-    CPU_PCL(env) = CPU_ILINK(env);
+    CPU_PCL(env) = CPU_ILINK(env) & (~((target_ulong) 3));
     env->pc = CPU_ILINK(env);
 }
 
@@ -203,7 +203,7 @@ static void arc_rtie_irq(CPUARCState *env)
 
     /* Keep U-bit in sync. */
     env->aux_irq_act &= ~(GET_STATUS_BIT(env->stat, Uf) << 31);
-    CPU_PCL(env) = CPU_ILINK(env);
+    CPU_PCL(env) = CPU_ILINK(env) & (~((target_ulong) 3));
     env->pc = CPU_ILINK(env);
 }
 

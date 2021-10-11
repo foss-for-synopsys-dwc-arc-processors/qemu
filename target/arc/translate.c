@@ -1752,7 +1752,6 @@ arc_gen_RTIE(DisasCtxt *ctx)
 {
     tcg_gen_movi_tl(cpu_pc, ctx->cpc);
     gen_helper_rtie(cpu_env);
-    tcg_gen_mov_tl(cpu_pc, cpu_pcl);
     exit_tb(ctx); /* no chaining */
     return DISAS_NORETURN;
 }
