@@ -80,9 +80,9 @@ void cpu_loop(CPUARCState *env)
                 case TARGET_NR_arc_gettls:
                     env->r[0] = env->tls_backup;
                     break;
-                case TARGET_NR_arc_cacheflush:
+                case TARGET_NR_cacheflush:
                     break;
-                case TARGET_NR_arc_sysfs:
+                case TARGET_NR_sysfs:
                     break;
                 case TARGET_NR_arc_usr_cmpxchg:
                     break;

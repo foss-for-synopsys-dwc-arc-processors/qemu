@@ -10,6 +10,7 @@
 #define TARGET_NR_io_destroy 1
 #define TARGET_NR_io_submit 2
 #define TARGET_NR_io_cancel 3
+#define TARGET_NR_io_getevents 4
 #define TARGET_NR_setxattr 5
 #define TARGET_NR_lsetxattr 6
 #define TARGET_NR_fsetxattr 7
@@ -43,6 +44,7 @@
 #define TARGET_NR_unlinkat 35
 #define TARGET_NR_symlinkat 36
 #define TARGET_NR_linkat 37
+#define TARGET_NR_renameat 38
 #define TARGET_NR_umount2 39
 #define TARGET_NR_mount 40
 #define TARGET_NR_pivot_root 41
@@ -76,6 +78,8 @@
 #define TARGET_NR_preadv 69
 #define TARGET_NR_pwritev 70
 #define TARGET_NR_sendfile64 71
+#define TARGET_NR_pselect6 72
+#define TARGET_NR_ppoll 73
 #define TARGET_NR_signalfd4 74
 #define TARGET_NR_vmsplice 75
 #define TARGET_NR_splice 76
@@ -88,6 +92,9 @@
 #define TARGET_NR_fdatasync 83
 #define TARGET_NR_sync_file_range 84
 #define TARGET_NR_timerfd_create 85
+#define TARGET_NR_timerfd_settime 86
+#define TARGET_NR_timerfd_gettime 87
+#define TARGET_NR_utimensat 88
 #define TARGET_NR_acct 89
 #define TARGET_NR_capget 90
 #define TARGET_NR_capset 91
@@ -97,16 +104,24 @@
 #define TARGET_NR_waitid 95
 #define TARGET_NR_set_tid_address 96
 #define TARGET_NR_unshare 97
+#define TARGET_NR_futex 98
 #define TARGET_NR_set_robust_list 99
 #define TARGET_NR_get_robust_list 100
+#define TARGET_NR_nanosleep 101
 #define TARGET_NR_getitimer 102
 #define TARGET_NR_setitimer 103
 #define TARGET_NR_kexec_load 104
 #define TARGET_NR_init_module 105
 #define TARGET_NR_delete_module 106
 #define TARGET_NR_timer_create 107
+#define TARGET_NR_timer_gettime 108
 #define TARGET_NR_timer_getoverrun 109
+#define TARGET_NR_timer_settime 110
 #define TARGET_NR_timer_delete 111
+#define TARGET_NR_clock_settime 112
+#define TARGET_NR_clock_gettime 113
+#define TARGET_NR_clock_getres 114
+#define TARGET_NR_clock_nanosleep 115
 #define TARGET_NR_syslog 116
 #define TARGET_NR_ptrace 117
 #define TARGET_NR_sched_setparam 118
@@ -118,6 +133,7 @@
 #define TARGET_NR_sched_yield 124
 #define TARGET_NR_sched_get_priority_max 125
 #define TARGET_NR_sched_get_priority_min 126
+#define TARGET_NR_sched_rr_get_interval 127
 #define TARGET_NR_restart_syscall 128
 #define TARGET_NR_kill 129
 #define TARGET_NR_tkill 130
@@ -127,6 +143,7 @@
 #define TARGET_NR_rt_sigaction 134
 #define TARGET_NR_rt_sigprocmask 135
 #define TARGET_NR_rt_sigpending 136
+#define TARGET_NR_rt_sigtimedwait 137
 #define TARGET_NR_rt_sigqueueinfo 138
 #define TARGET_NR_rt_sigreturn 139
 #define TARGET_NR_setpriority 140
@@ -158,6 +175,9 @@
 #define TARGET_NR_umask 166
 #define TARGET_NR_prctl 167
 #define TARGET_NR_getcpu 168
+#define TARGET_NR_gettimeofday 169
+#define TARGET_NR_settimeofday 170
+#define TARGET_NR_adjtimex 171
 #define TARGET_NR_getpid 172
 #define TARGET_NR_getppid 173
 #define TARGET_NR_getuid 174
@@ -168,6 +188,8 @@
 #define TARGET_NR_sysinfo 179
 #define TARGET_NR_mq_open 180
 #define TARGET_NR_mq_unlink 181
+#define TARGET_NR_mq_timedsend 182
+#define TARGET_NR_mq_timedreceive 183
 #define TARGET_NR_mq_notify 184
 #define TARGET_NR_mq_getsetattr 185
 #define TARGET_NR_msgget 186
@@ -176,6 +198,7 @@
 #define TARGET_NR_msgsnd 189
 #define TARGET_NR_semget 190
 #define TARGET_NR_semctl 191
+#define TARGET_NR_semtimedop 192
 #define TARGET_NR_semop 193
 #define TARGET_NR_shmget 194
 #define TARGET_NR_shmctl 195
@@ -226,12 +249,14 @@
 #define TARGET_NR_rt_tgsigqueueinfo 240
 #define TARGET_NR_perf_event_open 241
 #define TARGET_NR_accept4 242
+#define TARGET_NR_recvmmsg 243
+#define TARGET_NR_arch_specific_syscall 244
 
-#define TARGET_NR_arc_cacheflush 244
-#define TARGET_NR_arc_settls 245
-#define TARGET_NR_arc_gettls 246
-#define TARGET_NR_arc_sysfs 247
-#define TARGET_NR_arc_usr_cmpxchg 248
+#define TARGET_NR_cacheflush (TARGET_NR_arch_specific_syscall + 0)
+#define TARGET_NR_arc_settls (TARGET_NR_arch_specific_syscall + 1)
+#define TARGET_NR_arc_gettls (TARGET_NR_arch_specific_syscall + 2)
+#define TARGET_NR_sysfs (TARGET_NR_arch_specific_syscall + 3)
+#define TARGET_NR_arc_usr_cmpxchg (TARGET_NR_arch_specific_syscall + 4)
 
 #define TARGET_NR_wait4 260
 #define TARGET_NR_prlimit64 261
@@ -239,6 +264,7 @@
 #define TARGET_NR_fanotify_mark 263
 #define TARGET_NR_name_to_handle_at 264
 #define TARGET_NR_open_by_handle_at 265
+#define TARGET_NR_clock_adjtime 266
 #define TARGET_NR_syncfs 267
 #define TARGET_NR_setns 268
 #define TARGET_NR_sendmmsg 269
@@ -264,6 +290,7 @@
 #define TARGET_NR_pkey_alloc 289
 #define TARGET_NR_pkey_free 290
 #define TARGET_NR_statx 291
+#define TARGET_NR_io_pgetevents 292
 #define TARGET_NR_rseq 293
 #define TARGET_NR_kexec_file_load 294
 #define TARGET_NR_clock_gettime64 403
@@ -302,6 +329,14 @@
 #define TARGET_NR_openat2 437
 #define TARGET_NR_pidfd_getfd 438
 #define TARGET_NR_faccessat2 439
-#define TARGET_NR_syscalls 440
+#define TARGET_NR_process_madvise 440
+#define TARGET_NR_epoll_pwait2 441
+#define TARGET_NR_mount_setattr 442
+#define TARGET_NR_quotactl_fd 443
+#define TARGET_NR_landlock_create_ruleset 444
+#define TARGET_NR_landlock_add_rule 445
+#define TARGET_NR_landlock_restrict_self 446
+#define TARGET_NR_process_mrelease 448
+#define TARGET_NR_syscalls 449
 
 #endif /* LINUX_USER_ARC_SYSCALL32_NR_H */

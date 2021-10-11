@@ -250,12 +250,13 @@
 #define TARGET_NR_perf_event_open 241
 #define TARGET_NR_accept4 242
 #define TARGET_NR_recvmmsg 243
+#define TARGET_NR_arch_specific_syscall 244
 
-#define TARGET_NR_arc_cacheflush 244
-#define TARGET_NR_arc_settls 245
-#define TARGET_NR_arc_gettls 246
-#define TARGET_NR_arc_sysfs 247
-#define TARGET_NR_arc_usr_cmpxchg 248
+#define TARGET_NR_cacheflush (TARGET_NR_arch_specific_syscall + 0)
+#define TARGET_NR_arc_settls (TARGET_NR_arch_specific_syscall + 1)
+#define TARGET_NR_arc_gettls (TARGET_NR_arch_specific_syscall + 2)
+#define TARGET_NR_sysfs (TARGET_NR_arch_specific_syscall + 3)
+#define TARGET_NR_arc_usr_cmpxchg (TARGET_NR_arch_specific_syscall + 4)
 
 #define TARGET_NR_wait4 260
 #define TARGET_NR_prlimit64 261
