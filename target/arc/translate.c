@@ -130,7 +130,7 @@ void arc_translate_init(void)
         NEW_ARC_REG(cpu_Cf, stat.Cf)
         NEW_ARC_REG(cpu_Vf, stat.Vf)
 
-        NEW_ARC_REG(cpu_pstate, stat.pstate)
+        NEW_ARC_REG(cpu_er_pstate, stat_er.pstate)
         NEW_ARC_REG(cpu_er_Zf, stat_er.Zf)
         NEW_ARC_REG(cpu_er_Nf, stat_er.Nf)
         NEW_ARC_REG(cpu_er_Cf, stat_er.Cf)
