@@ -40,7 +40,6 @@ void arc_cpu_do_interrupt(CPUState *cs)
     uint32_t     offset = 0;
     uint32_t     vectno;
     const char  *name;
-    MemTxResult txres;
 
     /*
      * NOTE: Special LP_END exception. Immediately return code execution to
@@ -207,9 +206,18 @@ void arc_cpu_do_interrupt(CPUState *cs)
     SET_STATUS_BIT(env->stat, SCf, 0);
 
     /* 15. The PC is set with the appropriate exception vector. */
+#if defined(TARGET_ARCV2)
+    MemTxResult txres;
+
     env->pc = address_space_ldl(cs->as, env->intvec + offset,
                                 MEMTXATTRS_UNSPECIFIED, &txres);
     assert(txres == MEMTX_OK);
+#elif defined(TARGET_ARCV3)
+    env->pc = cpu_ldq_data(env, env->intvec + offset);
+#else
+#error "This should never happen !!!!"
+#endif
+
     CPU_PCL(env) = env->pc & (~((target_ulong) 3));
 
     qemu_log_mask(CPU_LOG_INT, "[EXCP] isr=0x" TARGET_FMT_lx
