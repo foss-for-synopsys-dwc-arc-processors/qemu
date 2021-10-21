@@ -27,10 +27,10 @@
 
 #define LOAD_DATA_IN(ADDR) (address_space_ldq(((CPUState *) cpu)->as, ADDR, MEMTXATTRS_UNSPECIFIED, NULL))
 
-#define SET_MMU_EXCEPTION(ENV, N, C, P) { \
-  ENV->mmu.exception.number = N; \
-  ENV->mmu.exception.causecode = C; \
-  ENV->mmu.exception.parameter = P; \
+#define SET_MMU_EXCEPTION(EXCP, N, C, P) { \
+  (EXCP).number = N; \
+  (EXCP).causecode = C; \
+  (EXCP).parameter = P; \
 }
 
 uint32_t mmu_ctrl;
@@ -390,7 +390,8 @@ get_prot_for_pte(struct CPUARCState *env, uint64_t pte,
 static target_ulong
 page_table_traverse(struct CPUARCState *env,
 		   target_ulong vaddr, enum mmu_access_type rwe,
-           int *prot)
+           int *prot,
+           struct mem_exception *excp)
 {
     bool found_block_descriptor = false;
     uint64_t pte, pte_addr;
@@ -405,10 +406,10 @@ page_table_traverse(struct CPUARCState *env,
 
     if(valid_root == false) {
         if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
-            SET_MMU_EXCEPTION(env, EXCP_IMMU_FAULT, 0x00, 0x00);
+            SET_MMU_EXCEPTION(*excp, EXCP_IMMU_FAULT, 0x00, 0x00);
             return -1;
         } else if(rwe == MMU_MEM_READ || rwe == MMU_MEM_WRITE) {
-            SET_MMU_EXCEPTION(env, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
+            SET_MMU_EXCEPTION(*excp, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
             return -1;
         }
     }
@@ -428,10 +429,10 @@ page_table_traverse(struct CPUARCState *env,
 
             mmu_fault_status = (l & 0x7);
             if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
-                SET_MMU_EXCEPTION(env, EXCP_IMMU_FAULT, 0x00, 0x00);
+                SET_MMU_EXCEPTION(*excp, EXCP_IMMU_FAULT, 0x00, 0x00);
                 return -1;
             } else if(rwe == MMU_MEM_READ || rwe == MMU_MEM_WRITE) {
-                SET_MMU_EXCEPTION(env, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
+                SET_MMU_EXCEPTION(*excp, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
                 return -1;
             }
         }
@@ -445,10 +446,10 @@ page_table_traverse(struct CPUARCState *env,
                 qemu_log_mask(CPU_LOG_MMU, "[MMUV3] PTE AF is not set\n");
                 mmu_fault_status = (l & 0x7);
                 if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
-                    SET_MMU_EXCEPTION(env, EXCP_IMMU_FAULT, 0x10, 0x00);
+                    SET_MMU_EXCEPTION(*excp, EXCP_IMMU_FAULT, 0x10, 0x00);
                     return -1;
                 } else if(rwe == MMU_MEM_READ || rwe == MMU_MEM_WRITE) {
-                    SET_MMU_EXCEPTION(env, EXCP_DMMU_FAULT, 0x10 | CAUSE_CODE(rwe), 0x00);
+                    SET_MMU_EXCEPTION(*excp, EXCP_DMMU_FAULT, 0x10 | CAUSE_CODE(rwe), 0x00);
                     return -1;
                 }
             }
@@ -474,10 +475,10 @@ page_table_traverse(struct CPUARCState *env,
 
         if(PTE_IS_INVALID(pte, l)) {
             if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
-                SET_MMU_EXCEPTION(env, EXCP_IMMU_FAULT, 0x00, 0x00);
+                SET_MMU_EXCEPTION(*excp, EXCP_IMMU_FAULT, 0x00, 0x00);
                 return -1;
             } else if(rwe == MMU_MEM_READ || rwe == MMU_MEM_WRITE) {
-                SET_MMU_EXCEPTION(env, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
+                SET_MMU_EXCEPTION(*excp, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
                 return -1;
             }
         }
@@ -490,7 +491,7 @@ page_table_traverse(struct CPUARCState *env,
         if(protv_violation(env, pte, l, overwrite_permitions, rwe)) {
             qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] [PC %lx] PTE Protection violation: vaddr %lx pte [addr %lx val %lx]\n", env->pc, vaddr, pte_addr, pte);
             found_block_descriptor = false;
-            SET_MMU_EXCEPTION(env, EXCP_PROTV, CAUSE_CODE(rwe), 0x08);
+            SET_MMU_EXCEPTION(*excp, EXCP_PROTV, CAUSE_CODE(rwe), 0x08);
             return -1;
         }
 
@@ -517,8 +518,8 @@ void arc_mmu_init(CPUARCState *env)
 
 static target_ulong
 arc_mmuv6_translate(struct CPUARCState *env,
-		     target_ulong vaddr, enum mmu_access_type rwe,
-             int *prot)
+		            target_ulong vaddr, enum mmu_access_type rwe,
+                    int *prot, struct mem_exception *excp)
 {
     target_ulong paddr;
 
@@ -529,7 +530,7 @@ arc_mmuv6_translate(struct CPUARCState *env,
       paddr = vaddr;
     }
 
-   paddr = (target_ulong) page_table_traverse(env, vaddr, rwe, prot);
+   paddr = (target_ulong) page_table_traverse(env, vaddr, rwe, prot, excp);
 
     // TODO: Check if address is valid
     // Still need to know what it means ...
@@ -559,10 +560,10 @@ static int mmuv6_decide_action(const struct CPUARCState *env,
 
 static void QEMU_NORETURN raise_mem_exception(
         CPUState *cs, target_ulong addr, uintptr_t host_pc,
-        int32_t excp_idx, uint8_t excp_cause_code, uint8_t excp_param)
+        struct mem_exception *excp)
 {
     CPUARCState *env = &(ARC_CPU(cs)->env);
-    if (excp_idx != EXCP_IMMU_FAULT) {
+    if (excp->number != EXCP_IMMU_FAULT) {
         cpu_restore_state(cs, host_pc, true);
     }
 
@@ -570,11 +571,48 @@ static void QEMU_NORETURN raise_mem_exception(
     env->eret = env->pc;
     env->erbta = env->bta;
 
-    cs->exception_index = excp_idx;
-    env->causecode = excp_cause_code;
-    env->param = excp_param;
+    cs->exception_index = excp->number;
+    env->causecode = excp->causecode;
+    env->param = excp->parameter;
     cpu_loop_exit(cs);
 }
+
+#ifndef CONFIG_USER_ONLY
+
+bool
+arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
+                  enum mmu_access_type rwe, bool probe,
+                  uintptr_t retaddr)
+{
+    CPUARCState *env = &((ARC_CPU(cs))->env);
+    uintptr_t mmu_idx = cpu_mmu_index(env, true);
+    int action = mmuv6_decide_action(env, addr, mmu_idx);
+    struct mem_exception excp;
+    int prot;
+    excp.number = EXCP_NO_EXCEPTION;
+
+    switch (action) {
+    case DIRECT_ACTION:
+        *paddr = addr;
+        return true;
+        break;
+    case MMU_ACTION:
+	    *paddr = arc_mmuv6_translate(env, addr, rwe, &prot, &excp);
+        if ((enum exception_code_list) excp.number != EXCP_NO_EXCEPTION) {
+            if (probe) {
+                return false;
+            }
+            raise_mem_exception(cs, addr, retaddr, &excp);
+        }
+        else {
+            return true;
+        }
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
+#endif /* ifndef CONFIG_USER_ONLY */
 
 /* Softmmu support function for MMU. */
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
@@ -583,10 +621,12 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 {
     /* TODO: this rwe should go away when the TODO below is done */
     enum mmu_access_type rwe = (char) access_type;
-    ARCCPU *cpu = ARC_CPU(cs);
-    CPUARCState *env = &(cpu->env);
+    struct mem_exception excp;
+    excp.number = EXCP_NO_EXCEPTION;
 
 #ifndef CONFIG_USER_ONLY
+    ARCCPU *cpu = ARC_CPU(cs);
+    CPUARCState *env = &(cpu->env);
     int prot;
     int action = mmuv6_decide_action(env, address, mmu_idx);
 
@@ -604,15 +644,13 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
          */
 
         target_ulong paddr;
-	    paddr = arc_mmuv6_translate(env, address, rwe, &prot);
+	    paddr = arc_mmuv6_translate(env, address, rwe, &prot, &excp);
 
-        if ((enum exception_code_list) env->mmu.exception.number != EXCP_NO_EXCEPTION) {
+        if ((enum exception_code_list) excp.number != EXCP_NO_EXCEPTION) {
             if (probe) {
                 return false;
             }
-            const struct mmuv6_exception *mmu_excp = &(env->mmu.exception);
-            raise_mem_exception(cs, address, retaddr,
-                    mmu_excp->number, mmu_excp->causecode, mmu_excp->parameter);
+            raise_mem_exception(cs, address, retaddr, &excp);
         }
         else {
 		    tlb_set_page(cs, address, paddr & PAGE_MASK, prot,
@@ -624,22 +662,19 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
         g_assert_not_reached();
     }
 #else /* CONFIG_USER_ONLY */
-    const struct mmuv6_exception *mmu_excp = &env->mmu.exception;
-
     switch (access_type) {
     case MMU_INST_FETCH:
-        SET_MMU_EXCEPTION(env, EXCP_IMMU_FAULT, 0x00, 0x00);
+        SET_MMU_EXCEPTION(excp, EXCP_IMMU_FAULT, 0x00, 0x00);
 
         break;
     case MMU_DATA_LOAD:
     case MMU_DATA_STORE:
-        SET_MMU_EXCEPTION(env, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
+        SET_MMU_EXCEPTION(excp, EXCP_DMMU_FAULT, CAUSE_CODE(rwe), 0x00);
         break;
     default:
         g_assert_not_reached();
     }
-    raise_mem_exception(cs, address, retaddr,
-                        mmu_excp->number, CAUSE_CODE(rwe), 0);
+    raise_mem_exception(cs, address, retaddr, &excp);
 #endif /* CONFIG_USER_ONLY */
 
     return true;
@@ -647,9 +682,10 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 
 #ifndef CONFIG_USER_ONLY
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
-{
+{ 
+    struct mem_exception excp;
     if(mmuv6_enabled()) {
-        return arc_mmuv6_translate(env, addr, MMU_MEM_IRRELEVANT_TYPE, NULL);
+        return arc_mmuv6_translate(env, addr, MMU_MEM_IRRELEVANT_TYPE, NULL, &excp);
     } else {
         return addr;
     }
