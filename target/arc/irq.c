@@ -242,6 +242,7 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
     SET_STATUS_BIT(env->stat, DEf, 0);
     SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 0);
     env->in_delayslot_instruction = 0;
+    env->lock_lf_var = 0;
 
     /* Set .RB to 1 if additional register banks are specified. */
     if (cpu->cfg.rgf_num_banks > 0) {
@@ -347,6 +348,7 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
     SET_STATUS_BIT(env->stat, DEf, 0);
     SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 0);
     SET_STATUS_BIT(env->stat, Uf, 0);
+    env->lock_lf_var = 0;
 }
 
 /* Function implementation for reading the IRQ related aux regs. */
