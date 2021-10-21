@@ -742,7 +742,7 @@ arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
         return true;
         break;
     case MPU_ACTION:
-        /* TODO: Verify if no address translation happens on MPU */
+        /* TODO: This is incomplete. Verify if no address translation happens on MPU */
         *paddr = addr;
         return true;
         break;
