@@ -24,10 +24,14 @@
 #include "fpu/softfloat.h"
 
 #include "target/arc/arc-common.h"
-#include "target/arc/mmu.h"
+#if defined(TARGET_ARCV3)
 #include "target/arc/mmu-v6.h"
+#elif defined(TARGET_ARCV2)
+#include "target/arc/mmu.h"
+#endif
 #include "target/arc/mpu.h"
 #include "target/arc/cache.h"
+#include "target/arc/arconnect.h"
 
 #include "hw/registerfields.h"
 
@@ -284,6 +288,7 @@ typedef struct CPUARCState {
     struct arc_mmuv6 mmu;       /* mmu.h */
 #endif
     ARCMPU mpu;               /* mpu.h */
+    struct arc_arcconnect_info arconnect;
     struct arc_cache cache;   /* cache.h */
 
     bool      stopped;
@@ -305,6 +310,8 @@ typedef struct CPUARCState {
 #ifdef CONFIG_USER_ONLY
     target_ulong tls_backup;
 #endif
+
+    target_ulong readback;
 } CPUARCState;
 
 /*
@@ -415,6 +422,8 @@ struct ARCCPU {
     uint32_t mpy_build;     /* Multiply configuration register. */
     uint32_t isa_config;    /* Instruction Set Configuration Register. */
 
+    uint8_t core_id;        /* Core id holder. */
+
     CPUNegativeOffsetState neg;
     CPUARCState env;
 };
@@ -445,9 +454,7 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
 {
     *pc = env->pc;
     *cs_base = 0;
-#ifdef CONFIG_USER_ONLY
-    //assert(0); /* Not really supported at the moment. */
-#else
+#ifndef CONFIG_USER_ONLY
     *pflags = cpu_mmu_index(env, 0);
 #endif
 }
@@ -474,6 +481,10 @@ void arc_mmu_init(CPUARCState *env);
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr);
+bool
+arc_get_physical_addr(struct CPUState *env, hwaddr *paddr, vaddr addr,
+                  enum mmu_access_type rwe, bool probe,
+                  uintptr_t retaddr);
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr);
 void arc_mmu_disable(CPUARCState *env);
 

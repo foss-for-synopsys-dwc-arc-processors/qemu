@@ -324,11 +324,13 @@ protv_violation(struct CPUARCState *env, uint64_t pte, int level, int table_perm
             trigger_prot_v = true;
         }
 
-	    if((table_perm_overwride & RESTRICT_TBL_NO_USER_MODE) != 0) {
+	    if(rwe != MMU_MEM_IRRELEVANT_TYPE
+           && (table_perm_overwride & RESTRICT_TBL_NO_USER_MODE) != 0) {
 	        trigger_prot_v = true;
 	    }
 
-	    if(PTE_BLK_IS_KERNEL_ONLY(pte)) {
+	    if(rwe != MMU_MEM_IRRELEVANT_TYPE
+           && PTE_BLK_IS_KERNEL_ONLY(pte)) {
 	        trigger_prot_v = true;
 	    }
 	}
@@ -537,6 +539,9 @@ arc_mmuv6_translate(struct CPUARCState *env,
 
     return paddr;
 }
+#endif /* CONFIG_USER_ONLY */
+
+#ifndef CONFIG_USER_ONLY
 
 typedef enum {
     DIRECT_ACTION,
@@ -556,7 +561,8 @@ static int mmuv6_decide_action(const struct CPUARCState *env,
   else
     return DIRECT_ACTION;
 }
-#endif /* CONFIG_USER_ONLY */
+
+#endif
 
 static void QEMU_NORETURN raise_mem_exception(
         CPUState *cs, target_ulong addr, uintptr_t host_pc,
@@ -577,13 +583,16 @@ static void QEMU_NORETURN raise_mem_exception(
     cpu_loop_exit(cs);
 }
 
-#ifndef CONFIG_USER_ONLY
 
 bool
 arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
                   enum mmu_access_type rwe, bool probe,
                   uintptr_t retaddr)
 {
+#ifdef CONFIG_USER_ONLY
+    *paddr = addr;
+    return true;
+#else
     CPUARCState *env = &((ARC_CPU(cs))->env);
     uintptr_t mmu_idx = cpu_mmu_index(env, true);
     int action = mmuv6_decide_action(env, addr, mmu_idx);
@@ -611,8 +620,8 @@ arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
     default:
         g_assert_not_reached();
     }
+#endif
 }
-#endif /* ifndef CONFIG_USER_ONLY */
 
 /* Softmmu support function for MMU. */
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
@@ -680,10 +689,12 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     return true;
 }
 
+
 #ifndef CONFIG_USER_ONLY
 hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
 { 
     struct mem_exception excp;
+
     if(mmuv6_enabled()) {
         return arc_mmuv6_translate(env, addr, MMU_MEM_IRRELEVANT_TYPE, NULL, &excp);
     } else {

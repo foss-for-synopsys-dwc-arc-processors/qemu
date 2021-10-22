@@ -53,3 +53,14 @@ DEF_HELPER_FLAGS_2(asr_32, TCG_CALL_NO_RWG_SE, i64, i64, i64)
 
 DEF_HELPER_2(norml, i64, env, i64)
 #endif
+
+DEF_HELPER_2(llock, tl, env, tl)
+DEF_HELPER_3(scond, tl, env, tl, tl)
+#if defined(TARGET_ARCV3)
+DEF_HELPER_2(llockl, tl, env, tl)
+DEF_HELPER_3(scondl, tl, env, tl, tl)
+#elif defined(TARGET_ARCV2)
+DEF_HELPER_2(llockd, i64, env, tl)
+DEF_HELPER_3(scondd, tl, env, tl, i64)
+#endif
+

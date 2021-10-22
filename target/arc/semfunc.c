@@ -7547,177 +7547,89 @@ arc_gen_EX(DisasCtxt *ctx, TCGv b, TCGv c)
 
 
 /*
- * LLOCK
- *    Variables: @dest, @src
- *    Functions: getMemory, setLF
- * --- code ---
- * {
- *   @dest = getMemory (@src, LONG);
- *   setLF (1);
- * }
+ * LLOCK -- CODED BY HAND
  */
 
 int
 arc_gen_LLOCK(DisasCtxt *ctx, TCGv dest, TCGv src)
 {
     int ret = DISAS_NEXT;
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
-    getMemory(temp_1, src, LONG);
-    tcg_gen_mov_tl(dest, temp_1);
-    tcg_gen_movi_tl(temp_2, 1);
-    setLF(temp_2);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_2);
+    gen_helper_llock(dest, cpu_env, src);
 
     return ret;
 }
 
 
 /*
- * LLOCKD
- *    Variables: @dest, @src
- *    Functions: getMemory, nextReg, setLF
- * --- code ---
- * {
- *   @dest = getMemory (@src, LONG);
- *   pair = nextReg (dest);
- *   pair = getMemory ((@src + 4), LONG);
- *   setLF (1);
- * }
+ * LLOCKD -- CODED BY HAND
  */
 
 int
 arc_gen_LLOCKD(DisasCtxt *ctx, TCGv dest, TCGv src)
 {
     int ret = DISAS_NEXT;
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv pair = NULL;
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    getMemory(temp_1, src, LONG);
-    tcg_gen_mov_tl(dest, temp_1);
-    pair = nextReg (dest);
-    tcg_gen_addi_tl(temp_3, src, 4);
-    getMemory(temp_2, temp_3, LONG);
-    tcg_gen_mov_tl(pair, temp_2);
-    tcg_gen_movi_tl(temp_4, 1);
-    setLF(temp_4);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(temp_2);
-    tcg_temp_free(temp_4);
+    TCGv pair = nextReg (dest);
+
+    TCGv_i64 temp_1 = tcg_temp_local_new_i64();
+    TCGv_i64 temp_2 = tcg_temp_local_new_i64();
+
+    gen_helper_llockd(temp_1, cpu_env, src);
+
+    tcg_gen_shri_i64(temp_2, temp_1, 32);
+    tcg_gen_trunc_i64_tl(pair, temp_2);
+    tcg_gen_trunc_i64_tl(dest, temp_1);
+
+    tcg_temp_free_i64(temp_1);
+    tcg_temp_free_i64(temp_2);
+
 
     return ret;
 }
 
 
 /*
- * SCOND
- *    Variables: @src, @dest
- *    Functions: getLF, setMemory, setZFlag, setLF
- * --- code ---
- * {
- *   lf = getLF ();
- *   if((lf == 1))
- *     {
- *       setMemory (@src, LONG, @dest);
- *     };
- *   setZFlag (!lf);
- *   setLF (0);
- * }
+ * SCOND -- CODED BY HAND
  */
 
 int
 arc_gen_SCOND(DisasCtxt *ctx, TCGv src, TCGv dest)
 {
     int ret = DISAS_NEXT;
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv lf = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
     TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_5 = tcg_temp_local_new();
-    getLF(temp_3);
-    tcg_gen_mov_tl(lf, temp_3);
-    TCGLabel *done_1 = gen_new_label();
-    tcg_gen_setcondi_tl(TCG_COND_EQ, temp_1, lf, 1);
-    tcg_gen_xori_tl(temp_2, temp_1, 1);
-    tcg_gen_andi_tl(temp_2, temp_2, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    setMemory(src, LONG, dest);
-    gen_set_label(done_1);
-    tcg_gen_xori_tl(temp_4, lf, 1);
-    tcg_gen_andi_tl(temp_4, temp_4, 1);
+    gen_helper_scond(temp_4, cpu_env, src, dest);
     setZFlag(temp_4);
-    tcg_gen_movi_tl(temp_5, 0);
-    setLF(temp_5);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(lf);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_2);
     tcg_temp_free(temp_4);
-    tcg_temp_free(temp_5);
 
     return ret;
 }
 
 
 /*
- * SCONDD
- *    Variables: @src, @dest
- *    Functions: getLF, setMemory, nextReg, setZFlag, setLF
- * --- code ---
- * {
- *   lf = getLF ();
- *   if((lf == 1))
- *     {
- *       setMemory (@src, LONG, @dest);
- *       pair = nextReg (dest);
- *       setMemory ((@src + 4), LONG, pair);
- *     };
- *   setZFlag (!lf);
- *   setLF (0);
- * }
+ * SCONDD -- CODED BY HAND
  */
 
 int
 arc_gen_SCONDD(DisasCtxt *ctx, TCGv src, TCGv dest)
 {
     int ret = DISAS_NEXT;
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv lf = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
     TCGv pair = NULL;
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_5 = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
-    getLF(temp_3);
-    tcg_gen_mov_tl(lf, temp_3);
-    TCGLabel *done_1 = gen_new_label();
-    tcg_gen_setcondi_tl(TCG_COND_EQ, temp_1, lf, 1);
-    tcg_gen_xori_tl(temp_2, temp_1, 1);
-    tcg_gen_andi_tl(temp_2, temp_2, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    setMemory(src, LONG, dest);
     pair = nextReg (dest);
-    tcg_gen_addi_tl(temp_4, src, 4);
-    setMemory(temp_4, LONG, pair);
-    gen_set_label(done_1);
-    tcg_gen_xori_tl(temp_5, lf, 1);
-    tcg_gen_andi_tl(temp_5, temp_5, 1);
-    setZFlag(temp_5);
-    tcg_gen_movi_tl(temp_6, 0);
-    setLF(temp_6);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(lf);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_2);
+
+    TCGv_i64 temp_1 = tcg_temp_local_new_i64();
+    TCGv_i64 temp_2 = tcg_temp_local_new_i64();
+
+    tcg_gen_ext_i32_i64(temp_1, pair);
+    tcg_gen_ext_i32_i64(temp_2, dest);
+    tcg_gen_shli_i64(temp_1, temp_1, 32);
+    tcg_gen_or_i64(temp_1, temp_1, temp_2);
+
+    TCGv temp_4 = tcg_temp_local_new();
+    gen_helper_scondd(temp_4, cpu_env, src, temp_1);
+    setZFlag(temp_4);
+
+    tcg_temp_free_i64(temp_1);
+    tcg_temp_free_i64(temp_2);
     tcg_temp_free(temp_4);
-    tcg_temp_free(temp_5);
-    tcg_temp_free(temp_6);
 
     return ret;
 }

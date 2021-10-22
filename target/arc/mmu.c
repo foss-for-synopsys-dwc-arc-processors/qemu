@@ -22,7 +22,7 @@
 #include "qemu/osdep.h"
 #include "mmu.h"
 #include "target/arc/regs.h"
-#include "qemu/osdep.h"
+//#include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
 
@@ -561,6 +561,8 @@ arc_mmu_translate(struct CPUARCState *env,
     }
 }
 
+#ifndef CONFIG_USER_ONLY
+
 static uint32_t
 arc_mmu_page_address_for(uint32_t vaddr)
 {
@@ -571,7 +573,6 @@ arc_mmu_page_address_for(uint32_t vaddr)
     return ret;
 }
 
-#ifndef CONFIG_USER_ONLY
 static int
 arc_mmu_get_prot_for_index(uint32_t index, CPUARCState *env)
 {
@@ -623,6 +624,7 @@ static void QEMU_NORETURN raise_mem_exception(
 }
 
 #ifndef CONFIG_USER_ONLY
+
 /* MMU range */
 static const uint32_t MMU_VA_START = 0x00000000;  /* inclusive */
 static const uint32_t MMU_VA_END = 0x80000000;    /* exclusive */
@@ -704,6 +706,7 @@ static int decide_action(const CPUARCState *env,
 
     return table[env->mmu.enabled][env->mpu.enabled][is_mmu_range][is_user];
 }
+
 #endif
 
 void arc_mmu_init(CPUARCState *env)
@@ -723,14 +726,15 @@ void arc_mmu_init(CPUARCState *env)
     memset(env->mmu.nTLB, 0, sizeof(env->mmu.nTLB));
 }
 
-
-#ifndef CONFIG_USER_ONLY
-
 bool
 arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
                   enum mmu_access_type rwe, bool probe,
                   uintptr_t retaddr)
 {
+#ifdef CONFIG_USER_ONLY
+    *paddr = addr;
+    return true;
+#else
     CPUARCState *env = &((ARC_CPU(cs))->env);
     uintptr_t mmu_idx = cpu_mmu_index(env, true);
     int action = decide_action(env, addr, mmu_idx);
@@ -769,8 +773,8 @@ arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
     default:
         g_assert_not_reached();
     }
+#endif
 }
-#endif /* ifndef CONFIG_USER_ONLY */
 
 /* Softmmu support function for MMU. */
 bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
