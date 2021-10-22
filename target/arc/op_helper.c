@@ -32,6 +32,7 @@
 #include "irq.h"
 #include "sysemu/sysemu.h"
 #include "exec/exec-all.h"
+#include "target/arc/arconnect.h"
 
 
 static target_ulong get_status32(CPUARCState *env)
@@ -73,6 +74,138 @@ static void set_status32(CPUARCState *env, target_ulong value)
     }
 #endif
 }
+
+target_ulong helper_llock(CPUARCState *env, target_ulong addr)
+{
+    assert((addr & 0x3) == 0);
+    hwaddr haddr;
+    CPUState *cs = env_cpu(env);
+    arc_get_physical_addr(cs, &haddr, addr, MMU_MEM_READ, false, GETPC());
+    struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(haddr)];
+    qemu_log_mask(LOG_UNIMP, "0x" TARGET_FMT_lx "LLOCK at addr 0x" TARGET_FMT_lx " at index %d\n",
+                  env->pc,
+                  (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
+    qemu_mutex_lock(&entry->mutex);
+    env->arconnect.locked_mutex = &entry->mutex;
+    target_ulong ret = cpu_ldl_data(env, addr);
+    env->arconnect.lpa_lf = entry;
+    entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
+    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    entry->requestor = (void *) env;
+    qemu_mutex_unlock(&entry->mutex);
+    return ret;
+}
+target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong value)
+{
+    assert((addr & 0x3) == 0);
+    hwaddr haddr;
+    CPUState *cs = env_cpu(env);
+    arc_get_physical_addr(cs, &haddr, addr, MMU_MEM_WRITE, false, GETPC());
+    qemu_log_mask(LOG_UNIMP, "0x" TARGET_FMT_lx "SCOND at addr 0x" TARGET_FMT_lx " at index %d\n",
+                  env->pc,
+                  (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
+    qemu_mutex_lock(env->arconnect.locked_mutex);
+    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+    haddr = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
+    target_ulong ret = 1;
+    if(entry->lpa_lf == (haddr + 1) && (entry->requestor == (void *) env)) {
+        ret  = 0;
+        cpu_stl_data(env, addr, value);
+        entry->lpa_lf = 0;
+        qemu_log_mask(LOG_UNIMP, "SCOND success with value 0x" TARGET_FMT_lx "\n", value);
+    }
+    else
+        {
+          qemu_log_mask(LOG_UNIMP, "SCOND fail with value 0x" TARGET_FMT_lx "\n", value);
+
+        }
+    qemu_mutex_unlock(&entry->mutex);
+    return ret;
+}
+
+#if defined(TARGET_ARCV3)
+target_ulong helper_llockl(CPUARCState *env, target_ulong addr)
+{
+    assert((addr & 0x3) == 0);
+    target_ulong haddr;
+    CPUState *cs = env_cpu(env);
+    arc_get_physical_addr(cs, &haddr, addr, MMU_MEM_READ, false, GETPC());
+    struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(haddr)];
+    qemu_log_mask(LOG_UNIMP, "0x" TARGET_FMT_lx "LLOCKL at addr 0x" TARGET_FMT_lx " at index %d\n",
+                  env->pc,
+                  (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
+    qemu_mutex_lock(&entry->mutex);
+    env->arconnect.locked_mutex = &entry->mutex;
+    target_ulong ret = cpu_ldq_data(env, addr);
+    env->arconnect.lpa_lf = entry;
+    entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
+    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    entry->requestor = (void *) env;
+    qemu_mutex_unlock(&entry->mutex);
+    return ret;
+}
+target_ulong helper_scondl(CPUARCState *env, target_ulong addr, target_ulong value)
+{
+    assert((addr & 0x3) == 0);
+    target_ulong haddr;
+    CPUState *cs = env_cpu(env);
+    arc_get_physical_addr(cs, &haddr, addr, MMU_MEM_WRITE, false, GETPC());
+    qemu_log_mask(LOG_UNIMP, "0x" TARGET_FMT_lx "SCONDL at addr 0x" TARGET_FMT_lx " at index %d\n",
+                  env->pc,
+                  (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
+    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+    qemu_mutex_lock(env->arconnect.locked_mutex);
+    target_ulong ret = 1;
+    haddr = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
+    if(entry->lpa_lf == (haddr + 1) && (entry->requestor == (void *) env)) {
+        ret = 0;
+        cpu_stq_data(env, addr, value);
+        entry->lpa_lf = 0;
+        qemu_log_mask(LOG_UNIMP, "SCONDL success\n");
+    }
+    qemu_mutex_unlock(&entry->mutex);
+    return ret;
+}
+
+#elif defined(TARGET_ARCV2)
+
+uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
+{
+    assert((addr & 0x7) == 0);
+    hwaddr haddr;
+    CPUState *cs = env_cpu(env);
+    arc_get_physical_addr(cs, &haddr, addr, MMU_MEM_READ, false, GETPC());
+    struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(haddr)];
+    qemu_mutex_lock(&entry->mutex);
+    env->arconnect.locked_mutex = &entry->mutex;
+    target_ulong ret = cpu_ldl_data(env, addr);
+    ret |= (((uint64_t) cpu_ldl_data(env, addr+4)) << 32);
+    env->arconnect.lpa_lf = entry;
+    entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
+    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    entry->requestor = (void *) env;
+    qemu_mutex_unlock(&entry->mutex);
+    return ret;
+}
+target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
+{
+    assert((addr & 0x7) == 0);
+    hwaddr haddr;
+    CPUState *cs = env_cpu(env);
+    arc_get_physical_addr(cs, &haddr, addr, MMU_MEM_WRITE, false, GETPC());
+    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+    qemu_mutex_lock(env->arconnect.locked_mutex);
+    target_ulong ret = !(entry->lpa_lf & 0x1);
+    addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
+    if(entry->lpa_lf == (haddr + 1) && (entry->requestor == (void *) env)) {
+        cpu_stl_data(env, addr, (value & 0xffffffff));
+        cpu_stl_data(env, addr+4, (value >> 32));
+        entry->lpa_lf = 0;
+    }
+    qemu_mutex_unlock(&entry->mutex);
+    return ret;
+}
+#endif
 
 static void report_aux_reg_error(target_ulong aux)
 {

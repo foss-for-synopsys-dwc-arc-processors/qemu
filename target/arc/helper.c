@@ -41,6 +41,11 @@ void arc_cpu_do_interrupt(CPUState *cs)
     uint32_t     vectno;
     const char  *name;
 
+    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+    if(entry != NULL) {
+        qemu_mutex_unlock(&(entry->mutex));
+        entry->lpa_lf = 0;
+    }
     /*
      * NOTE: Special LP_END exception. Immediately return code execution to
      * lp_start.
