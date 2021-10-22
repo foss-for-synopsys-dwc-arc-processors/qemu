@@ -21,7 +21,7 @@
 #ifndef ARC64_MMUV3_H
 #define ARC64_MMUV3_H
 
-#include "target/arc/regs.h"
+#include "target/arc/mmu-common.h"
 
 struct arc_mmuv6 {
     struct mmuv6_exception {

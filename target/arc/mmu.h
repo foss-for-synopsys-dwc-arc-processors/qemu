@@ -22,7 +22,7 @@
 #ifndef ARC_MMU_H
 #define ARC_MMU_H
 
-#include "target/arc/regs.h"
+#include "target/arc/mmu-common.h"
 
 /* PD0 flags */
 #define PD0_VPN 0x7ffff000
@@ -63,32 +63,6 @@
 #define N_WAYS          4
 #define TLB_ENTRIES     (N_SETS * N_WAYS)
 
-#define PAGE_SHIFT      TARGET_PAGE_BITS
-#define PAGE_SIZE       (1 << PAGE_SHIFT)
-#define PAGE_MASK       (~(PAGE_SIZE - 1))
-
-/* NOTE: Do not reorder, this is casted in tbl_fill function. */
-enum mmu_access_type {
-    MMU_MEM_READ = 0,
-    MMU_MEM_WRITE,
-    MMU_MEM_FETCH,  /* Read for execution. */
-    MMU_MEM_ATTOMIC,
-    MMU_MEM_IRRELEVANT_TYPE,
-};
-
-#define RWE_STRING(RWE) \
-    (RWE == MMU_MEM_READ ? "MEM_READ" : \
-     (RWE == MMU_MEM_WRITE ? "MEM_WRITE" : \
-      (RWE == MMU_MEM_ATTOMIC ? "MEM_ATTOMIC" : \
-       (RWE == MMU_MEM_FETCH ? "MEM_FETCH" : \
-        (RWE == MMU_MEM_IRRELEVANT_TYPE ? "MEM_IRRELEVANT" \
-         : "NOT_VALID_RWE")))))
-
-
-#define CAUSE_CODE(ENUM) \
-    ((ENUM == MMU_MEM_FETCH) ? 0 : \
-     ((ENUM == MMU_MEM_READ) ? 1 : \
-       ((ENUM == MMU_MEM_WRITE) ? 2 : 3)))
 
 
 struct arc_tlb_e {
@@ -98,25 +72,6 @@ struct arc_tlb_e {
      */
     uint32_t pd0, pd1;
 };
-
-#define RAISE_MMU_EXCEPTION(ENV) { \
-    do_exception_no_delayslot(ENV, \
-                              ENV->mmu.exception.number, \
-                              ENV->mmu.exception.causecode, \
-                              ENV->mmu.exception.parameter); \
-}
-
-struct mem_exception {
-  int32_t number;
-  uint8_t causecode;
-  uint8_t parameter;
-};
-
-#define SET_MEM_EXCEPTION(EXCP, N, C, P) { \
-  (EXCP).number = N; \
-  (EXCP).causecode = C; \
-  (EXCP).parameter = P; \
-}
 
 struct arc_mmu {
     uint32_t enabled;
@@ -149,10 +104,5 @@ struct CPUARCState;
 
 void arc_mmu_debug_tlb(struct CPUARCState *env);
 void arc_mmu_debug_tlb_for_vaddr(struct CPUARCState *env, uint32_t vaddr);
-
-bool
-arc_get_physical_addr(struct CPUState *env, hwaddr *paddr, vaddr addr,
-                  enum mmu_access_type rwe, bool probe,
-                  uintptr_t retaddr);
 
 #endif /* ARC_MMU_H */
