@@ -83,6 +83,7 @@ TESTCASES += check_bta.tst
 TESTCASES += check_vadd.tst
 TESTCASES += check_vsub.tst
 TESTCASES += check_vmac2h.tst
+TESTCASES += check_dmachu.tst
 TESTCASES += check_mpyd.tst
 TESTCASES += check_bi.tst
 TESTCASES += check_bih.tst

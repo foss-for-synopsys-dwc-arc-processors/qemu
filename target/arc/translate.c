@@ -307,6 +307,11 @@ static bool read_and_decode_context(DisasContext *ctx,
         ctx->insn.limm = 0;
     }
 
+    if(ctx->insn.limm_split_16_p) {
+        ctx->insn.limm &= 0x0000ffff;
+        ctx->insn.limm |= (ctx->insn.limm << 16);
+    }
+
     /* Update context. */
     ctx->insn.len = length;
     ctx->npc = ctx->cpc + length;

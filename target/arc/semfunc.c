@@ -8435,4 +8435,150 @@ arc_gen_FFS(DisasCtxt *ctx, TCGv src, TCGv dest)
     return ret;
 }
 
+/*
+ * DMACHU -- CODED BY HAND
+ */
+int
+arc_gen_DMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    int ret = DISAS_NEXT;
+    TCGv_i64 b_lo = tcg_temp_new_i64();
+    TCGv_i64 b_hi = tcg_temp_new_i64();
+    TCGv_i64 c_lo = tcg_temp_new_i64();
+    TCGv_i64 c_hi = tcg_temp_new_i64();
 
+    TCGv acc_lo = tcg_temp_new();
+    TCGv acc_hi = tcg_temp_new();
+
+    TCGv_i64 lmul = tcg_temp_new_i64();
+    TCGv_i64 rmul = tcg_temp_new_i64();
+    TCGv_i64 result = tcg_temp_new_i64();
+    TCGv_i64 acc = tcg_temp_new_i64();
+
+    TCGv cc_temp = tcg_temp_local_new();
+    TCGLabel *cc_done = gen_new_label();
+
+    /* Conditional execution */
+    getCCFlag(cc_temp);
+    tcg_gen_brcond_tl(TCG_COND_NE, cc_temp, arc_true, cc_done);
+
+    /* Instruction code */
+
+    tcg_gen_extu_i32_i64(b_hi, b);
+    tcg_gen_extract_i64(b_lo, b_hi, 0, 16);
+    tcg_gen_extract_i64(b_hi, b_hi, 16, 16);
+    tcg_gen_extu_i32_i64(c_hi, c);
+    tcg_gen_extract_i64(c_lo, c_hi, 0, 16);
+    tcg_gen_extract_i64(c_hi, c_hi, 16, 16);
+
+    tcg_gen_mul_i64(lmul, b_lo, c_lo);
+    tcg_gen_mul_i64(rmul, b_hi, c_hi);
+
+    getRegister(acc_lo, R_ACCLO);
+    getRegister(acc_hi, R_ACCHI);
+    tcg_gen_concat_i32_i64(acc, acc_lo, acc_hi);
+
+    tcg_gen_add_i64(result, lmul, rmul);
+    tcg_gen_add_i64(result, acc, result);
+
+    tcg_gen_extrl_i64_i32(acc_lo, result);
+    tcg_gen_extrh_i64_i32(acc_hi, result);
+
+    setRegister(R_ACCLO, acc_lo);
+    setRegister(R_ACCHI, acc_hi);
+
+    tcg_gen_extrl_i64_i32(a, result);
+
+    /* Conditional execution end. */
+    gen_set_label(cc_done);
+    tcg_temp_free(cc_temp);
+
+    tcg_temp_free_i64(b_lo);
+    tcg_temp_free_i64(b_hi);
+    tcg_temp_free_i64(c_lo);
+    tcg_temp_free_i64(c_hi);
+
+    tcg_temp_free(acc_lo);
+    tcg_temp_free(acc_hi);
+
+    tcg_temp_free_i64(lmul);
+    tcg_temp_free_i64(rmul);
+    tcg_temp_free_i64(result);
+    tcg_temp_free_i64(acc);
+
+    return ret;
+}
+
+/*
+ * DMACH -- CODED BY HAND
+ */
+int
+arc_gen_DMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    int ret = DISAS_NEXT;
+    TCGv_i64 b_lo = tcg_temp_new_i64();
+    TCGv_i64 b_hi = tcg_temp_new_i64();
+    TCGv_i64 c_lo = tcg_temp_new_i64();
+    TCGv_i64 c_hi = tcg_temp_new_i64();
+
+    TCGv acc_lo = tcg_temp_new();
+    TCGv acc_hi = tcg_temp_new();
+
+    TCGv_i64 lmul = tcg_temp_new_i64();
+    TCGv_i64 rmul = tcg_temp_new_i64();
+    TCGv_i64 result = tcg_temp_new_i64();
+    TCGv_i64 acc = tcg_temp_new_i64();
+
+    TCGv cc_temp = tcg_temp_local_new();
+    TCGLabel *cc_done = gen_new_label();
+
+    /* Conditional execution */
+    getCCFlag(cc_temp);
+    tcg_gen_brcond_tl(TCG_COND_NE, cc_temp, arc_true, cc_done);
+
+    /* Instruction code */
+
+    tcg_gen_extu_i32_i64(b_hi, b);
+    tcg_gen_sextract_i64(b_lo, b_hi, 0, 16);
+    tcg_gen_sextract_i64(b_hi, b_hi, 16, 16);
+    tcg_gen_extu_i32_i64(c_hi, c);
+    tcg_gen_sextract_i64(c_lo, c_hi, 0, 16);
+    tcg_gen_sextract_i64(c_hi, c_hi, 16, 16);
+
+    tcg_gen_mul_i64(lmul, b_lo, c_lo);
+    tcg_gen_mul_i64(rmul, b_hi, c_hi);
+
+    getRegister(acc_lo, R_ACCLO);
+    getRegister(acc_hi, R_ACCHI);
+    tcg_gen_concat_i32_i64(acc, acc_lo, acc_hi);
+
+    tcg_gen_add_i64(result, lmul, rmul);
+    tcg_gen_add_i64(result, acc, result);
+
+    tcg_gen_extrl_i64_i32(acc_lo, result);
+    tcg_gen_extrh_i64_i32(acc_hi, result);
+
+    setRegister(R_ACCLO, acc_lo);
+    setRegister(R_ACCHI, acc_hi);
+
+    tcg_gen_extrl_i64_i32(a, result);
+
+    /* Conditional execution end. */
+    gen_set_label(cc_done);
+    tcg_temp_free(cc_temp);
+
+    tcg_temp_free_i64(b_lo);
+    tcg_temp_free_i64(b_hi);
+    tcg_temp_free_i64(c_lo);
+    tcg_temp_free_i64(c_hi);
+
+    tcg_temp_free(acc_lo);
+    tcg_temp_free(acc_hi);
+
+    tcg_temp_free_i64(lmul);
+    tcg_temp_free_i64(rmul);
+    tcg_temp_free_i64(result);
+    tcg_temp_free_i64(acc);
+
+    return ret;
+}

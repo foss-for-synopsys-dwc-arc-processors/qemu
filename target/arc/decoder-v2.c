@@ -1167,6 +1167,14 @@ load_insninfo_if_valid(uint64_t insn,
         if (operand->flags & ARC_OPERAND_LIMM &&
             !(operand->flags & ARC_OPERAND_DUPLICATE)) {
             has_limm = true;
+            if (operand->flags & ARC_OPERAND_16_SPLIT) {
+                ret.limm_split_16_p = true;
+            }
+        } else {
+            if (operand->flags & ARC_OPERAND_16_SPLIT) {
+                value &= 0x0000ffff;
+                value |= (value << 16);
+            }
         }
 
         ret.operands[noperands].value = value;
