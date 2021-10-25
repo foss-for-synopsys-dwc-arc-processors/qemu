@@ -287,6 +287,9 @@ const struct arc_opcode *arc_find_format(insn_t *insnd,
 /* Mark the braket possition. */
 #define ARC_OPERAND_BRAKET      0x1000
 
+/* Replicate value in 16bit chunks. */
+#define ARC_OPERAND_16_SPLIT      0x2000
+
 /* Mask for selecting the type for typecheck purposes. */
 #define ARC_OPERAND_TYPECHECK_MASK               \
     (ARC_OPERAND_IR                              \

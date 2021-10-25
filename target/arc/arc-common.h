@@ -48,6 +48,7 @@ typedef struct {
     uint64_t limm;
     uint8_t len;
     bool limm_p;
+    bool limm_split_16_p;
 #define unsigned_limm_p limm_p
     bool signed_limm_p;
     operand_t operands[3];
