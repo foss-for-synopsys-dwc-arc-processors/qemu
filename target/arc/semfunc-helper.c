@@ -104,7 +104,7 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
         break;
     /* LS */
     case ARC_COND_LS:
-        /* C & Z */
+        /* C | Z */
         tcg_gen_or_tl(ret, cpu_Cf, cpu_Zf);
         break;
     /* PNZ */
