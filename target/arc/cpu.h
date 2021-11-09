@@ -312,6 +312,10 @@ typedef struct CPUARCState {
 #endif
 
     target_ulong readback;
+
+    target_ulong exclusive_addr;
+    target_ulong exclusive_val;
+
 } CPUARCState;
 
 /*
