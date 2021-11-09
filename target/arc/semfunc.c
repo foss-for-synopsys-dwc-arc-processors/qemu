@@ -7518,31 +7518,19 @@ arc_gen_SETHS(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 
 /*
- * EX
- *    Variables: @b, @c
- *    Functions: getMemory, setMemory
- * --- code ---
- * {
- *   temp = @b;
- *   @b = getMemory (@c, LONG);
- *   setMemory (@c, LONG, temp);
- * }
+ * EX - CODED BY HAND
  */
 
 int
-arc_gen_EX(DisasCtxt *ctx, TCGv b, TCGv c)
+arc_gen_EX (DisasCtxt *ctx, TCGv b, TCGv c)
 {
-    int ret = DISAS_NEXT;
-    TCGv temp = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    tcg_gen_mov_tl(temp, b);
-    getMemory(temp_1, c, LONG);
-    tcg_gen_mov_tl(b, temp_1);
-    setMemory(c, LONG, temp);
-    tcg_temp_free(temp);
-    tcg_temp_free(temp_1);
+  int ret = DISAS_NEXT;
+  TCGv temp = tcg_temp_local_new();
+  tcg_gen_mov_tl(temp, b);
+  tcg_gen_atomic_xchg_tl(b, c, temp, ctx->mem_idx, MO_UL);
+  tcg_temp_free(temp);
 
-    return ret;
+  return ret;
 }
 
 
