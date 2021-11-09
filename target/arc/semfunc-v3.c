@@ -8172,15 +8172,8 @@ arc_gen_SETHS (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 
 
-/* EX
- *    Variables: @b, @c
- *    Functions: getMemory, setMemory
---- code ---
-{
-  temp = @b;
-  @b = getMemory (@c, LONG);
-  setMemory (@c, LONG, temp);
-}
+/*
+ * EX - CODED BY HAND
  */
 
 int
@@ -8267,19 +8260,27 @@ arc_gen_SCONDL(DisasCtxt *ctx, TCGv src, TCGv dest)
 
 
 
-/* DMB
- *    Variables: @a
- *    Functions:
---- code ---
-{
-  @a = @a;
-}
+/* DMB - HAND MADE
  */
 
 int
 arc_gen_DMB (DisasCtxt *ctx, TCGv a)
 {
   int ret = DISAS_NEXT;
+
+  TCGBar bar = 0;
+  switch(ctx->insn.operands[0].value & 7) {
+    case 1:
+      bar |= TCG_BAR_SC | TCG_MO_LD_LD | TCG_MO_LD_ST;
+      break;
+    case 2:
+      bar |= TCG_BAR_SC | TCG_MO_ST_ST;
+      break;
+    default:
+      bar |= TCG_BAR_SC | TCG_MO_ALL;
+      break;
+  }
+  tcg_gen_mb(bar);
 
   return ret;
 }
@@ -13635,15 +13636,8 @@ arc_gen_SETHSL (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 
 
-/* EXL
- *    Variables: @b, @c
- *    Functions: getMemory, setMemory
---- code ---
-{
-  temp = @b;
-  @b = getMemory (@c, LONG);
-  setMemory (@c, LONG, temp);
-}
+/*
+ * EXL - CODED BY HAND
  */
 
 int
@@ -13651,13 +13645,9 @@ arc_gen_EXL (DisasCtxt *ctx, TCGv b, TCGv c)
 {
   int ret = DISAS_NEXT;
   TCGv temp = tcg_temp_local_new();
-  TCGv temp_1 = tcg_temp_local_new();
   tcg_gen_mov_tl(temp, b);
-  getMemory(temp_1, c, LONGLONG);
-  tcg_gen_mov_tl(b, temp_1);
-  setMemory(c, LONGLONG, temp);
+  tcg_gen_atomic_xchg_tl(b, c, temp, ctx->mem_idx, MO_Q);
   tcg_temp_free(temp);
-  tcg_temp_free(temp_1);
 
   return ret;
 }
