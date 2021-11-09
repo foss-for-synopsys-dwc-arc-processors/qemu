@@ -8181,20 +8181,18 @@ arc_gen_EX (DisasCtxt *ctx, TCGv b, TCGv c)
 {
   int ret = DISAS_NEXT;
   TCGv temp = tcg_temp_local_new();
-  TCGv temp_1 = tcg_temp_local_new();
   tcg_gen_mov_tl(temp, b);
-  getMemory(temp_1, c, LONG);
-  tcg_gen_mov_tl(b, temp_1);
-  setMemory(c, LONG, temp);
+  tcg_gen_atomic_xchg_tl(b, c, temp, ctx->mem_idx, MO_UL);
   tcg_temp_free(temp);
-  tcg_temp_free(temp_1);
 
   return ret;
 }
 
 
+#define ARM_LIKE_LLOCK_SCOND
 
-
+extern TCGv cpu_exclusive_addr;
+extern TCGv cpu_exclusive_val;
 
 /*
  * LLOCK -- CODED BY HAND
@@ -8204,7 +8202,13 @@ int
 arc_gen_LLOCK(DisasCtxt *ctx, TCGv dest, TCGv src)
 {
     int ret = DISAS_NEXT;
+#ifndef ARM_LIKE_LLOCK_SCOND
     gen_helper_llock(dest, cpu_env, src);
+#else
+    tcg_gen_qemu_ld_tl(cpu_exclusive_val, src, ctx->mem_idx, MO_UL);
+    tcg_gen_mov_tl(dest, cpu_exclusive_val);
+    tcg_gen_mov_tl(cpu_exclusive_addr, src);
+#endif
 
     return ret;
 }
@@ -8217,7 +8221,13 @@ int
 arc_gen_LLOCKL(DisasCtxt *ctx, TCGv dest, TCGv src)
 {
     int ret = DISAS_NEXT;
+#ifndef ARM_LIKE_LLOCK_SCOND
     gen_helper_llockl(dest, cpu_env, src);
+#else
+    tcg_gen_qemu_ld_tl(cpu_exclusive_val, src, ctx->mem_idx, MO_Q);
+    tcg_gen_mov_tl(dest, cpu_exclusive_val);
+    tcg_gen_mov_tl(cpu_exclusive_addr, src);
+#endif
 
     return ret;
 }
@@ -8228,13 +8238,37 @@ arc_gen_LLOCKL(DisasCtxt *ctx, TCGv dest, TCGv src)
  */
 
 int
-arc_gen_SCOND(DisasCtxt *ctx, TCGv src, TCGv dest)
+arc_gen_SCOND(DisasCtxt *ctx, TCGv addr, TCGv value)
 {
     int ret = DISAS_NEXT;
+#ifndef ARM_LIKE_LLOCK_SCOND
     TCGv temp_4 = tcg_temp_local_new();
-    gen_helper_scond(temp_4, cpu_env, src, dest);
+    gen_helper_scond(temp_4, cpu_env, addr, value);
     setZFlag(temp_4);
     tcg_temp_free(temp_4);
+#else
+    TCGLabel *fail_label = gen_new_label();
+    TCGLabel *done_label = gen_new_label();
+    TCGv tmp;
+
+    tcg_gen_brcond_tl(TCG_COND_NE, addr, cpu_exclusive_addr, fail_label);
+    tmp = tcg_temp_new();
+
+    tcg_gen_atomic_cmpxchg_tl(tmp, cpu_exclusive_addr, cpu_exclusive_val,
+                               value, ctx->mem_idx,
+                               MO_UL | MO_ALIGN);
+    tcg_gen_setcond_tl(TCG_COND_NE, tmp, tmp, cpu_exclusive_val);
+
+    setZFlag(tmp);
+
+    tcg_temp_free(tmp);
+    tcg_gen_br(done_label);
+
+    gen_set_label(fail_label);
+    tcg_gen_movi_tl(cpu_Zf, 1);
+    gen_set_label(done_label);
+    tcg_gen_movi_tl(cpu_exclusive_addr, -1);
+#endif
 
     return ret;
 }
@@ -8245,13 +8279,37 @@ arc_gen_SCOND(DisasCtxt *ctx, TCGv src, TCGv dest)
  */
 
 int
-arc_gen_SCONDL(DisasCtxt *ctx, TCGv src, TCGv dest)
+arc_gen_SCONDL(DisasCtxt *ctx, TCGv addr, TCGv value)
 {
     int ret = DISAS_NEXT;
+#ifndef ARM_LIKE_LLOCK_SCOND
     TCGv temp_4 = tcg_temp_local_new();
-    gen_helper_scondl(temp_4, cpu_env, src, dest);
+    gen_helper_scondl(temp_4, cpu_env, addr, value);
     setZFlag(temp_4);
     tcg_temp_free(temp_4);
+#else
+    TCGLabel *fail_label = gen_new_label();
+    TCGLabel *done_label = gen_new_label();
+    TCGv tmp;
+
+    tcg_gen_brcond_tl(TCG_COND_NE, addr, cpu_exclusive_addr, fail_label);
+    tmp = tcg_temp_new();
+
+    tcg_gen_atomic_cmpxchg_tl(tmp, cpu_exclusive_addr, cpu_exclusive_val,
+                               value, ctx->mem_idx,
+                               MO_Q | MO_ALIGN);
+    tcg_gen_setcond_tl(TCG_COND_NE, tmp, tmp, cpu_exclusive_val);
+
+    setZFlag(tmp);
+
+    tcg_temp_free(tmp);
+    tcg_gen_br(done_label);
+
+    gen_set_label(fail_label);
+    tcg_gen_movi_tl(cpu_Zf, 1);
+    gen_set_label(done_label);
+    tcg_gen_movi_tl(cpu_exclusive_addr, -1);
+#endif
 
     return ret;
 }

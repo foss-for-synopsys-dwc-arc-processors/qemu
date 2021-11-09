@@ -62,6 +62,10 @@ TCGv    cpu_lock_lf_var;
 /* NOTE: Pseudo register required for comparison with lp_end */
 TCGv    cpu_npc;
 
+/* LLOCK and SCOND support values */
+TCGv cpu_exclusive_addr;
+TCGv cpu_exclusive_val;
+
 /* Macros */
 
 #include "exec/gen-icount.h"
@@ -169,6 +173,11 @@ void arc_translate_init(void)
 
 #undef ARC_REG_OFFS
 #undef NEW_ARC_REG
+
+    cpu_exclusive_addr = tcg_global_mem_new(cpu_env,
+        offsetof(CPUARCState, exclusive_addr), "exclusive_addr");
+    cpu_exclusive_val = tcg_global_mem_new(cpu_env,
+        offsetof(CPUARCState, exclusive_val), "exclusive_val");
 }
 
 static void arc_tr_init_disas_context(DisasContextBase *dcbase,
