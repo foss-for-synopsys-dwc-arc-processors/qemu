@@ -92,8 +92,6 @@ static void arc_rtie_firq(CPUARCState *env)
         switchSP(env);
     }
 
-    assert(CPU_SP(env) >= 0x80000000);
-
     env->stat = env->stat_l1; /* FIXME use status32_p0 reg. */
     /* Keep U-bit in sync. */
     env->aux_irq_act &= ~(GET_STATUS_BIT(env->stat, Uf) << 31);
