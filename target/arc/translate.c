@@ -1935,9 +1935,35 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
       SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 1);
     }
 
+
+/* #define ZOL_RUNTIME_SIMULATION */
+#ifdef ZOL_RUNTIME_SIMULATION
     TCGv npc = tcg_const_local_tl(ctx->npc);
     gen_helper_zol_verify(cpu_env, npc);
     tcg_temp_free(npc);
+#else
+    if(1 && env->lpe == ctx->npc) {
+
+        DisasJumpType ret = ctx->base.is_jmp;
+
+        TCGLabel *zol_end = gen_new_label();
+        TCGLabel *zol_else = gen_new_label();
+        TCGv lps = tcg_temp_local_new();
+
+        tcg_gen_brcondi_tl(TCG_COND_GTU, cpu_lpc, 1, zol_else);
+          tcg_gen_movi_tl(cpu_lpc, 0);
+          tcg_gen_br(zol_end);
+        gen_set_label(zol_else);
+          tcg_gen_subi_tl(cpu_lpc, cpu_lpc, 1);
+          tcg_gen_movi_tl(lps, env->lps);
+          setPC(lps);
+        gen_set_label(zol_end);
+
+        ctx->base.is_jmp = DISAS_NORETURN;
+
+        tcg_temp_free(lps);
+    }
+#endif
 }
 
 static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
