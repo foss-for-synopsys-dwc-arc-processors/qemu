@@ -8182,7 +8182,7 @@ arc_gen_PUSH(DisasCtxt *ctx, TCGv src)
 int
 arc_gen_LP(DisasCtxt *ctx, TCGv rd)
 {
-    int ret = DISAS_NEXT;
+    int ret = DISAS_NORETURN;
     TCGv temp_3 = tcg_temp_local_new();
     TCGv temp_1 = tcg_temp_local_new();
     TCGv temp_2 = tcg_temp_local_new();
