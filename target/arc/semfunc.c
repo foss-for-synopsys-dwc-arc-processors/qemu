@@ -22,6 +22,7 @@
 #include "qemu/osdep.h"
 #include "translate.h"
 #include "target/arc/semfunc.h"
+#include "exec/gen-icount.h"
 
 /*
  * FLAG
@@ -3829,7 +3830,12 @@ arc_gen_AEX(DisasCtxt *ctx, TCGv src2, TCGv b)
 int
 arc_gen_LR(DisasCtxt *ctx, TCGv dest, TCGv src)
 {
-    int ret = DISAS_NEXT;
+    int ret = DISAS_NORETURN;
+
+    if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
+	gen_io_start();
+    }
+
     TCGv temp_1 = tcg_temp_local_new();
     readAuxReg(temp_1, src);
     tcg_gen_mov_tl(dest, temp_1);

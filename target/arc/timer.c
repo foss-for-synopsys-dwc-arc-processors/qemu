@@ -38,8 +38,13 @@
 
 static uint64_t get_ns(CPUARCState *env)
 {
+
 #ifndef CONFIG_USER_ONLY
-    return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    if (icount_enabled()) {
+        return icount_get();
+    } else {
+      return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    }
 #else
     return cpu_get_host_ticks();
 #endif
@@ -48,7 +53,11 @@ static uint64_t get_ns(CPUARCState *env)
 static uint32_t get_t_count(CPUARCState *env, uint32_t t)
 {
 #ifndef CONFIG_USER_ONLY
-    return NS_TO_CYCLE(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) - env->timer[t].last_clk);
+    if (icount_enabled()) {
+        return icount_get() - env->timer[t].last_clk;
+    } else {
+        return NS_TO_CYCLE(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) - env->timer[t].last_clk);
+    }
 #else
     return cpu_get_host_ticks() - env->timer[t].last_clk;
 #endif

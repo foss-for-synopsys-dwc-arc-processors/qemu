@@ -759,6 +759,10 @@ arc_gen_SR(DisasCtxt *ctx, TCGv src2, TCGv src1)
 {
     int ret = DISAS_NEXT;
 
+    if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
+	    gen_io_start();
+    }
+
 #if defined(TARGET_ARCV2)
     writeAuxReg(src2, src1);
 #elif defined(TARGET_ARCV3)
@@ -772,7 +776,11 @@ arc_gen_SR(DisasCtxt *ctx, TCGv src2, TCGv src1)
 int
 arc_gen_SRL(DisasCtxt *ctx, TCGv src2, TCGv src1)
 {
-    int ret = DISAS_NEXT;
+    int ret = DISAS_NORETURN;
+
+    if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
+	    gen_io_start();
+    }
 
     writeAuxReg(src2, src1);
     return ret;
@@ -1764,6 +1772,10 @@ arc_gen_TRAP(DisasCtxt *ctx, TCGv a)
 int
 arc_gen_RTIE(DisasCtxt *ctx)
 {
+    if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
+	    gen_io_start();
+    }
+
     tcg_gen_movi_tl(cpu_pc, ctx->cpc);
     gen_helper_rtie(cpu_env);
     tcg_gen_mov_tl(cpu_pc, cpu_pcl);
