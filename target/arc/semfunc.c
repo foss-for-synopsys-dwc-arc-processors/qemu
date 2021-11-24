@@ -7540,6 +7540,12 @@ arc_gen_EX (DisasCtxt *ctx, TCGv b, TCGv c)
 }
 
 
+#define ARM_LIKE_LLOCK_SCOND
+
+extern TCGv cpu_exclusive_addr;
+extern TCGv cpu_exclusive_val;
+extern TCGv cpu_exclusive_val_hi;
+
 /*
  * LLOCK -- CODED BY HAND
  */
@@ -7548,7 +7554,13 @@ int
 arc_gen_LLOCK(DisasCtxt *ctx, TCGv dest, TCGv src)
 {
     int ret = DISAS_NEXT;
+#ifndef ARM_LIKE_LLOCK_SCOND
     gen_helper_llock(dest, cpu_env, src);
+#else
+    tcg_gen_qemu_ld_tl(cpu_exclusive_val, src, ctx->mem_idx, MO_UL);
+    tcg_gen_mov_tl(dest, cpu_exclusive_val);
+    tcg_gen_mov_tl(cpu_exclusive_addr, src);
+#endif
 
     return ret;
 }
@@ -7567,7 +7579,16 @@ arc_gen_LLOCKD(DisasCtxt *ctx, TCGv dest, TCGv src)
     TCGv_i64 temp_1 = tcg_temp_local_new_i64();
     TCGv_i64 temp_2 = tcg_temp_local_new_i64();
 
-    gen_helper_llockd(temp_1, cpu_env, src);
+#ifndef ARM_LIKE_LLOCK_SCOND
+    gen_helper_llock(temp_1, cpu_env, src);
+#else
+    tcg_gen_qemu_ld_i64(temp_1, src, ctx->mem_idx, MO_Q);
+    tcg_gen_mov_tl(cpu_exclusive_addr, src);
+
+    tcg_gen_shri_i64(temp_2, temp_1, 32);
+    tcg_gen_trunc_i64_tl(cpu_exclusive_val_hi, temp_2);
+    tcg_gen_trunc_i64_tl(cpu_exclusive_val, temp_1);
+#endif
 
     tcg_gen_shri_i64(temp_2, temp_1, 32);
     tcg_gen_trunc_i64_tl(pair, temp_2);
@@ -7586,13 +7607,37 @@ arc_gen_LLOCKD(DisasCtxt *ctx, TCGv dest, TCGv src)
  */
 
 int
-arc_gen_SCOND(DisasCtxt *ctx, TCGv src, TCGv dest)
+arc_gen_SCOND(DisasCtxt *ctx, TCGv addr, TCGv value)
 {
     int ret = DISAS_NEXT;
+#ifndef ARM_LIKE_LLOCK_SCOND
     TCGv temp_4 = tcg_temp_local_new();
-    gen_helper_scond(temp_4, cpu_env, src, dest);
+    gen_helper_scond(temp_4, cpu_env, addr, value);
     setZFlag(temp_4);
     tcg_temp_free(temp_4);
+#else
+    TCGLabel *fail_label = gen_new_label();
+    TCGLabel *done_label = gen_new_label();
+    TCGv tmp;
+
+    tcg_gen_brcond_tl(TCG_COND_NE, addr, cpu_exclusive_addr, fail_label);
+    tmp = tcg_temp_new();
+
+    tcg_gen_atomic_cmpxchg_tl(tmp, cpu_exclusive_addr, cpu_exclusive_val,
+                               value, ctx->mem_idx,
+                               MO_UL | MO_ALIGN);
+    tcg_gen_setcond_tl(TCG_COND_NE, tmp, tmp, cpu_exclusive_val);
+
+    setZFlag(tmp);
+
+    tcg_temp_free(tmp);
+    tcg_gen_br(done_label);
+
+    gen_set_label(fail_label);
+    tcg_gen_movi_tl(cpu_Zf, 1);
+    gen_set_label(done_label);
+    tcg_gen_movi_tl(cpu_exclusive_addr, -1);
+#endif
 
     return ret;
 }
@@ -7603,27 +7648,67 @@ arc_gen_SCOND(DisasCtxt *ctx, TCGv src, TCGv dest)
  */
 
 int
-arc_gen_SCONDD(DisasCtxt *ctx, TCGv src, TCGv dest)
+arc_gen_SCONDD(DisasCtxt *ctx, TCGv addr, TCGv value)
 {
     int ret = DISAS_NEXT;
     TCGv pair = NULL;
-    pair = nextReg (dest);
+    pair = nextReg (value);
 
     TCGv_i64 temp_1 = tcg_temp_local_new_i64();
     TCGv_i64 temp_2 = tcg_temp_local_new_i64();
 
+    TCGv_i64 temp_3 = tcg_temp_local_new_i64();
+    TCGv_i64 temp_4 = tcg_temp_local_new_i64();
+    TCGv_i64 exclusive_val = tcg_temp_local_new_i64();
+
     tcg_gen_ext_i32_i64(temp_1, pair);
-    tcg_gen_ext_i32_i64(temp_2, dest);
+    tcg_gen_ext_i32_i64(temp_2, value);
     tcg_gen_shli_i64(temp_1, temp_1, 32);
     tcg_gen_or_i64(temp_1, temp_1, temp_2);
 
-    TCGv temp_4 = tcg_temp_local_new();
-    gen_helper_scondd(temp_4, cpu_env, src, temp_1);
-    setZFlag(temp_4);
+#ifndef ARM_LIKE_LLOCK_SCOND
+    TCGv temp_5 = tcg_temp_local_new();
+    gen_helper_scondd(temp_5, cpu_env, addr, temp_1);
+    setZFlag(temp_5);
+    tcg_temp_free(temp_5);
+#else
+    TCGLabel *fail_label = gen_new_label();
+    TCGLabel *done_label = gen_new_label();
+
+    tcg_gen_ext_i32_i64(temp_3, pair);
+    tcg_gen_ext_i32_i64(temp_4, value);
+    tcg_gen_shli_i64(temp_3, temp_3, 32);
+
+
+    tcg_gen_brcond_tl(TCG_COND_NE, addr, cpu_exclusive_addr, fail_label);
+
+    TCGv_i64 tmp = tcg_temp_new_i64();
+    TCGv tmp1 = tcg_temp_new();
+
+    tcg_gen_or_i64(exclusive_val, temp_3, temp_4);
+
+    tcg_gen_atomic_cmpxchg_i64(tmp, cpu_exclusive_addr, exclusive_val,
+                               temp_1, ctx->mem_idx,
+                               MO_UL | MO_ALIGN);
+    tcg_gen_setcond_i64(TCG_COND_NE, tmp, tmp, exclusive_val);
+    tcg_gen_trunc_i64_tl(tmp1, tmp);
+    setZFlag(tmp1);
+
+    tcg_temp_free_i64(tmp);
+    tcg_temp_free(tmp1);
+    tcg_gen_br(done_label);
+
+    gen_set_label(fail_label);
+    tcg_gen_movi_tl(cpu_Zf, 1);
+    gen_set_label(done_label);
+    tcg_gen_movi_tl(cpu_exclusive_addr, -1);
+#endif
 
     tcg_temp_free_i64(temp_1);
     tcg_temp_free_i64(temp_2);
-    tcg_temp_free(temp_4);
+    tcg_temp_free_i64(temp_3);
+    tcg_temp_free_i64(temp_4);
+    tcg_temp_free_i64(exclusive_val);
 
     return ret;
 }

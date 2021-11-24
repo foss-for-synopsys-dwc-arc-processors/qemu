@@ -65,6 +65,7 @@ TCGv    cpu_npc;
 /* LLOCK and SCOND support values */
 TCGv cpu_exclusive_addr;
 TCGv cpu_exclusive_val;
+TCGv cpu_exclusive_val_hi;
 
 /* Macros */
 
@@ -178,6 +179,8 @@ void arc_translate_init(void)
         offsetof(CPUARCState, exclusive_addr), "exclusive_addr");
     cpu_exclusive_val = tcg_global_mem_new(cpu_env,
         offsetof(CPUARCState, exclusive_val), "exclusive_val");
+    cpu_exclusive_val_hi = tcg_global_mem_new(cpu_env,
+        offsetof(CPUARCState, exclusive_val_hi), "exclusive_val_hi");
 }
 
 static void arc_tr_init_disas_context(DisasContextBase *dcbase,

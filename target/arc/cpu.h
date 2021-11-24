@@ -315,6 +315,7 @@ typedef struct CPUARCState {
 
     target_ulong exclusive_addr;
     target_ulong exclusive_val;
+    target_ulong exclusive_val_hi;
 
 } CPUARCState;
 
