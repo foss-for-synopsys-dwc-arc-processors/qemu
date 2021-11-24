@@ -21,6 +21,7 @@
 #include "qemu/osdep.h"
 #include "translate.h"
 #include "semfunc-v3.h"
+#include "exec/gen-icount.h"
 
 
 
