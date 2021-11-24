@@ -7714,22 +7714,29 @@ arc_gen_SCONDD(DisasCtxt *ctx, TCGv addr, TCGv value)
 }
 
 
-/*
- * DMB
- *    Variables: @a
- *    Functions:
- * --- code ---
- * {
- *   @a = @a;
- * }
+/* DMB - HAND MADE
  */
 
 int
-arc_gen_DMB(DisasCtxt *ctx, TCGv a)
+arc_gen_DMB (DisasCtxt *ctx, TCGv a)
 {
-    int ret = DISAS_NEXT;
+  int ret = DISAS_NEXT;
 
-    return ret;
+  TCGBar bar = 0;
+  switch(ctx->insn.operands[0].value & 7) {
+    case 1:
+      bar |= TCG_BAR_SC | TCG_MO_LD_LD | TCG_MO_LD_ST;
+      break;
+    case 2:
+      bar |= TCG_BAR_SC | TCG_MO_ST_ST;
+      break;
+    default:
+      bar |= TCG_BAR_SC | TCG_MO_ALL;
+      break;
+  }
+  tcg_gen_mb(bar);
+
+  return ret;
 }
 
 
