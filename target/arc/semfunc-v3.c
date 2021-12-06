@@ -8419,41 +8419,24 @@ arc_gen_LD (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   tcg_gen_movi_tl(address, 0);
   if (((AA == 0) || (AA == 1)))
     {
-    tcg_gen_add_tl(address, src1, src2);
-;
-    }
-  else
-    {
-  ;
+      ARC64_ADDRESS_ADD(address, src1, src2);
+      //tcg_gen_add_tl(address, src1, src2);
     }
   if ((AA == 2))
     {
-    tcg_gen_mov_tl(address, src1);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_mov_tl(address, src1);
     }
   if (((AA == 3) && ((ZZ == 0) || (ZZ == 3))))
     {
-    tcg_gen_shli_tl(temp_2, src2, 2);
-  tcg_gen_add_tl(address, src1, temp_2);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_2, src2, 2);
+      ARC64_ADDRESS_ADD(address, src1, temp_2);
+      //tcg_gen_add_tl(address, src1, temp_2);
     }
   if (((AA == 3) && (ZZ == 2)))
     {
-    tcg_gen_shli_tl(temp_3, src2, 1);
-  tcg_gen_add_tl(address, src1, temp_3);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_3, src2, 1);
+      ARC64_ADDRESS_ADD(address, src1, temp_3);
+      //tcg_gen_add_tl(address, src1, temp_3);
     }
   tcg_gen_mov_tl(l_src1, src1);
   tcg_gen_mov_tl(l_src2, src2);
@@ -8463,21 +8446,12 @@ arc_gen_LD (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   tcg_gen_mov_tl(new_dest, temp_5);
   if (((AA == 1) || (AA == 2)))
     {
-    tcg_gen_add_tl(src1, l_src1, l_src2);
-;
-    }
-  else
-    {
-  ;
+      //tcg_gen_add_tl(src1, l_src1, l_src2);
+      ARC64_ADDRESS_ADD(src1, l_src1, l_src2);
     }
   if ((getFlagX () == 1))
     {
-    new_dest = SignExtend (new_dest, ZZ);
-;
-    }
-  else
-    {
-  ;
+      new_dest = SignExtend (new_dest, ZZ);
     }
   TCGLabel *done_1 = gen_new_label();
   NoFurtherLoadsPending(temp_6);
@@ -8573,41 +8547,21 @@ arc_gen_LDD (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   tcg_gen_movi_tl(address, 0);
   if (((AA == 0) || (AA == 1)))
     {
-    tcg_gen_add_tl(address, src1, src2);
-;
-    }
-  else
-    {
-  ;
+      ARC64_ADDRESS_ADD(address, src1, src2);
     }
   if ((AA == 2))
     {
     tcg_gen_mov_tl(address, src1);
-;
-    }
-  else
-    {
-  ;
     }
   if (((AA == 3) && ((ZZ == 0) || (ZZ == 3))))
     {
-    tcg_gen_shli_tl(temp_2, src2, 2);
-  tcg_gen_add_tl(address, src1, temp_2);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_2, src2, 2);
+      ARC64_ADDRESS_ADD(address, src1, temp_2);
     }
   if (((AA == 3) && (ZZ == 2)))
     {
-    tcg_gen_shli_tl(temp_3, src2, 1);
-  tcg_gen_add_tl(address, src1, temp_3);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_3, src2, 1);
+      ARC64_ADDRESS_ADD(address, src1, temp_3);
     }
   tcg_gen_mov_tl(l_src1, src1);
   tcg_gen_mov_tl(l_src2, src2);
@@ -8621,12 +8575,7 @@ arc_gen_LDD (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   tcg_gen_mov_tl(pair, temp_6);
   if (((AA == 1) || (AA == 2)))
     {
-    tcg_gen_add_tl(src1, l_src1, l_src2);
-;
-    }
-  else
-    {
-  ;
+      ARC64_ADDRESS_ADD(src1, l_src1, l_src2);
     }
   TCGLabel *done_1 = gen_new_label();
   NoFurtherLoadsPending(temp_8);
@@ -8703,51 +8652,26 @@ arc_gen_ST (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   tcg_gen_movi_tl(address, 0);
   if (((AA == 0) || (AA == 1)))
     {
-    tcg_gen_add_tl(address, src1, src2);
-;
-    }
-  else
-    {
-  ;
+      ARC64_ADDRESS_ADD(address, src1, src2);
     }
   if ((AA == 2))
     {
-    tcg_gen_mov_tl(address, src1);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_mov_tl(address, src1);
     }
   if (((AA == 3) && ((ZZ == 0) || (ZZ == 3))))
     {
-    tcg_gen_shli_tl(temp_1, src2, 2);
-  tcg_gen_add_tl(address, src1, temp_1);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_1, src2, 2);
+      ARC64_ADDRESS_ADD(address, src1, temp_1);
     }
   if (((AA == 3) && (ZZ == 2)))
     {
-    tcg_gen_shli_tl(temp_2, src2, 1);
-  tcg_gen_add_tl(address, src1, temp_2);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_2, src2, 1);
+      ARC64_ADDRESS_ADD(address, src1, temp_2);
     }
   setMemory(address, ZZ, dest);
   if (((AA == 1) || (AA == 2)))
     {
-    tcg_gen_add_tl(src1, src1, src2);
-;
-    }
-  else
-    {
-  ;
+      ARC64_ADDRESS_ADD(src1, src1, src2);
     }
   tcg_temp_free(address);
   tcg_temp_free(temp_1);
@@ -8828,47 +8752,26 @@ arc_gen_STD (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   tcg_gen_movi_tl(address, 0);
   if (((AA == 0) || (AA == 1)))
     {
-    tcg_gen_add_tl(address, src1, src2);
-;
-    }
-  else
-    {
-  ;
+      ARC64_ADDRESS_ADD(address, src1, src2);
     }
   if ((AA == 2))
     {
-    tcg_gen_mov_tl(address, src1);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_mov_tl(address, src1);
     }
   if (((AA == 3) && ((ZZ == 0) || (ZZ == 3))))
     {
-    tcg_gen_shli_tl(temp_3, src2, 2);
-  tcg_gen_add_tl(address, src1, temp_3);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_3, src2, 2);
+      ARC64_ADDRESS_ADD(address, src1, temp_3);
     }
   if (((AA == 3) && (ZZ == 2)))
     {
-    tcg_gen_shli_tl(temp_4, src2, 1);
-  tcg_gen_add_tl(address, src1, temp_4);
-;
-    }
-  else
-    {
-  ;
+      tcg_gen_shli_tl(temp_4, src2, 1);
+      ARC64_ADDRESS_ADD(address, src1, temp_4);
     }
   setMemory(address, LONG, dest);
   if (instructionHasRegisterOperandIn (0))
     {
     pair = nextReg (dest);
-;
     }
   else
     {
@@ -8890,12 +8793,7 @@ arc_gen_STD (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   setMemory(temp_7, LONG, pair);
   if (((AA == 1) || (AA == 2)))
     {
-    tcg_gen_add_tl(src1, src1, src2);
-;
-    }
-  else
-    {
-  ;
+      ARC64_ADDRESS_ADD(src1, src1, src2);
     }
   tcg_temp_free(address);
   tcg_temp_free(temp_3);

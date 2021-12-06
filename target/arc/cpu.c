@@ -210,6 +210,9 @@ static void arc_cpu_disas_set_info(CPUState *cs, disassemble_info *info)
     case ARC_OPCODE_V3_ARC64:
         info->mach = bfd_mach_arcv3_64;
         break;
+    case ARC_OPCODE_V3_ARC32:
+        info->mach = bfd_mach_arcv3_32;
+        break;
     default:
         info->mach = bfd_mach_arc_arcv2;
         break;
@@ -370,7 +373,18 @@ static ObjectClass *arc_cpu_class_by_name(const char *cpu_model)
 
 static gchar *arc_gdb_arch_name(CPUState *cs)
 {
+#if defined(TARGET_ARCV2)
     return g_strdup(GDB_TARGET_STRING);
+#elif defined(TARGET_ARCV3)
+    ARCCPU *cpu = ARC_CPU(cs);
+    if(cpu->family & ARC_OPCODE_V3_ARC64) {
+        return g_strdup(GDB_TARGET_STRING);
+    } else {
+        return g_strdup("arc64:32");
+    }
+#else
+#error "Not possible to happen"
+#endif
 }
 
 #include "hw/core/tcg-cpu-ops.h"
@@ -464,6 +478,12 @@ static void arc_hs6x_initfn(Object *obj)
     ARCCPU *cpu = ARC_CPU(obj);
     cpu->family = ARC_OPCODE_V3_ARC64;
 }
+
+static void arc_hs5x_initfn(Object *obj)
+{
+    ARCCPU *cpu = ARC_CPU(obj);
+    cpu->family = ARC_OPCODE_V3_ARC32;
+}
 #endif
 
 typedef struct ARCCPUInfo {
@@ -480,6 +500,7 @@ static const ARCCPUInfo arc_cpus[] = {
 #endif
 #ifdef TARGET_ARCV3
     { .name = "hs6x", .initfn = arc_hs6x_initfn },
+    { .name = "hs5x", .initfn = arc_hs5x_initfn },
 #endif
     { .name = "any", .initfn = arc_any_initfn },
 };

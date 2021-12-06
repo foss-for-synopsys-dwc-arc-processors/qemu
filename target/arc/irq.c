@@ -34,8 +34,25 @@
 #define TARGET_LONG_LOAD(ENV, ADDR) cpu_ldl_data(ENV, ADDR)
 #define TARGET_LONG_STORE(ENV, ADDR, VALUE) cpu_stl_data(ENV, ADDR, VALUE)
 #elif defined(TARGET_ARCV3)
-#define TARGET_LONG_LOAD(ENV, ADDR) cpu_ldq_data(ENV, ADDR)
-#define TARGET_LONG_STORE(ENV, ADDR, VALUE) cpu_stq_data(ENV, ADDR, VALUE)
+static inline target_ulong
+TARGET_LONG_LOAD(CPUARCState *env, target_ulong addr) {
+    ARCCPU *cpu = env_archcpu(env);
+    if((cpu->family & ARC_OPCODE_V3_ARC64) != 0) {
+	return cpu_ldq_data(env, addr);
+    } else {
+	return cpu_ldl_data(env, addr);
+    }
+}
+static inline void
+TARGET_LONG_STORE(CPUARCState *env, target_ulong addr,
+		  target_ulong value) {
+    ARCCPU *cpu = env_archcpu(env);
+    if((cpu->family & ARC_OPCODE_V3_ARC64) != 0) {
+	cpu_stq_data(env, addr, value);
+    } else {
+	cpu_stq_data(env, addr, value);
+    }
+}
 #else
 #error "This should never happen !!!!"
 #endif
@@ -569,7 +586,7 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     }
 
     /* XX. The PC is set with the appropriate exception vector. */
-    offset = OFFSET_FOR_VECTOR(vectno);
+    offset = OFFSET_FOR_VECTOR(cpu, vectno);
     env->pc = TARGET_LONG_LOAD(env, env->intvec + offset);
     CPU_PCL(env) = env->pc & (~((target_ulong) 3));
 
