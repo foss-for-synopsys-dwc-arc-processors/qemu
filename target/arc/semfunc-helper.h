@@ -370,6 +370,29 @@ void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
 //#define se32to64(A, B) gen_helper_se32to64(A, B)
 #define se32to64(A, B) tcg_gen_ext32s_tl(A, B)
 
+#define ARC64_ADDRESS_ADD(A, B, C) { \
+  ARCCPU *cpu = env_archcpu(ctx->env); \
+  if((cpu->family & ARC_OPCODE_V3_ARC64) != 0) { \
+    tcg_gen_add_tl(A, B, C); \
+  } else if((cpu->family & ARC_OPCODE_V3_ARC32) != 0) { \
+    TCGv_i32 tA, tB, tC; \
+    tA = tcg_temp_new_i32(); \
+    tB = tcg_temp_new_i32(); \
+    tC = tcg_temp_new_i32(); \
+    \
+    tcg_gen_extrl_i64_i32(tB, B); \
+    tcg_gen_extrl_i64_i32(tC, C); \
+    tcg_gen_add_i32(tA, tB, tC); \
+    tcg_gen_extu_i32_i64(A, tA); \
+    \
+    tcg_temp_free_i32(tA); \
+    tcg_temp_free_i32(tB); \
+    tcg_temp_free_i32(tC); \
+  } else { \
+    assert(0); \
+  } \
+}
+
 #endif
 
 #endif /* SEMFUNC_HELPER_H_ */
