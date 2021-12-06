@@ -84,7 +84,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
         env->mpu.enabled = false;     /* no more MPU */
     }
     vectno = cs->exception_index & 0x0F;
-    offset = OFFSET_FOR_VECTOR(vectno);
+    offset = OFFSET_FOR_VECTOR(cpu, vectno);
 
     /* Generic computation for exceptions. */
     switch (cs->exception_index) {
@@ -218,7 +218,14 @@ void arc_cpu_do_interrupt(CPUState *cs)
                                 MEMTXATTRS_UNSPECIFIED, &txres);
     assert(txres == MEMTX_OK);
 #elif defined(TARGET_ARCV3)
-    env->pc = cpu_ldq_data(env, env->intvec + offset);
+    switch(cpu->family) {
+      case ARC_OPCODE_V3_ARC64:
+        env->pc = cpu_ldq_data(env, env->intvec + offset);
+        break;
+      case ARC_OPCODE_V3_ARC32:
+        env->pc = cpu_ldl_data(env, env->intvec + offset);
+        break;
+    }
 #else
 #error "This should never happen !!!!"
 #endif

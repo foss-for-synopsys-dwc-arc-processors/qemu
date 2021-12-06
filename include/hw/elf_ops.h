@@ -344,6 +344,14 @@ static int glue(load_elf, SZ)(const char *name, int fd,
     }
 
     switch (elf_machine) {
+        case EM_ARC_COMPACT3_64:
+            if (ehdr.e_machine != EM_ARC_COMPACT3_64) {
+                if (ehdr.e_machine != EM_ARC_COMPACT3_32) {
+                    ret = ELF_LOAD_WRONG_ARCH;
+                    goto fail;
+                }
+            }
+            break;
         case EM_PPC64:
             if (ehdr.e_machine != EM_PPC64) {
                 if (ehdr.e_machine != EM_PPC) {
