@@ -373,7 +373,18 @@ static ObjectClass *arc_cpu_class_by_name(const char *cpu_model)
 
 static gchar *arc_gdb_arch_name(CPUState *cs)
 {
+#if defined(TARGET_ARCV2)
     return g_strdup(GDB_TARGET_STRING);
+#elif defined(TARGET_ARCV3)
+    ARCCPU *cpu = ARC_CPU(cs);
+    if(cpu->family & ARC_OPCODE_V3_ARC64) {
+        return g_strdup("arc:ARCv3_64");
+    } else {
+        return g_strdup("arc:ARCv3_32");
+    }
+#else
+#error "Not possible to happen"
+#endif
 }
 
 #include "hw/core/tcg-cpu-ops.h"
