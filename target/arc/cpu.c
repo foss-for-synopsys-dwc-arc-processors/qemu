@@ -378,9 +378,9 @@ static gchar *arc_gdb_arch_name(CPUState *cs)
 #elif defined(TARGET_ARCV3)
     ARCCPU *cpu = ARC_CPU(cs);
     if(cpu->family & ARC_OPCODE_V3_ARC64) {
-        return g_strdup("arc:ARCv3_64");
+        return g_strdup(GDB_TARGET_STRING);
     } else {
-        return g_strdup("arc:ARCv3_32");
+        return g_strdup("arc64:32");
     }
 #else
 #error "Not possible to happen"
