@@ -20,17 +20,17 @@
  */
 
 #include "qemu/osdep.h"
-#include "mmu.h"
 #include "target/arc/regs.h"
 //#include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
+#include "mmu.h"
 
 target_ulong
 arc_mmu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
 {
     CPUARCState *env = (CPUARCState *) data;
-    struct arc_mmu *mmu = &env->mmu;
+    struct arc_mmu *mmu = &env->mmu.v3;
     uint32_t reg = 0;
 
     switch (aux_reg_detail->id) {
@@ -82,7 +82,7 @@ arc_mmu_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
 {
     CPUARCState *env = (CPUARCState *) data;
     CPUState *cs = env_cpu(env);
-    struct arc_mmu *mmu = &env->mmu;
+    struct arc_mmu *mmu = &env->mmu.v3;
 
     switch (aux_reg_detail->id) {
     /* AUX_ID_tlbcommand is more involved and handled seperately */
@@ -132,7 +132,7 @@ arc_mmu_debug_tlb_for_set(CPUARCState *env, int set)
     bool set_printed = false;
 
     for (j = 0; j < N_WAYS; j++) {
-        struct arc_tlb_e *tlb = &env->mmu.nTLB[set][j];
+        struct arc_tlb_e *tlb = &env->mmu.v3.nTLB[set][j];
 
         if ((tlb->pd0 & PD0_V) != 0) {
             if (set_printed == false) {
@@ -268,7 +268,7 @@ arc_mmu_aux_set_tlbcmd(const struct arc_aux_reg_detail *aux_reg_detail,
 {
     CPUARCState *env = (CPUARCState *) data;
     CPUState *cs = env_cpu(env);
-    struct arc_mmu *mmu = &env->mmu;
+    struct arc_mmu *mmu = &env->mmu.v3;
     uint32_t pd0 = mmu->tlbpd0;
     uint32_t pd1 = mmu->tlbpd1;
     int num_finds = 4;
@@ -329,7 +329,7 @@ arc_mmu_aux_set_tlbcmd(const struct arc_aux_reg_detail *aux_reg_detail,
         matching_mask &= (VPN(PD0_VPN) | (~PD0_VPN)) ;
         tlb = arc_mmu_lookup_tlb(pd0,
                                  matching_mask | PD0_V,
-                                 &env->mmu, &num_finds, &index);
+                                 &env->mmu.v3, &num_finds, &index);
 
         if (num_finds == 0) {
             mmu->tlbindex = 0x80000000; /* No entry to delete */
@@ -428,7 +428,7 @@ arc_mmu_translate(struct CPUARCState *env,
                   uint32_t *index,
                   struct mem_exception *excp)
 {
-    struct arc_mmu *mmu = &(env->mmu);
+    struct arc_mmu *mmu = &(env->mmu.v3);
     struct arc_tlb_e *tlb = NULL;
     int num_matching_tlb = 0;
 
@@ -583,7 +583,7 @@ arc_mmu_get_prot_for_index(uint32_t index, CPUARCState *env)
 
     tlb = arc_mmu_get_tlb_at_index(
             index,
-            &env->mmu);
+            &env->mmu.v3);
 
     if ((in_kernel_mode && (tlb->pd1 & PD1_RK) != 0)
        || (!in_kernel_mode && (tlb->pd1 & PD1_RU) != 0)) {
@@ -704,30 +704,30 @@ static int decide_action(const CPUARCState *env,
         is_initialized = true;
     }
 
-    return table[env->mmu.enabled][env->mpu.enabled][is_mmu_range][is_user];
+    return table[env->mmu.v3.enabled][env->mpu.enabled][is_mmu_range][is_user];
 }
 
 #endif
 
-void arc_mmu_init(CPUARCState *env)
+void arc_mmu_init_v3(CPUARCState *env)
 {
-    env->mmu.enabled = 0;
-    env->mmu.pid_asid = 0;
-    env->mmu.sasid0 = 0;
-    env->mmu.sasid1 = 0;
+    env->mmu.v3.enabled = 0;
+    env->mmu.v3.pid_asid = 0;
+    env->mmu.v3.sasid0 = 0;
+    env->mmu.v3.sasid1 = 0;
 
-    env->mmu.tlbpd0 = 0;
-    env->mmu.tlbpd1 = 0;
-    env->mmu.tlbpd1_hi = 0;
-    env->mmu.tlbindex = 0;
-    env->mmu.tlbcmd = 0;
-    env->mmu.scratch_data0 = 0;
+    env->mmu.v3.tlbpd0 = 0;
+    env->mmu.v3.tlbpd1 = 0;
+    env->mmu.v3.tlbpd1_hi = 0;
+    env->mmu.v3.tlbindex = 0;
+    env->mmu.v3.tlbcmd = 0;
+    env->mmu.v3.scratch_data0 = 0;
 
-    memset(env->mmu.nTLB, 0, sizeof(env->mmu.nTLB));
+    memset(env->mmu.v3.nTLB, 0, sizeof(env->mmu.v3.nTLB));
 }
 
 bool
-arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
+arc_get_physical_addr_v3(struct CPUState *cs, hwaddr *paddr, vaddr addr,
                   enum mmu_access_type rwe, bool probe,
                   uintptr_t retaddr)
 {
@@ -777,7 +777,7 @@ arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
 }
 
 /* Softmmu support function for MMU. */
-bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
+bool arc_cpu_tlb_fill_v3(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr)
 {
@@ -855,7 +855,7 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 #endif /* CONFIG_USER_ONLY */
 }
 
-hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
+hwaddr arc_mmu_debug_translate_v3(CPUARCState *env, vaddr addr)
 {
     hwaddr paddr = -1;
     struct mem_exception excp;
@@ -864,7 +864,7 @@ hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
     return paddr;
 }
 
-void arc_mmu_disable(CPUARCState *env)
+void arc_mmu_disable_v3(CPUARCState *env)
 {
-    env->mmu.enabled = false;
+    env->mmu.v3.enabled = false;
 }

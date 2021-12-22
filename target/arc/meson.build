@@ -3,12 +3,10 @@ dir = meson.current_source_dir()
 gen32 = [
     dir + '/decoder-v2.c',
     dir + '/semfunc.c',
-    dir + '/mmu.c',
 ]
 gen64 = [
     dir + '/decoder-v3.c',
     dir + '/semfunc-v3.c',
-    dir + '/mmu-v6.c',
 ]
 
 arc_softmmu_ss = ss.source_set()
@@ -29,7 +27,10 @@ arc_softmmu_ss.add(files(
   'timer.c',
   'irq.c',
   'cache.c',
-  'arconnect.c'
+  'arconnect.c',
+  'mmu-v6.c',
+  'mmu.c',
+  'mmu-common.c'
 ))
 
 target_arch += {'arc': arc_softmmu_ss}

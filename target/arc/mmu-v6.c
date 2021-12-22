@@ -19,11 +19,11 @@
  */
 
 #include "qemu/osdep.h"
-#include "mmu-v6.h"
 #include "target/arc/regs.h"
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
+#include "mmu-v6.h"
 
 #define LOAD_DATA_IN(ADDR) (address_space_ldq(((CPUState *) cpu)->as, ADDR, MEMTXATTRS_UNSPECIFIED, NULL))
 
@@ -212,33 +212,38 @@ arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
     switch(aux_reg_detail->id)
     {
     case AUX_ID_mmu_rtp0:
-        qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] RTP0 update %lx ==> %lx\n\n", mmu_rtp0, val);
+        qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] RTP0 update %lx"
+                      " ==> " TARGET_FMT_lx "\n\n", mmu_rtp0, val);
         if (mmu_rtp0 != val)
             tlb_flush(cs);
         mmu_rtp0 =  val;
         break;
+#ifdef TARGET_ARCV3
     case AUX_ID_mmu_rtp0hi:
         if ((mmu_rtp0 >> 32) != val)
             tlb_flush(cs);
         mmu_rtp0 &= ~0xffffffff00000000;
         mmu_rtp0 |= (val << 32);
         break;
+#endif
     case AUX_ID_mmu_rtp1:
         if (mmu_rtp1 != val)
             tlb_flush(cs);
         mmu_rtp1 =  val;
         break;
+#ifdef TARGET_ARCV3
     case AUX_ID_mmu_rtp1hi:
         if ((mmu_rtp1 >> 32) != val)
             tlb_flush(cs);
         mmu_rtp1 &= ~0xffffffff00000000;
         mmu_rtp1 |= (val << 32);
         break;
+#endif
     case AUX_ID_mmu_ctrl:
         if (mmu_ctrl != val)
             tlb_flush(cs);
         mmu_ctrl =  val;
-        qemu_log_mask(CPU_LOG_MMU, "mmu_ctrl = 0x%08lx\n", val);
+        qemu_log_mask(CPU_LOG_MMU, "mmu_ctrl = 0x" TARGET_FMT_lx "\n", val);
         break;
     case AUX_ID_mmu_ttbcr:
         mmu_ttbcr = val;
@@ -404,7 +409,8 @@ page_table_traverse(struct CPUARCState *env,
     ARCCPU *cpu = env_archcpu (env);
     unsigned char remainig_bits = vaddr_size();
 
-    qemu_log_mask(CPU_LOG_MMU, "[MMUV3] [PC %lx] PageWalking for %lx [%s]\n", env->pc, vaddr, RWE_STRING(rwe));
+    qemu_log_mask(CPU_LOG_MMU, "[MMUV3] [PC " TARGET_FMT_lx
+                  "] PageWalking for "TARGET_FMT_lx" [%s]\n", env->pc, vaddr, RWE_STRING(rwe));
 
     if(valid_root == false) {
         if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
@@ -491,7 +497,9 @@ page_table_traverse(struct CPUARCState *env,
     if(found_block_descriptor) {
 
         if(protv_violation(env, pte, l, overwrite_permitions, rwe)) {
-            qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] [PC %lx] PTE Protection violation: vaddr %lx pte [addr %lx val %lx]\n", env->pc, vaddr, pte_addr, pte);
+            qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] [PC "TARGET_FMT_lx
+                          "] PTE Protection violation: vaddr "TARGET_FMT_lx
+                          " pte [addr %lx val %lx]\n", env->pc, vaddr, pte_addr, pte);
             found_block_descriptor = false;
             SET_MMU_EXCEPTION(*excp, EXCP_PROTV, CAUSE_CODE(rwe), 0x08);
             return -1;
@@ -511,7 +519,7 @@ page_table_traverse(struct CPUARCState *env,
 #undef PTE_PADDR_MASK
 #undef PADDR
 
-void arc_mmu_init(CPUARCState *env)
+void arc_mmu_init_v6(CPUARCState *env)
 {
     return;
 }
@@ -526,7 +534,7 @@ arc_mmuv6_translate(struct CPUARCState *env,
     target_ulong paddr;
 
     /* This is really required. Fail in non singlestep without in_asm. */
-    env->mmu.exception.number = EXCP_NO_EXCEPTION;
+    env->mmu.v6.exception.number = EXCP_NO_EXCEPTION;
 
     if(!MMU_ENABLED) {
       paddr = vaddr;
@@ -585,7 +593,7 @@ static void QEMU_NORETURN raise_mem_exception(
 
 
 bool
-arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
+arc_get_physical_addr_v6(struct CPUState *cs, hwaddr *paddr, vaddr addr,
                   enum mmu_access_type rwe, bool probe,
                   uintptr_t retaddr)
 {
@@ -624,7 +632,7 @@ arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
 }
 
 /* Softmmu support function for MMU. */
-bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
+bool arc_cpu_tlb_fill_v6(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr)
 {
@@ -691,7 +699,7 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 
 
 #ifndef CONFIG_USER_ONLY
-hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
+hwaddr arc_mmu_debug_translate_v6(CPUARCState *env, vaddr addr)
 { 
     struct mem_exception excp;
 
@@ -703,7 +711,7 @@ hwaddr arc_mmu_debug_translate(CPUARCState *env, vaddr addr)
 }
 #endif /* CONFIG_USER_ONLY */
 
-void arc_mmu_disable(CPUARCState *env) {
+void arc_mmu_disable_v6(CPUARCState *env) {
     disable_mmuv6();
 }
 

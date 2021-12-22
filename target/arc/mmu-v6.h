@@ -18,8 +18,8 @@
  * http://www.gnu.org/licenses/lgpl-2.1.html
  */
 
-#ifndef ARC64_MMUV3_H
-#define ARC64_MMUV3_H
+#ifndef ARC64_MMUV6_H
+#define ARC64_MMUV6_H
 
 #include "target/arc/mmu-common.h"
 
@@ -33,4 +33,4 @@ struct arc_mmuv6 {
 
 int mmuv6_enabled(void);
 
-#endif /* ARC64_MMUV3_H */
+#endif /* ARC64_MMUV6_H */
