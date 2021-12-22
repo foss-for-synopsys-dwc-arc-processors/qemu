@@ -69,4 +69,30 @@ struct mem_exception {
   (EXCP).parameter = P; \
 }
 
+struct CPUARCState;
+
+/* ARCv2 MMU functions */
+void arc_mmu_init_v3(struct CPUARCState *env);
+bool
+arc_get_physical_addr_v3(struct CPUState *cs, hwaddr *paddr, vaddr addr,
+                  enum mmu_access_type rwe, bool probe,
+                  uintptr_t retaddr);
+bool arc_cpu_tlb_fill_v3(CPUState *cs, vaddr address, int size,
+                      MMUAccessType access_type, int mmu_idx,
+                      bool probe, uintptr_t retaddr);
+hwaddr arc_mmu_debug_translate_v3(struct CPUARCState *env, vaddr addr);
+void arc_mmu_disable_v3(struct CPUARCState *env);
+
+/* ARCv3 MMU functions */
+void arc_mmu_init_v6(struct CPUARCState *env);
+bool
+arc_get_physical_addr_v6(struct CPUState *cs, hwaddr *paddr, vaddr addr,
+                  enum mmu_access_type rwe, bool probe,
+                  uintptr_t retaddr);
+bool arc_cpu_tlb_fill_v6(CPUState *cs, vaddr address, int size,
+                      MMUAccessType access_type, int mmu_idx,
+                      bool probe, uintptr_t retaddr);
+hwaddr arc_mmu_debug_translate_v6(struct CPUARCState *env, vaddr addr);
+void arc_mmu_disable_v6(struct CPUARCState *env);
+
 #endif /* ARC_MMU_COMMON_H */
