@@ -24,11 +24,8 @@
 #include "fpu/softfloat.h"
 
 #include "target/arc/arc-common.h"
-#if defined(TARGET_ARCV3)
 #include "target/arc/mmu-v6.h"
-#elif defined(TARGET_ARCV2)
 #include "target/arc/mmu.h"
-#endif
 #include "target/arc/mpu.h"
 #include "target/arc/cache.h"
 #include "target/arc/arconnect.h"
@@ -73,15 +70,8 @@ enum exception_code_list {
     EXCP_MEMORY_ERROR,
     EXCP_INST_ERROR,
     EXCP_MACHINE_CHECK,
-#if defined(TARGET_ARCV2)
     EXCP_TLB_MISS_I,
     EXCP_TLB_MISS_D,
-#elif defined(TARGET_ARCV3)
-    EXCP_IMMU_FAULT,
-    EXCP_DMMU_FAULT,
-#else
-    #error "TARGET macro not defined!"
-#endif
     EXCP_PROTV,
     EXCP_PRIVILEGEV,
     EXCP_SWI,
@@ -94,6 +84,9 @@ enum exception_code_list {
     EXCP_LPEND_REACHED = 9000,
     EXCP_FAKE
 };
+
+#define EXCP_IMMU_FAULT EXCP_TLB_MISS_I
+#define EXCP_DMMU_FAULT EXCP_TLB_MISS_D
 
 
 /*
@@ -282,11 +275,10 @@ typedef struct CPUARCState {
     target_ulong causecode;
     target_ulong param;
 
-#if defined(TARGET_ARCV2)
-    struct arc_mmu mmu;       /* mmu.h */
-#elif defined(TARGET_ARCV3)
-    struct arc_mmuv6 mmu;       /* mmu.h */
-#endif
+    union {
+      struct arc_mmu v3;
+      struct arc_mmuv6 v6;
+    } mmu;
     ARCMPU mpu;               /* mpu.h */
     struct arc_arcconnect_info arconnect;
     struct arc_cache cache;   /* cache.h */
