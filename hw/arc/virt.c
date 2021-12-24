@@ -29,8 +29,12 @@
 #define VIRT_RAM_BASE      0x80000000
 #define VIRT_IO_BASE       0xf0000000
 #define VIRT_IO_SIZE       0x10000000
-#define VIRT_UART0_OFFSET  0x0
-#define VIRT_UART0_IRQ     24
+
+/* UART */
+#define VIRT_UART_NUMBER   2
+#define VIRT_UART_OFFSET   0x0
+#define VIRT_UART_IRQ      24
+#define VIRT_UART_SIZE     0x2000
 
 /* VirtIO */
 #define VIRT_VIRTIO_NUMBER 5
@@ -156,9 +160,11 @@ static void virt_init(MachineState *machine)
                           VIRT_IO_SIZE);
     memory_region_add_subregion(system_memory, VIRT_IO_BASE, system_io);
 
-    serial_mm_init(system_io, VIRT_UART0_OFFSET, 2,
-                   cpu->env.irq[VIRT_UART0_IRQ], 115200, serial_hd(0),
-                   DEVICE_NATIVE_ENDIAN);
+    for (n = 0; n < VIRT_UART_NUMBER; n++) {
+        serial_mm_init(system_io, VIRT_UART_OFFSET + VIRT_UART_SIZE * n, 2,
+                       cpu->env.irq[VIRT_UART_IRQ + n], 115200, serial_hd(n),
+                       DEVICE_NATIVE_ENDIAN);
+    }
 
     for (n = 0; n < VIRT_VIRTIO_NUMBER; n++) {
         sysbus_create_simple("virtio-mmio",
