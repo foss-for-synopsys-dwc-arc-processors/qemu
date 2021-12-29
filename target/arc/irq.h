@@ -30,11 +30,11 @@ void switchSP(CPUARCState *);
 void arc_initializeIRQ(ARCCPU *);
 void arc_resetIRQ(ARCCPU *);
 
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
 #define OFFSET_FOR_VECTOR(CPU, VECNO) (VECNO << 2)
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
 #define OFFSET_FOR_VECTOR(CPU, VECNO) \
-  ((cpu->family & ARC_OPCODE_V3_ARC64) != 0) ? \
+  ((cpu->family & ARC_OPCODE_ARC64) != 0) ? \
   (VECNO << 3) : \
   (VECNO << 2)
 

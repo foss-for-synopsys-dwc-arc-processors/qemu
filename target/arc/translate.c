@@ -25,6 +25,7 @@
 #include "target/arc/semfunc.h"
 #include "target/arc/arc-common.h"
 
+
 /* Globals */
 TCGv    cpu_S1f;
 TCGv    cpu_S2f;
@@ -145,7 +146,7 @@ void arc_translate_init(void)
         NEW_ARC_REG(cpu_erbta, erbta)
         NEW_ARC_REG(cpu_efa, efa)
         NEW_ARC_REG(cpu_bta, bta)
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
         NEW_ARC_REG(cpu_lps, lps)
         NEW_ARC_REG(cpu_lpe, lpe)
 #endif
@@ -297,7 +298,7 @@ static bool read_and_decode_context(DisasContext *ctx,
                                         cpu_ldl_code(ctx->env,
                                         ctx->cpc + length));
         length += 4;
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
     } else if(ctx->insn.signed_limm_p) {
         ctx->insn.limm = ARRANGE_ENDIAN(true,
                                         cpu_ldl_code (ctx->env,
@@ -334,8 +335,7 @@ enum arc_opcode_map {
 #define SEMANTIC_FUNCTION(...)
 #define CONSTANT(...)
 #define MAPPING(MNEMONIC, NAME, NOPS, ...) MAP_##MNEMONIC##_##NAME,
-#include "target/arc/semfunc_mapping.def"
-#include "target/arc/extra_mapping.def"
+#include "target/arc/semfunc-full_mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -347,8 +347,7 @@ const char number_of_ops_semfunc[MAP_LAST + 1] = {
 #define SEMANTIC_FUNCTION(...)
 #define CONSTANT(...)
 #define MAPPING(MNEMONIC, NAME, NOPS, ...) NOPS,
-#include "target/arc/semfunc_mapping.def"
-#include "target/arc/extra_mapping.def"
+#include "target/arc/semfunc-full_mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -363,8 +362,7 @@ static enum arc_opcode_map arc_map_opcode(const struct arc_opcode *opcode)
 #define MAPPING(INSN_NAME, NAME, ...)         \
     case MNEMONIC_##INSN_NAME: \
         return MAP_##INSN_NAME##_##NAME;
-#include "target/arc/semfunc_mapping.def"
-#include "target/arc/extra_mapping.def"
+#include "target/arc/semfunc-full_mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -419,8 +417,7 @@ static void init_constants(void)
 #define MAPPING(...)
 #define CONSTANT(NAME, MNEMONIC, OP_NUM, VALUE) \
   add_constant_operand(MAP_##MNEMONIC##_##NAME, OP_NUM, VALUE);
-#include "target/arc/semfunc_mapping.def"
-#include "target/arc/extra_mapping.def"
+#include "target/arc/semfunc-full_mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -601,7 +598,7 @@ static void check_addr_is_word_aligned(const DisasCtxt *ctx,
  * | fp    |
  * `-------'
  */
-int arc_gen_ENTER(DisasContext *ctx)
+int arc_gen_ENTER(DisasCtxt *ctx)
 {
     int ret = DISAS_NEXT;
     uint32_t u6 = ctx->insn.operands[0].value;
@@ -766,9 +763,9 @@ arc_gen_SR(DisasCtxt *ctx, TCGv src2, TCGv src1)
 	    gen_io_start();
     }
 
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
     writeAuxReg(src2, src1);
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
     TCGv temp = tcg_temp_local_new();
     tcg_gen_andi_tl(temp, src1, 0xffffffff);
     writeAuxReg(src2, src1);
@@ -800,7 +797,7 @@ arc_gen_SYNC(DisasCtxt *ctx)
 }
 
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 /*
  * The mpyl instruction is a 64x64 signed multipler that produces
  * a 64-bit product (the lower 64-bit of the actual prodcut).
@@ -1162,7 +1159,7 @@ arc_gen_STDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv src)
 }
 
 #endif
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
 
 /*
  * Function to add boiler plate code for conditional execution.
@@ -1823,6 +1820,7 @@ arc_gen_SLEEP(DisasCtxt *ctx, TCGv a)
     return DISAS_NEXT;
 }
 
+
 /* Given a CTX, generate the relevant TCG code for the given opcode. */
 static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
 {
@@ -1868,8 +1866,7 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
                 ret = SEMANTIC_FUNCTION_CALL_##NOPS(NAME, __VA_ARGS__); \
                 break;
         switch (mapping) {
-#include "target/arc/semfunc_mapping.def"
-#include "target/arc/extra_mapping.def"
+#include "target/arc/semfunc-full_mapping.def"
 
         default:
             arc_debug_opcode(opcode, ctx, "No handle for map opcode");

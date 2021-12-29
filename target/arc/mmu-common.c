@@ -70,9 +70,10 @@ const struct mmu_callbacks_struct mmu_callbacks[MMU_VERSION_LAST] = {
 };
 
 static enum mmu_version get_mmu_version(void) {
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
+  // TODO: Make this correct for arc32.
   return MMU_VERSION_3;
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
   return MMU_VERSION_6;
 #else
 #error "NOT POSSIBLE!!!!"

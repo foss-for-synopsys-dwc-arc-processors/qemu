@@ -124,7 +124,7 @@ target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong valu
     return ret;
 }
 
-#if defined(TARGET_ARCV3)
+#if defined(TARGET_ARC64)
 target_ulong helper_llockl(CPUARCState *env, target_ulong addr)
 {
     assert((addr & 0x3) == 0);
@@ -169,7 +169,7 @@ target_ulong helper_scondl(CPUARCState *env, target_ulong addr, target_ulong val
     return ret;
 }
 
-#elif defined(TARGET_ARCV2)
+#elif defined(TARGET_ARC32)
 
 uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
 {
@@ -335,7 +335,7 @@ void helper_rtie(CPUARCState *env)
                       (target_ulong) pack_status32(&env->stat));
     }
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
     helper_zol_verify(env, env->pc);
 #endif
 }
@@ -539,7 +539,7 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
     }
 }
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 uint64_t helper_carry_add_flag32(uint64_t dest, uint64_t b, uint64_t c) {
     return carry_add_flag(dest, b, c, 32);
 }

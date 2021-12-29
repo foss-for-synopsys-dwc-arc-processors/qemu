@@ -1600,7 +1600,7 @@ static inline void init_thread(struct target_pt_regs *regs,
 
 #endif /* TARGET_HEXAGON */
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
 
 #define ELF_START_MMAP 0x20000000
 #define ELF_ARCH  EM_ARC_COMPACT2
@@ -1616,9 +1616,9 @@ static inline void init_thread(struct target_pt_regs *regs,
 
 #define ELF_EXEC_PAGESIZE 8192
 
-#endif /* TARGET_ARCV2 */
+#endif /* TARGET_ARC32 */
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 
 #define ELF_START_MMAP 0x20000000
 #define ELF_ARCH  EM_ARC_COMPACT3_64
@@ -1634,7 +1634,7 @@ static inline void init_thread(struct target_pt_regs *regs,
 
 #define ELF_EXEC_PAGESIZE 4096
 
-#endif /* TARGET_ARCV3 */
+#endif /* TARGET_ARC64 */
 
 
 #ifndef ELF_PLATFORM

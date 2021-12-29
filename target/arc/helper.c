@@ -100,14 +100,14 @@ void arc_cpu_do_interrupt(CPUState *cs)
     case EXCP_MACHINE_CHECK:
         name = "Machine Check";
         break;
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
     case EXCP_TLB_MISS_I:
         name = "TLB Miss Instruction";
         break;
     case EXCP_TLB_MISS_D:
         name = "TLB Miss Data";
         break;
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
     case EXCP_IMMU_FAULT:
         name = "Instruction MMU Fault";
         break;
@@ -211,18 +211,18 @@ void arc_cpu_do_interrupt(CPUState *cs)
     SET_STATUS_BIT(env->stat, SCf, 0);
 
     /* 15. The PC is set with the appropriate exception vector. */
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
     MemTxResult txres;
 
     env->pc = address_space_ldl(cs->as, env->intvec + offset,
                                 MEMTXATTRS_UNSPECIFIED, &txres);
     assert(txres == MEMTX_OK);
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
     switch(cpu->family) {
-      case ARC_OPCODE_V3_ARC64:
+      case ARC_OPCODE_ARC64:
         env->pc = cpu_ldq_data(env, env->intvec + offset);
         break;
-      case ARC_OPCODE_V3_ARC32:
+      case ARC_OPCODE_ARC32:
         env->pc = cpu_ldl_data(env, env->intvec + offset);
         break;
     }

@@ -1,17 +1,15 @@
 dir = meson.current_source_dir()
 
 gen32 = [
-    dir + '/decoder-v2.c',
-    dir + '/semfunc.c',
+  dir + '/semfunc.c',
 ]
 gen64 = [
-    dir + '/decoder-v3.c',
-    dir + '/semfunc-v3.c',
+  dir + '/semfunc-v3.c',
 ]
 
 arc_softmmu_ss = ss.source_set()
-arc_softmmu_ss.add(when: 'TARGET_ARCV2', if_true: gen32)
-arc_softmmu_ss.add(when: 'TARGET_ARCV3', if_true: gen64)
+arc_softmmu_ss.add(when: 'TARGET_ARC32', if_true: gen32)
+arc_softmmu_ss.add(when: 'TARGET_ARC64', if_true: gen64)
 arc_softmmu_ss.add(when: 'CONFIG_USER_ONLY', if_false: files('arc-semi.c'))
 
 arc_softmmu_ss.add(files(
@@ -30,7 +28,11 @@ arc_softmmu_ss.add(files(
   'arconnect.c',
   'mmu-v6.c',
   'mmu.c',
-  'mmu-common.c'
+  'mmu-common.c',
+  'decoder.c',
+  'decoder-v3.c',
+  'decoder-v2.c',
+  'semfunc-weak.c',
 ))
 
 target_arch += {'arc': arc_softmmu_ss}

@@ -49,10 +49,10 @@ void cpu_loop(CPUARCState *env)
             env->pc = env->param;
             CPU_PCL(env) = env->pc & (~1);
             break;
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
         case EXCP_TLB_MISS_I:
         case EXCP_TLB_MISS_D:
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
         case EXCP_IMMU_FAULT:
         case EXCP_DMMU_FAULT:
 #else

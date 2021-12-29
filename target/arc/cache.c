@@ -97,6 +97,7 @@ target_ulong arc_cache_aux_get(const struct arc_aux_reg_detail *aux_reg_detail,
                                void *data)
 {
     CPUARCState *env = (CPUARCState *) data;
+    ARCCPU *cpu = env_archcpu(env);
     struct arc_cache *cache = &env->cache;
     uint32_t reg = 0;
 
@@ -155,9 +156,9 @@ target_ulong arc_cache_aux_get(const struct arc_aux_reg_detail *aux_reg_detail,
               (1 << 8)  | /* Cache Associativiy */
               (4 << 0);   /* Version number */
 
-#ifdef TARGET_ARCV3
-	reg |= (1 << 30); /* Hardware prefetcher */
-#endif
+	if(IS_ARCV3(cpu)) {
+	  reg |= (1 << 30); /* Hardware prefetcher */
+	}
         break;
 
 /*

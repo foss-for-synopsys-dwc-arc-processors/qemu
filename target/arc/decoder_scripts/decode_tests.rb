@@ -2,7 +2,10 @@
 
 @opcode_input_data = []
 
+
 def load_opcodes(opcode_file)
+  uniq_elements_hash = {}
+
   File.read(opcode_file).split("\n").each do |l|
     if(l =~ /OPCODE\(([^)]+)\)/)
       args = $1.split(/, ?/)
@@ -262,13 +265,19 @@ end
 #
 
 files = {
-  'opcodes.def' => [
+  'opcodes-full.def' => [
     { arch: "ARCv2HS", file: "v2_hs_dtree.def" },
     { arch: "ARCv2EM", file: "v2_em_dtree.def" },
-  ],
-  'opcodes-v3.def' => [
-    { arch: "V3_ARC64", file: "v3_hs6x_dtree.def" }
+    { arch: "ARC64", file: "v3_hs6x_dtree.def" },
+    { arch: "ARC32", file: "v3_hs5x_dtree.def" }
   ]
+  #'opcodes.def' => [
+  #  { arch: "ARCv2HS", file: "v2_hs_dtree.def" },
+  #  { arch: "ARCv2EM", file: "v2_em_dtree.def" },
+  #],
+  #'opcodes-v3.def' => [
+  #  { arch: "V3_ARC64", file: "v3_hs6x_dtree.def" }
+  #]
 }
 
 files.each_pair do |file, versions|
