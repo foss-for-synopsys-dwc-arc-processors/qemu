@@ -48,7 +48,7 @@ typedef struct DisasContext {
     target_ulong npc;   /*  next pc         */
     target_ulong dpc;   /*  next next pc    */
     target_ulong pcl;
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
     target_ulong lpe;
     target_ulong lps;
 #endif
@@ -106,7 +106,7 @@ extern TCGv     cpu_ecr;
 extern TCGv     cpu_efa;
 
 extern TCGv     cpu_pc;
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
 extern TCGv     cpu_lps;
 extern TCGv     cpu_lpe;
 #endif

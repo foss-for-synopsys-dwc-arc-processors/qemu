@@ -20,7 +20,7 @@
 #ifndef ARC_GDBSTUB_H
 #define ARC_GDBSTUB_H
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
 
 #define GDB_TARGET_STRING "arc:ARCv2"
 
@@ -154,6 +154,7 @@ enum gdb_aux_regs {
 /* ARCv3_64 */
 #else
 
+//#define GDB_TARGET_STRING "arc:ARCv3_64"
 #define GDB_TARGET_STRING "arc64:64"
 
 /* The order here is strictly tied with gdb-xml/arc-v3_64-core.xml. */

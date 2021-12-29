@@ -39,7 +39,7 @@ DEF_HELPER_FLAGS_3(mpym, TCG_CALL_NO_RWG_SE, tl, env, tl, tl)
 DEF_HELPER_FLAGS_3(repl_mask, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl)
 
 /* ARCV3 helpers */
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 DEF_HELPER_FLAGS_2(ffs32, TCG_CALL_NO_RWG_SE, tl, env, tl)
 
 DEF_HELPER_FLAGS_3(carry_add_flag32, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl)
@@ -56,10 +56,10 @@ DEF_HELPER_2(norml, i64, env, i64)
 
 DEF_HELPER_2(llock, tl, env, tl)
 DEF_HELPER_3(scond, tl, env, tl, tl)
-#if defined(TARGET_ARCV3)
+#if defined(TARGET_ARC64)
 DEF_HELPER_2(llockl, tl, env, tl)
 DEF_HELPER_3(scondl, tl, env, tl, tl)
-#elif defined(TARGET_ARCV2)
+#elif defined(TARGET_ARC32)
 DEF_HELPER_2(llockd, i64, env, tl)
 DEF_HELPER_3(scondd, tl, env, tl, i64)
 #endif

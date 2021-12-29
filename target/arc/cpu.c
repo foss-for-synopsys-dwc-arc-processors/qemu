@@ -190,6 +190,9 @@ static void arc_cpu_reset(DeviceState *dev)
     cpu->mpy_build = 0x00001006;
 }
 
+int print_insn_arc_v3(bfd_vma memaddr, struct disassemble_info *info);
+int print_insn_arc_v2(bfd_vma memaddr, struct disassemble_info *info);
+
 static void arc_cpu_disas_set_info(CPUState *cs, disassemble_info *info)
 {
     ARCCPU *cpu = ARC_CPU(cs);
@@ -197,28 +200,33 @@ static void arc_cpu_disas_set_info(CPUState *cs, disassemble_info *info)
     switch (cpu->family) {
     case ARC_OPCODE_ARC700:
         info->mach = bfd_mach_arc_arc700;
+        info->print_insn = print_insn_arc_v2;
         break;
     case ARC_OPCODE_ARC600:
         info->mach = bfd_mach_arc_arc600;
+        info->print_insn = print_insn_arc_v2;
         break;
     case ARC_OPCODE_ARCv2EM:
         info->mach = bfd_mach_arc_arcv2em;
+        info->print_insn = print_insn_arc_v2;
         break;
     case ARC_OPCODE_ARCv2HS:
         info->mach = bfd_mach_arc_arcv2hs;
+        info->print_insn = print_insn_arc_v2;
         break;
-    case ARC_OPCODE_V3_ARC64:
+    case ARC_OPCODE_ARC64:
         info->mach = bfd_mach_arcv3_64;
+        info->print_insn = print_insn_arc_v3;
         break;
-    case ARC_OPCODE_V3_ARC32:
+    case ARC_OPCODE_ARC32:
         info->mach = bfd_mach_arcv3_32;
+        info->print_insn = print_insn_arc_v3;
         break;
     default:
         info->mach = bfd_mach_arc_arcv2;
         break;
     }
 
-    info->print_insn = print_insn_arc;
     info->endian = BFD_ENDIAN_LITTLE;
 }
 
@@ -246,7 +254,7 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
      */
     cpu->freq_hz = cpu->cfg.freq_hz;
 
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
     cpu->isa_config = 0x02;
     switch (cpu->cfg.pc_size) {
     case 16:
@@ -315,7 +323,7 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
                     | (cpu->cfg.code_density ? (2 << 24) : 0)
                     | BIT(28) /* div_rem */;
 
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
     cpu->isa_config = 0x03        /* ver */
                       | (1 << 8)  /* va_size: 48-bit */
                       | (1 << 16) /* pa_size: 48-bit */
@@ -373,11 +381,11 @@ static ObjectClass *arc_cpu_class_by_name(const char *cpu_model)
 
 static gchar *arc_gdb_arch_name(CPUState *cs)
 {
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
     return g_strdup(GDB_TARGET_STRING);
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
     ARCCPU *cpu = ARC_CPU(cs);
-    if(cpu->family & ARC_OPCODE_V3_ARC64) {
+    if(cpu->family & ARC_OPCODE_ARC64) {
         return g_strdup(GDB_TARGET_STRING);
     } else {
         return g_strdup("arc64:32");
@@ -426,7 +434,7 @@ static void arc_cpu_class_init(ObjectClass *oc, void *data)
     cc->gdb_write_register = arc_cpu_gdb_write_register;
 
     /* Core GDB support */
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
     cc->gdb_core_xml_file = "arc-v2-core.xml";
 #else
     cc->gdb_core_xml_file = "arc-v3_64-core.xml";
@@ -446,7 +454,7 @@ static void arc_any_initfn(Object *obj)
     cpu->family = ARC_OPCODE_ARC700;
 }
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
 static void arc600_initfn(Object *obj)
 {
     ARCCPU *cpu = ARC_CPU(obj);
@@ -472,17 +480,17 @@ static void archs_initfn(Object *obj)
 }
 #endif
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 static void arc_hs6x_initfn(Object *obj)
 {
     ARCCPU *cpu = ARC_CPU(obj);
-    cpu->family = ARC_OPCODE_V3_ARC64;
+    cpu->family = ARC_OPCODE_ARC64;
 }
 
 static void arc_hs5x_initfn(Object *obj)
 {
     ARCCPU *cpu = ARC_CPU(obj);
-    cpu->family = ARC_OPCODE_V3_ARC32;
+    cpu->family = ARC_OPCODE_ARC32;
 }
 #endif
 
@@ -492,13 +500,13 @@ typedef struct ARCCPUInfo {
 } ARCCPUInfo;
 
 static const ARCCPUInfo arc_cpus[] = {
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
     { .name = "arc600", .initfn = arc600_initfn },
     { .name = "arc700", .initfn = arc700_initfn },
     { .name = "arcem", .initfn = arcem_initfn },
     { .name = "archs", .initfn = archs_initfn },
 #endif
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
     { .name = "hs6x", .initfn = arc_hs6x_initfn },
     { .name = "hs5x", .initfn = arc_hs5x_initfn },
 #endif

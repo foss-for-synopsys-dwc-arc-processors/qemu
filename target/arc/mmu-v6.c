@@ -218,7 +218,7 @@ arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
             tlb_flush(cs);
         mmu_rtp0 =  val;
         break;
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
     case AUX_ID_mmu_rtp0hi:
         if ((mmu_rtp0 >> 32) != val)
             tlb_flush(cs);
@@ -231,7 +231,7 @@ arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
             tlb_flush(cs);
         mmu_rtp1 =  val;
         break;
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
     case AUX_ID_mmu_rtp1hi:
         if ((mmu_rtp1 >> 32) != val)
             tlb_flush(cs);

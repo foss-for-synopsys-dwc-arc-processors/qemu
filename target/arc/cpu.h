@@ -36,18 +36,6 @@
 #define ARC_CPU_TYPE_NAME(model) model ARC_CPU_TYPE_SUFFIX
 #define CPU_RESOLVING_TYPE TYPE_ARC_CPU
 
-enum arc_features {
-    ARC_FEATURE_ARC5,
-    ARC_FEATURE_ARC600,
-    ARC_FEATURE_ARC700,
-    no_features,
-};
-
-enum arc_endianess {
-    ARC_ENDIANNESS_LE = 0,
-    ARC_ENDIANNESS_BE,
-};
-
 /* U-Boot - kernel ABI */
 #define ARC_UBOOT_CMDLINE 1
 #define ARC_UBOOT_DTB     2
@@ -455,6 +443,9 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
     *pflags = cpu_mmu_index(env, 0);
 #endif
 }
+
+#define IS_ARCV3(CPU) \
+  ((cpu->family & ARC_OPCODE_V3_ALL) != 0)
 
 void arc_translate_init(void);
 

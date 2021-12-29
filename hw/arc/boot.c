@@ -71,7 +71,8 @@ void arc_load_kernel(ARCCPU *cpu, struct arc_boot_info *info)
     elf_machine = cpu->family > 2 ? EM_ARC_COMPACT2 : EM_ARC_COMPACT;
     elf_machine = (cpu->family & ARC_OPCODE_V3_ALL) != 0 ? EM_ARC_COMPACT3_64 : elf_machine;
     kernel_size = load_elf(info->kernel_filename, NULL, NULL, NULL,
-                           &entry, NULL, NULL, NULL, ARC_ENDIANNESS_LE,
+                           &entry, NULL, NULL, NULL,
+                           false, /* little endian */
                            elf_machine, 1, 0);
 
     if (kernel_size < 0) {

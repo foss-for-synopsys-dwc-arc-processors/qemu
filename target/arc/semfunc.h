@@ -32,6 +32,13 @@
 #define LONG 0
 #define BYTE 1
 #define WORD 2
+#define LONGLONG 3
+
+int __not_implemented_semfunc_0(DisasCtxt *ctx);
+int __not_implemented_semfunc_1(DisasCtxt *ctx, TCGv a);
+int __not_implemented_semfunc_2(DisasCtxt *ctx, TCGv a, TCGv b);
+int __not_implemented_semfunc_3(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c);
+int __not_implemented_semfunc_4(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d);
 
 #define SEMANTIC_FUNCTION_PROTOTYPE_0(NAME) \
     int arc_gen_##NAME(DisasCtxt *);
@@ -47,10 +54,9 @@
 #define MAPPING(MNEMONIC, NAME, NOPS, ...)
 #define CONSTANT(...)
 #define SEMANTIC_FUNCTION(NAME, NOPS) \
-    SEMANTIC_FUNCTION_PROTOTYPE_##NOPS(NAME)
+  SEMANTIC_FUNCTION_PROTOTYPE_##NOPS(NAME)
 
-#include "target/arc/semfunc_mapping.def"
-#include "target/arc/extra_mapping.def"
+#include "target/arc/semfunc-full_mapping.def"
 
 #undef MAPPING
 #undef CONSTANT
@@ -58,6 +64,7 @@
 #undef SEMANTIC_FUNCTION_PROTOTYPE_1
 #undef SEMANTIC_FUNCTION_PROTOTYPE_2
 #undef SEMANTIC_FUNCTION_PROTOTYPE_3
+#undef SEMANTIC_FUNCTION_PROTOTYPE_4
 #undef SEMANTIC_FUNCTION
 
 #endif /* __ARC_SEMFUNC_H__ */

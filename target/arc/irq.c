@@ -30,14 +30,14 @@
 #include "qemu/host-utils.h"
 
 #define CACHE_ENTRY_SIZE (TARGET_LONG_BITS / 8)
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
 #define TARGET_LONG_LOAD(ENV, ADDR) cpu_ldl_data(ENV, ADDR)
 #define TARGET_LONG_STORE(ENV, ADDR, VALUE) cpu_stl_data(ENV, ADDR, VALUE)
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
 static inline target_ulong
 TARGET_LONG_LOAD(CPUARCState *env, target_ulong addr) {
     ARCCPU *cpu = env_archcpu(env);
-    if((cpu->family & ARC_OPCODE_V3_ARC64) != 0) {
+    if((cpu->family & ARC_OPCODE_ARC64) != 0) {
 	return cpu_ldq_data(env, addr);
     } else {
 	return cpu_ldl_data(env, addr);
@@ -47,7 +47,7 @@ static inline void
 TARGET_LONG_STORE(CPUARCState *env, target_ulong addr,
 		  target_ulong value) {
     ARCCPU *cpu = env_archcpu(env);
-    if((cpu->family & ARC_OPCODE_V3_ARC64) != 0) {
+    if((cpu->family & ARC_OPCODE_ARC64) != 0) {
 	cpu_stq_data(env, addr, value);
     } else {
 	cpu_stq_data(env, addr, value);
@@ -184,7 +184,7 @@ static void arc_rtie_irq(CPUARCState *env)
         CPU_BLINK(env) = irq_pop(env, "blink");
     }
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
     /* Pop lp_end, lp_start, lp_count if aux_irq_ctrl.l bit is set. */
     if (env->aux_irq_ctrl & (1 << 10)) {
         env->lpe = irq_pop(env, "LP_END");
@@ -320,7 +320,7 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
         irq_push(env, 0xdeadbeef, "dummy EI_BASE");
     }
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
     /* Push LP_COUNT, LP_START, LP_END registers if required. */
     if (env->aux_irq_ctrl & (1 << 10)) {
         irq_push(env, CPU_LP(env), "lp");
