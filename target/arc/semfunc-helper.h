@@ -120,7 +120,7 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 
 #define getNFlag(R)     cpu_Nf
 #define setNFlag(ELEM)  tcg_gen_shri_tl(cpu_Nf, ELEM, (TARGET_LONG_BITS - 1))
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 #define setNFlag32(ELEM)  tcg_gen_shri_tl(cpu_Nf, ELEM, 31)
 #endif
 #define setNFlagByNum(ELEM, N) { \
@@ -171,14 +171,14 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define setBLINK(BLINK_ADDR) \
   tcg_gen_mov_tl(cpu_blink, BLINK_ADDR);
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
 
 #define Carry(R, A)             tcg_gen_shri_tl(R, A, 31);
 
 #endif
 
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 
 #define Carry(R, A)             tcg_gen_shri_tl(R, A, 63);
 #define Carry32(R, A) \
@@ -210,7 +210,7 @@ void arc_gen_sub_Cf(TCGv ret, TCGv dest, TCGv src1, TCGv src2);
 #define rotateLeft(R, B, C)           tcg_gen_rotl_tl(R, B, C)
 #define rotateRight(R, B, C)          tcg_gen_rotr_tl(R, B, C)
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 #define rotateLeft32(R, B, C)     gen_helper_rotate_left32(R, B, C)
 #define rotateRight32(R, B, C)    gen_helper_rotate_right32(R, B, C)
 
@@ -365,16 +365,16 @@ bool arc_is_instruction_operand_a_register(const DisasCtxt *ctx, int nop);
 
 void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 
 //#define se32to64(A, B) gen_helper_se32to64(A, B)
 #define se32to64(A, B) tcg_gen_ext32s_tl(A, B)
 
 #define ARC64_ADDRESS_ADD(A, B, C) { \
   ARCCPU *cpu = env_archcpu(ctx->env); \
-  if((cpu->family & ARC_OPCODE_V3_ARC64) != 0) { \
+  if((cpu->family & ARC_OPCODE_ARC64) != 0) { \
     tcg_gen_add_tl(A, B, C); \
-  } else if((cpu->family & ARC_OPCODE_V3_ARC32) != 0) { \
+  } else if((cpu->family & ARC_OPCODE_ARC32) != 0) { \
     TCGv_i32 tA, tB, tC; \
     tA = tcg_temp_new_i32(); \
     tB = tcg_temp_new_i32(); \

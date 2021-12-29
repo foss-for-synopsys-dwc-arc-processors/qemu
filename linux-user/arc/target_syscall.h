@@ -43,7 +43,7 @@ struct target_pt_regs {
     abi_long t6;
 };
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
 #define UNAME_MACHINE "arcv2"
 #else
 #define UNAME_MACHINE "arcv3"

@@ -6,9 +6,9 @@
 #ifndef LINUX_USER_ARC_SYSCALL_NR_H
 #define LINUX_USER_ARC_SYSCALL_NR_H
 
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
 # include "syscall32_nr.h"
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
 # include "syscall64_nr.h"
 #else
 # error "This should never happen !!!!"
