@@ -20,7 +20,7 @@
 
 #include "qemu/osdep.h"
 #include "translate.h"
-#include "semfunc-v3.h"
+#include "semfunc.h"
 #include "exec/gen-icount.h"
 
 
@@ -14145,7 +14145,7 @@ arc_gen_FFSL(DisasCtxt *ctx, TCGv src, TCGv dest)
 
 
 
-/* DBNZL
+/* DBNZ
  *    Variables: @a, @offset
  *    Functions: getPCL, setPC
 --- code ---
@@ -14168,7 +14168,7 @@ arc_gen_FFSL(DisasCtxt *ctx, TCGv src, TCGv dest)
  */
 
 int
-arc_gen_DBNZL (DisasCtxt *ctx, TCGv a, TCGv offset)
+arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset)
 {
     int ret = DISAS_NEXT;
     TCGLabel *do_not_branch = gen_new_label();

@@ -24,979 +24,7 @@
 #include "qemu/bswap.h"
 #include "cpu.h"
 
-/* Register names. */
-static const char * const regnames[64] = {
-    "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
-    "r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
-    "r24", "r25",
-    "r26",
-    "fp", "sp", "ilink", "r30", "blink",
 
-    "r32", "r33", "r34", "r35", "r36", "r37", "r38", "r39",
-    "r40", "r41", "r42", "r43", "r44", "r45", "r46", "r47",
-    "r48", "r49", "r50", "r51", "r52", "r53", "r54", "r55",
-    "r56", "r57", "r58", "r59", "lp_count", "rezerved", "LIMM", "pcl"
-};
-
-static const char *get_register_name(int value)
-{
-    return regnames[value];
-}
-
-/* Extract functions. */
-static ATTRIBUTE_UNUSED int
-extract_limm(unsigned long long insn ATTRIBUTE_UNUSED,
-             bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  return value;
-}
-
-/* mask = 00000000000000000000111111000000. */
-static long long int
-extract_uimm6_20(unsigned long long insn ATTRIBUTE_UNUSED,
-                 bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 6) & 0x003f) << 0;
-
-  return value;
-}
-
-/* mask = 00000000000000000000111111222222. */
-static long long int
-extract_simm12_20(unsigned long long insn ATTRIBUTE_UNUSED,
-                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 6) & 0x003f) << 0;
-  value |= ((insn >> 0) & 0x003f) << 6;
-
-  /* Extend the sign. */
-  int signbit = 1 << (12 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000011100000000. */
-static ATTRIBUTE_UNUSED int
-extract_simm3_5_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 8) & 0x0007) << 0;
-
-  /* Extend the sign. */
-  int signbit = 1 << (3 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-static ATTRIBUTE_UNUSED int
-extract_limm_s(unsigned long long insn ATTRIBUTE_UNUSED,
-               bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  return value;
-}
-
-/* mask = 0000000000011111. */
-static long long int
-extract_uimm7_a32_11_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x001f) << 2;
-
-  return value;
-}
-
-/* mask = 0000000001111111. */
-static long long int
-extract_uimm7_9_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x007f) << 0;
-
-  return value;
-}
-
-/* mask = 0000000000000111. */
-static long long int
-extract_uimm3_13_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x0007) << 0;
-
-  return value;
-}
-
-/* mask = 0000000111111111. */
-static long long int
-extract_simm11_a32_7_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 0) & 0x01ff) << 2;
-
-  /* Extend the sign. */
-  int signbit = 1 << (11 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000002220111. */
-static long long int
-extract_uimm6_13_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x0007) << 0;
-  value |= ((insn >> 4) & 0x0007) << 3;
-
-  return value;
-}
-
-/* mask = 0000000000011111. */
-static long long int
-extract_uimm5_11_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x001f) << 0;
-
-  return value;
-}
-
-/* mask = 00000000111111102000000000000000. */
-static long long int
-extract_simm9_a16_8(unsigned long long insn ATTRIBUTE_UNUSED,
-                    bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 17) & 0x007f) << 1;
-  value |= ((insn >> 15) & 0x0001) << 8;
-
-  /* Extend the sign. */
-  int signbit = 1 << (9 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 00000000000000000000111111000000. */
-static long long int
-extract_uimm6_8(unsigned long long insn ATTRIBUTE_UNUSED,
-                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 6) & 0x003f) << 0;
-
-  return value;
-}
-
-/* mask = 00000111111111102222222222000000. */
-static long long int
-extract_simm21_a16_5(unsigned long long insn ATTRIBUTE_UNUSED,
-                     bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 17) & 0x03ff) << 1;
-  value |= ((insn >> 6) & 0x03ff) << 11;
-
-  /* Extend the sign. */
-  int signbit = 1 << (21 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 00000111111111102222222222003333. */
-static long long int
-extract_simm25_a16_5(unsigned long long insn ATTRIBUTE_UNUSED,
-                     bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 17) & 0x03ff) << 1;
-  value |= ((insn >> 6) & 0x03ff) << 11;
-  value |= ((insn >> 0) & 0x000f) << 21;
-
-  /* Extend the sign. */
-  int signbit = 1 << (25 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000111111111. */
-static long long int
-extract_simm10_a16_7_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 0) & 0x01ff) << 1;
-
-  /* Extend the sign. */
-  int signbit = 1 << (10 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000000111111. */
-static long long int
-extract_simm7_a16_10_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 0) & 0x003f) << 1;
-
-  /* Extend the sign. */
-  int signbit = 1 << (7 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 00000111111111002222222222000000. */
-static long long int
-extract_simm21_a32_5(unsigned long long insn ATTRIBUTE_UNUSED,
-                     bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 18) & 0x01ff) << 2;
-  value |= ((insn >> 6) & 0x03ff) << 11;
-
-  /* Extend the sign. */
-  int signbit = 1 << (21 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 00000111111111002222222222003333. */
-static long long int
-extract_simm25_a32_5(unsigned long long insn ATTRIBUTE_UNUSED,
-                     bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 18) & 0x01ff) << 2;
-  value |= ((insn >> 6) & 0x03ff) << 11;
-  value |= ((insn >> 0) & 0x000f) << 21;
-
-  /* Extend the sign. */
-  int signbit = 1 << (25 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000011111111111. */
-static long long int
-extract_simm13_a32_5_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 0) & 0x07ff) << 2;
-
-  /* Extend the sign. */
-  int signbit = 1 << (13 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000001111111. */
-static long long int
-extract_simm8_a16_9_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                      bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 0) & 0x007f) << 1;
-
-  /* Extend the sign. */
-  int signbit = 1 << (8 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 00000000000000000000000111000000. */
-static long long int
-extract_uimm3_23(unsigned long long insn ATTRIBUTE_UNUSED,
-                 bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 6) & 0x0007) << 0;
-
-  return value;
-}
-
-/* mask = 0000001111111111. */
-static long long int
-extract_uimm10_6_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x03ff) << 0;
-
-  return value;
-}
-
-/* mask = 0000002200011110. */
-static long long int
-extract_uimm6_11_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 1) & 0x000f) << 0;
-  value |= ((insn >> 8) & 0x0003) << 4;
-
-  return value;
-}
-
-/* mask = 00000000111111112000000000000000. */
-static long long int
-extract_simm9_8(unsigned long long insn ATTRIBUTE_UNUSED,
-                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 16) & 0x00ff) << 0;
-  value |= ((insn >> 15) & 0x0001) << 8;
-
-  /* Extend the sign. */
-  int signbit = 1 << (9 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000011111111. */
-static long long int
-extract_uimm10_a32_8_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x00ff) << 2;
-
-  return value;
-}
-
-/* mask = 0000000111111111. */
-static long long int
-extract_simm9_7_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 0) & 0x01ff) << 0;
-
-  /* Extend the sign. */
-  int signbit = 1 << (9 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000000011111. */
-static long long int
-extract_uimm6_a16_11_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x001f) << 1;
-
-  return value;
-}
-
-/* mask = 0000020000011000. */
-static long long int
-extract_uimm5_a32_11_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 3) & 0x0003) << 2;
-  value |= ((insn >> 10) & 0x0001) << 4;
-
-  return value;
-}
-
-/* mask = 0000022222200111. */
-static long long int
-extract_simm11_a32_13_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                        bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 0) & 0x0007) << 2;
-  value |= ((insn >> 5) & 0x003f) << 5;
-
-  /* Extend the sign. */
-  int signbit = 1 << (11 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000022220111. */
-static long long int
-extract_uimm7_13_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x0007) << 0;
-  value |= ((insn >> 4) & 0x000f) << 3;
-
-  return value;
-}
-
-/* mask = 00000000000000000000011111000000. */
-static long long int
-extract_uimm6_a16_21(unsigned long long insn ATTRIBUTE_UNUSED,
-                     bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 6) & 0x001f) << 1;
-
-  return value;
-}
-
-/* mask = 0000022200011110. */
-static long long int
-extract_uimm7_11_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 1) & 0x000f) << 0;
-  value |= ((insn >> 8) & 0x0007) << 4;
-
-  return value;
-}
-
-/* mask = 00000000000000000000111111000000. */
-static long long int
-extract_uimm7_a16_20(unsigned long long insn ATTRIBUTE_UNUSED,
-                     bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 6) & 0x003f) << 1;
-
-  return value;
-}
-
-/* mask = 00000000000000000000111111222222. */
-static long long int
-extract_simm13_a16_20(unsigned long long insn ATTRIBUTE_UNUSED,
-                      bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  int value = 0;
-
-  value |= ((insn >> 6) & 0x003f) << 1;
-  value |= ((insn >> 0) & 0x003f) << 7;
-
-  /* Extend the sign. */
-  int signbit = 1 << (13 - 1);
-  value = (value ^ signbit) - signbit;
-
-  return value;
-}
-
-/* mask = 0000000011111111. */
-static long long int
-extract_uimm8_8_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 0) & 0x00ff) << 0;
-
-  return value;
-}
-
-/* mask = 0000011111100000. */
-static long long int
-extract_uimm6_5_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  value |= ((insn >> 5) & 0x003f) << 0;
-
-  return value;
-}
-
-/* mask = 00000000000000000000000000000000. */
-static ATTRIBUTE_UNUSED int
-extract_uimm6_axx_(unsigned long long insn ATTRIBUTE_UNUSED,
-                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-  unsigned value = 0;
-
-  return value;
-}
-
-static long long int extract_rb(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = (((insn >> 12) & 0x07) << 3) | ((insn >> 24) & 0x07);
-
-    if (value == 0x3e && invalid) {
-        *invalid = TRUE;
-    }
-
-    return value;
-}
-
-static long long int extract_rhv1(unsigned long long insn ATTRIBUTE_UNUSED,
-                                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = ((insn & 0x7) << 3) | ((insn >> 5) & 0x7);
-
-    return value;
-}
-
-static long long int extract_rhv2(unsigned long long insn ATTRIBUTE_UNUSED,
-                                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = ((insn >> 5) & 0x07) | ((insn & 0x03) << 3);
-
-    return value;
-}
-
-static long long int extract_r0(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 0;
-}
-
-static long long int extract_r1(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 1;
-}
-
-static long long int extract_r2(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 2;
-}
-
-static long long int extract_r3(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 3;
-}
-
-static long long int extract_sp(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 28;
-}
-
-static long long int extract_gp(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 26;
-}
-
-static long long int extract_pcl(unsigned long long insn ATTRIBUTE_UNUSED,
-                                 bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 63;
-}
-
-static long long int extract_blink(unsigned long long insn ATTRIBUTE_UNUSED,
-                                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 31;
-}
-
-static long long int extract_ilink1(unsigned long long insn ATTRIBUTE_UNUSED,
-                                    bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 29;
-}
-
-static long long int extract_ilink2(unsigned long long insn ATTRIBUTE_UNUSED,
-                                    bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return 30;
-}
-
-static long long int extract_ras(unsigned long long insn ATTRIBUTE_UNUSED,
-                                 bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = insn & 0x07;
-    if (value > 3) {
-        return value + 8;
-    } else {
-        return value;
-    }
-}
-
-static long long int extract_rbs(unsigned long long insn ATTRIBUTE_UNUSED,
-                                 bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = (insn >> 8) & 0x07;
-    if (value > 3) {
-        return value + 8;
-    } else {
-        return value;
-    }
-}
-
-static long long int extract_rcs(unsigned long long insn ATTRIBUTE_UNUSED,
-                                 bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = (insn >> 5) & 0x07;
-    if (value > 3) {
-        return value + 8;
-    } else {
-        return value;
-    }
-}
-
-static long long int extract_simm3s(unsigned long long insn ATTRIBUTE_UNUSED,
-                                    bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = (insn >> 8) & 0x07;
-    if (value == 7) {
-        return -1;
-    } else {
-        return value;
-    }
-}
-
-static long long int extract_rrange(unsigned long long insn  ATTRIBUTE_UNUSED,
-                                    bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return (insn >> 1) & 0x0F;
-}
-
-static long long int extract_fpel(unsigned long long insn ATTRIBUTE_UNUSED,
-                                  bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return (insn & 0x0100) ? 27 : -1;
-}
-
-static long long int extract_blinkel(unsigned long long insn ATTRIBUTE_UNUSED,
-                                     bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return (insn & 0x0200) ? 31 : -1;
-}
-
-static long long int extract_pclel(unsigned long long insn ATTRIBUTE_UNUSED,
-                                   bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    return (insn & 0x0400) ? 63 : -1;
-}
-
-static long long int extract_w6(unsigned long long insn ATTRIBUTE_UNUSED,
-                                bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    signed value = 0;
-
-    value |= ((insn >> 6) & 0x003f) << 0;
-
-    int signbit = 1 << 5;
-    value = (value ^ signbit) - signbit;
-
-    return value;
-}
-
-static long long int extract_g_s(unsigned long long insn ATTRIBUTE_UNUSED,
-                                 bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = 0;
-
-    value |= ((insn >> 8) & 0x0007) << 0;
-    value |= ((insn >> 3) & 0x0003) << 3;
-
-    /* Extend the sign. */
-    int signbit = 1 << (6 - 1);
-    value = (value ^ signbit) - signbit;
-
-    return value;
-}
-
-static long long int extract_uimm12_20(unsigned long long insn ATTRIBUTE_UNUSED,
-                                       bfd_boolean *invalid ATTRIBUTE_UNUSED)
-{
-    int value = 0;
-
-    value |= ((insn >> 6) & 0x003f) << 0;
-    value |= ((insn >> 0) & 0x003f) << 6;
-
-    return value;
-}
-
-/*
- * The operands table.
- *
- * The format of the operands table is:
- *
- * BITS SHIFT FLAGS EXTRACT_FUN.
- */
-const struct arc_operand arc_operands[] = {
-    { 0, 0, 0, 0 },
-#define ARC_OPERAND(NAME, BITS, SHIFT, RELO, FLAGS, FUN)       \
-    { BITS, SHIFT, FLAGS, FUN },
-#include "target/arc/operands.def"
-#undef ARC_OPERAND
-    { 0, 0, 0, 0}
-};
-
-enum arc_operands_map {
-    OPERAND_UNUSED = 0,
-#define ARC_OPERAND(NAME, BITS, SHIFT, RELO, FLAGS, FUN) OPERAND_##NAME,
-#include "target/arc/operands.def"
-#undef ARC_OPERAND
-    OPERAND_LAST
-};
-
-/*
- * The flag operands table.
- *
- * The format of the table is
- * NAME CODE BITS SHIFT FAVAIL.
- */
-const struct arc_flag_operand arc_flag_operands[] = {
-    { 0, 0, 0, 0, 0},
-#define ARC_FLAG(NAME, MNEMONIC, CODE, BITS, SHIFT, AVAIL)      \
-    { MNEMONIC, CODE, BITS, SHIFT, AVAIL },
-#include "target/arc/flags.def"
-#undef ARC_FLAG
-    { 0, 0, 0, 0, 0}
-};
-
-enum arc_flags_map {
-    F_NULL = 0,
-#define ARC_FLAG(NAME, MNEMONIC, CODE, BITS, SHIFT, AVAIL) F_##NAME,
-#include "target/arc/flags.def"
-#undef ARC_FLAG
-    F_LAST
-};
-
-/*
- * Table of the flag classes.
- *
- * The format of the table is
- * CLASS {FLAG_CODE}.
- */
-const struct arc_flag_class arc_flag_classes[] = {
-#define C_EMPTY             0
-    { F_CLASS_NONE, { F_NULL }, 0},
-
-#define C_CC_EQ             (C_EMPTY + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_EQUAL, F_NULL}, 0},
-
-#define C_CC_GE             (C_CC_EQ + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_GE, F_NULL}, 0},
-
-#define C_CC_GT             (C_CC_GE + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_GT, F_NULL}, 0},
-
-#define C_CC_HI             (C_CC_GT + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_HI, F_NULL}, 0},
-
-#define C_CC_HS             (C_CC_HI + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_NOTCARRY, F_NULL}, 0},
-
-#define C_CC_LE             (C_CC_HS + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_LE, F_NULL}, 0},
-
-#define C_CC_LO             (C_CC_LE + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_CARRY, F_NULL}, 0},
-
-#define C_CC_LS             (C_CC_LO + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_LS, F_NULL}, 0},
-
-#define C_CC_LT             (C_CC_LS + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_LT, F_NULL}, 0},
-
-#define C_CC_NE             (C_CC_LT + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_COND, {F_NOTEQUAL, F_NULL}, 0},
-
-#define C_AA_AB             (C_CC_NE + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_WB, {F_AB3, F_NULL}, 0},
-
-#define C_AA_AW             (C_AA_AB + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_WB, {F_AW3, F_NULL}, 0},
-
-#define C_ZZ_D              (C_AA_AW + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_ZZ, {F_SIZED, F_NULL}, 0},
-
-#define C_ZZ_H              (C_ZZ_D + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_ZZ, {F_H1, F_NULL}, 0},
-
-#define C_ZZ_B              (C_ZZ_H + 1)
-    {F_CLASS_IMPLICIT | F_CLASS_ZZ, {F_SIZEB1, F_NULL}, 0},
-
-#define C_CC                (C_ZZ_B + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_EXTEND | F_CLASS_COND,
-        { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL,
-          F_NOTZERO, F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS,
-          F_CARRY, F_CARRYSET, F_LOWER, F_CARRYCLR,
-          F_NOTCARRY, F_HIGHER, F_OVERFLOWSET, F_OVERFLOW,
-          F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-          F_LE, F_HI, F_LS, F_PNZ, F_NULL
-        },
-      0
-    },
-
-#define C_AA_ADDR3          (C_CC + 1)
-#define C_AA27              (C_CC + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_WB, { F_A3, F_AW3, F_AB3, F_AS3, F_NULL }, 0},
-#define C_AA_ADDR9          (C_AA_ADDR3 + 1)
-#define C_AA21              (C_AA_ADDR3 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_WB, { F_A9, F_AW9, F_AB9, F_AS9, F_NULL }, 0},
-#define C_AA_ADDR22         (C_AA_ADDR9 + 1)
-#define C_AA8               (C_AA_ADDR9 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_WB,
-      { F_A22, F_AW22, F_AB22, F_AS22, F_NULL },
-      0
-    },
-
-#define C_F                 (C_AA_ADDR22 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_F, { F_FLAG, F_NULL }, 0},
-#define C_FHARD             (C_F + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_F, { F_FFAKE, F_NULL }, 0},
-
-#define C_T                 (C_FHARD + 1)
-    { F_CLASS_OPTIONAL, { F_NT, F_T, F_NULL }, 0},
-#define C_D                 (C_T + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_D, { F_ND, F_D, F_NULL }, 0},
-#define C_DNZ_D             (C_D + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_D, { F_DNZ_ND, F_DNZ_D, F_NULL }, 0},
-
-#define C_DHARD             (C_DNZ_D + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_D, { F_DFAKE, F_NULL }, 0},
-
-#define C_DI20              (C_DHARD + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_DI, { F_DI11, F_NULL }, 0},
-#define C_DI14              (C_DI20 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_DI, { F_DI14, F_NULL }, 0},
-#define C_DI16              (C_DI14 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_DI, { F_DI15, F_NULL }, 0},
-#define C_DI26              (C_DI16 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_DI, { F_DI5, F_NULL }, 0},
-
-#define C_X25               (C_DI26 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_X, { F_SIGN6, F_NULL }, 0},
-#define C_X15               (C_X25 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_X, { F_SIGN16, F_NULL }, 0},
-#define C_XHARD             (C_X15 + 1)
-#define C_X                 (C_X15 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_X, { F_SIGNX, F_NULL }, 0},
-
-#define C_ZZ13              (C_X + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_ZZ, { F_SIZEB17, F_SIZEW17, F_H17, F_NULL}, 0},
-#define C_ZZ23              (C_ZZ13 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_ZZ, { F_SIZEB7, F_SIZEW7, F_H7, F_NULL}, 0},
-#define C_ZZ29              (C_ZZ23 + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_ZZ, { F_SIZEB1, F_SIZEW1, F_H1, F_NULL}, 0},
-
-#define C_AS                (C_ZZ29 + 1)
-    { F_CLASS_IMPLICIT | F_CLASS_OPTIONAL | F_CLASS_WB, { F_ASFAKE, F_NULL}, 0},
-
-#define C_NE                (C_AS + 1)
-    { F_CLASS_OPTIONAL | F_CLASS_COND, { F_NE, F_NULL}, 0},
-};
-
-/* List with special cases instructions and the applicable flags. */
-const struct arc_flag_special arc_flag_special_cases[] = {
-    { "b",  { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL, F_NOTZERO,
-              F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS, F_CARRY, F_CARRYSET,
-              F_LOWER, F_CARRYCLR, F_NOTCARRY, F_HIGHER, F_OVERFLOWSET,
-              F_OVERFLOW, F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-              F_LE, F_HI, F_LS, F_PNZ, F_NULL
-            }
-    },
-    { "bl", { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL, F_NOTZERO,
-              F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS, F_CARRY, F_CARRYSET,
-              F_LOWER, F_CARRYCLR, F_NOTCARRY, F_HIGHER, F_OVERFLOWSET,
-              F_OVERFLOW, F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-              F_LE, F_HI, F_LS, F_PNZ, F_NULL
-            }
-    },
-    { "br", { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL, F_NOTZERO,
-              F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS, F_CARRY, F_CARRYSET,
-              F_LOWER, F_CARRYCLR, F_NOTCARRY, F_HIGHER, F_OVERFLOWSET,
-              F_OVERFLOW, F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-              F_LE, F_HI, F_LS, F_PNZ, F_NULL
-            }
-    },
-    { "j",  { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL, F_NOTZERO,
-              F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS, F_CARRY, F_CARRYSET,
-              F_LOWER, F_CARRYCLR, F_NOTCARRY, F_HIGHER, F_OVERFLOWSET,
-              F_OVERFLOW, F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-              F_LE, F_HI, F_LS, F_PNZ, F_NULL
-            }
-    },
-    { "jl", { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL, F_NOTZERO,
-              F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS, F_CARRY, F_CARRYSET,
-              F_LOWER, F_CARRYCLR, F_NOTCARRY, F_HIGHER, F_OVERFLOWSET,
-              F_OVERFLOW, F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-              F_LE, F_HI, F_LS, F_PNZ, F_NULL
-            }
-    },
-    { "lp", { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL, F_NOTZERO,
-              F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS, F_CARRY, F_CARRYSET,
-              F_LOWER, F_CARRYCLR, F_NOTCARRY, F_HIGHER, F_OVERFLOWSET,
-              F_OVERFLOW, F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-              F_LE, F_HI, F_LS, F_PNZ, F_NULL
-            }
-    },
-    { "set", { F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL, F_NOTZERO,
-               F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS, F_CARRY, F_CARRYSET,
-               F_LOWER, F_CARRYCLR, F_NOTCARRY, F_HIGHER, F_OVERFLOWSET,
-               F_OVERFLOW, F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
-               F_LE, F_HI, F_LS, F_PNZ, F_NULL
-             }
-    },
-    { "ld", { F_SIZEB17, F_SIZEW17, F_H17, F_NULL } },
-    { "st", { F_SIZEB1, F_SIZEW1, F_H1, F_NULL } }
-};
-
-const unsigned arc_num_flag_special = ARRAY_SIZE(arc_flag_special_cases);
 
 /*
  * The opcode table.
@@ -1036,88 +64,10 @@ const unsigned arc_num_flag_special = ARRAY_SIZE(arc_flag_special_cases);
  * nps extension instructions.
  */
 
-#define OPCODE(...)
-#define OPERANDS_LIST(NAME, COUNT, ...) \
-  { __VA_ARGS__ },
-#define FLAGS_LIST(...)
-#define MNEMONIC(...)
-static unsigned char operands[OPERANDS_LIST_SIZE+1][MAX_INSN_ARGS] = {
-#include "target/arc/opcodes.def"
-    { 0 } /* NO OPERANDS */
-};
-#undef OPCODE
-#undef OPERANDS_LIST
-#undef FLAGS_LIST
-#undef MNEMONIC
 
-#define OPCODE(NAME, INSN, MASK, ARCH, CLASS, SUBCLASS, OPERANDS, FLAGS, TEMPLATE, ASM_TEMPLATE) \
-    ASM_TEMPLATE,
-#define OPERANDS_LIST(...)
-#define FLAGS_LIST(...)
-#define MNEMONIC(...)
-const char *opcode_name_str[OPCODE_SIZE] = {
-    #include "target/arc/opcodes.def"
-};
-#undef OPCODE
-#undef OPERANDS_LIST
-#undef FLAGS_LIST
-#undef MNEMONIC
-
-#define OPCODE(...)
-#define OPERANDS_LIST(...)
-#define FLAGS_LIST(NAME, COUNT, ...) \
-  { __VA_ARGS__ },
-#define MNEMONIC(...)
-static unsigned char flags_arc[FLAGS_SIZE+1][MAX_INSN_FLGS] = {
-#include "target/arc/opcodes.def"
-    { 0 }
-};
-#undef OPCODE
-#undef OPERANDS_LIST
-#undef FLAGS_LIST
-#undef MNEMONIC
-
-/* Opcode debug strings */
-#define OPCODE(NAME, INSN, MASK, ARCH, CLASS, SUBCLASS, OPERANDS, FLAGS, ...) \
-    "OPCODE_" #ARCH "_" #NAME "_" #INSN "_" #MASK "_" #CLASS "_" #OPERANDS,
-#define OPERANDS_LIST(...)
-#define FLAGS_LIST(...)
-#define MNEMONIC(...)
-const char *opcode_enum_strs[OPCODE_SIZE] = {
-    #include "opcodes.def"
-};
-#undef OPCODE
-#undef OPERANDS_LIST
-#undef FLAGS_LIST
-#undef MNEMONIC
-
-#define OPCODE(NAME, OPCODE, MASK, ARCH, CLASS, SUBCLASS, OPS, FLGS, ...) { \
-  .name = #NAME, \
-  .mnemonic = MNEMONIC_##NAME, \
-  .opcode = OPCODE, \
-  .mask = MASK, \
-  .cpu = ARC_OPCODE_##ARCH, \
-  .insn_class = CLASS, \
-  .subclass = SUBCLASS, \
-  .operands = operands[OPERANDS_##OPS], \
-  .flags = flags_arc[FLAGS_##FLGS] \
-},
-#define OPERANDS_LIST(...)
-#define FLAGS_LIST(...)
-#define MNEMONIC(...)
-const struct arc_opcode arc_opcodes[OPCODE_SIZE+1] = {
-#include "target/arc/opcodes.def"
-    { NULL, 0, 0, 0, 0, 0, 0, 0 }
-};
-#undef OPCODE
-#undef OPERANDS_LIST
-#undef FLAGS_LIST
-#undef MNEMONIC
-
-#include "decode_tree.h"
 
 static insn_t
-load_insninfo_if_valid(uint64_t insn,
+load_insninfo_if_valid_v2(uint64_t insn,
                        uint8_t insn_len,
                        uint32_t isa_mask,
                        bool *invalid,
@@ -1292,7 +242,7 @@ load_insninfo_if_valid(uint64_t insn,
 }
 
 /* Main entry point for this file. */
-const struct arc_opcode *arc_find_format(insn_t *insnd,
+const struct arc_opcode *arc_find_format_v2(insn_t *insnd,
                                          uint64_t insn,
                                          uint8_t insn_len,
                                          uint32_t isa_mask)
@@ -1303,7 +253,7 @@ const struct arc_opcode *arc_find_format(insn_t *insnd,
     unsigned char mcount = find_insn_for_opcode(insn, isa_mask, insn_len, multi_match);
     for(unsigned char i = 0; i < mcount; i++) {
         bool invalid = FALSE;
-        insn_t tmp = load_insninfo_if_valid(insn, insn_len, isa_mask, &invalid, &arc_opcodes[multi_match[i]]);
+        insn_t tmp = load_insninfo_if_valid_v2(insn, insn_len, isa_mask, &invalid, &arc_opcodes[multi_match[i]]);
 
         if(invalid == FALSE) {
             *insnd = tmp;
@@ -1323,7 +273,7 @@ const struct arc_opcode *arc_find_format(insn_t *insnd,
  * The instruction lengths are calculated from the ARC_OPCODE table,
  * and cached for later use.
  */
-unsigned int arc_insn_length(uint16_t insn, uint16_t cpu_type)
+unsigned int arc_insn_length_v2(uint16_t insn, uint16_t cpu_type)
 {
     uint8_t major_opcode;
     uint8_t msb, lsb;
@@ -1362,7 +312,7 @@ unsigned int arc_insn_length(uint16_t insn, uint16_t cpu_type)
 }
 
 #define ARRANGE_ENDIAN(info, buf)                                       \
-    (info->endian == BFD_ENDIAN_LITTLE ? bfd_getm32(bfd_getl32(buf))    \
+    (info->endian == BFD_ENDIAN_LITTLE ? bfd_getm32_v2(bfd_getl32(buf))    \
      : bfd_getb32(buf))
 
 /*
@@ -1370,7 +320,7 @@ unsigned int arc_insn_length(uint16_t insn, uint16_t cpu_type)
  * meaningful.
  */
 
-static bfd_vma bfd_getm32(unsigned int data)
+static bfd_vma bfd_getm32_v2(unsigned int data)
 {
     bfd_vma value = 0;
 
@@ -1381,8 +331,8 @@ static bfd_vma bfd_getm32(unsigned int data)
 
 /* Helper for printing instruction flags. */
 
-bool special_flag_p(const char *opname, const char *flgname);
-bool special_flag_p(const char *opname, const char *flgname)
+bool special_flag_p_v2(const char *opname, const char *flgname);
+bool special_flag_p_v2(const char *opname, const char *flgname)
 {
     const struct arc_flag_special *flg_spec;
     unsigned i, j, flgidx;
@@ -1411,7 +361,7 @@ bool special_flag_p(const char *opname, const char *flgname)
 
 /* Print instruction flags. */
 
-static void print_flags(const struct arc_opcode *opcode,
+static void print_flags_v2(const struct arc_opcode *opcode,
                         uint64_t insn,
                         struct disassemble_info *info)
 {
@@ -1451,7 +401,7 @@ static void print_flags(const struct arc_opcode *opcode,
 
             if (value == flg_operand->code) {
                 /* FIXME!: print correctly nt/t flag. */
-                if (!special_flag_p(opcode->name, flg_operand->name)) {
+                if (!special_flag_p_v2(opcode->name, flg_operand->name)) {
                     (*info->fprintf_func)(info->stream, ".");
                 }
                 (*info->fprintf_func)(info->stream, "%s", flg_operand->name);
@@ -1460,7 +410,7 @@ static void print_flags(const struct arc_opcode *opcode,
     }
 }
 
-static const char *get_auxreg(const struct arc_opcode *opcode,
+static const char *get_auxreg_v2(const struct arc_opcode *opcode,
                        int value,
                        unsigned isa_mask)
 {
@@ -1489,7 +439,7 @@ static const char *get_auxreg(const struct arc_opcode *opcode,
 
 /* Print the operands of an instruction. */
 
-static void print_operands(const struct arc_opcode *opcode,
+static void print_operands_v2(const struct arc_opcode *opcode,
                            bfd_vma memaddr,
                            uint64_t insn,
                            uint32_t isa_mask,
@@ -1575,7 +525,7 @@ static void print_operands(const struct arc_opcode *opcode,
             }
         } else if (operand->flags & ARC_OPERAND_LIMM) {
             value = pinsn->limm;
-            const char *rname = get_auxreg(opcode, value, isa_mask);
+            const char *rname = get_auxreg_v2(opcode, value, isa_mask);
 
             if (rname && open_braket) {
                 (*info->fprintf_func)(info->stream, "%s", rname);
@@ -1583,7 +533,7 @@ static void print_operands(const struct arc_opcode *opcode,
                 (*info->fprintf_func)(info->stream, "%#x", value);
             }
         } else if (operand->flags & ARC_OPERAND_SIGNED) {
-            const char *rname = get_auxreg(opcode, value, isa_mask);
+            const char *rname = get_auxreg_v2(opcode, value, isa_mask);
             if (rname && open_braket) {
                 (*info->fprintf_func)(info->stream, "%s", rname);
             } else {
@@ -1610,7 +560,7 @@ static void print_operands(const struct arc_opcode *opcode,
                 rpcl = FALSE;
                 rset = FALSE;
             } else {
-                const char *rname = get_auxreg(opcode, value, isa_mask);
+                const char *rname = get_auxreg_v2(opcode, value, isa_mask);
                 if (rname && open_braket) {
                     (*info->fprintf_func)(info->stream, "%s", rname);
                 } else {
@@ -1641,7 +591,7 @@ static void print_operands(const struct arc_opcode *opcode,
 
 /* Select the proper instructions set for the given architecture. */
 
-static int arc_read_mem(bfd_vma memaddr,
+static int arc_read_mem_v2(bfd_vma memaddr,
                         uint64_t *insn,
                         uint32_t *isa_mask,
                         struct disassemble_info *info)
@@ -1735,7 +685,8 @@ static int arc_read_mem(bfd_vma memaddr,
 
 /* Disassembler main entry function. */
 
-int print_insn_arc(bfd_vma memaddr, struct disassemble_info *info)
+int print_insn_arc_v2(bfd_vma memaddr, struct disassemble_info *info);
+int print_insn_arc_v2(bfd_vma memaddr, struct disassemble_info *info)
 {
     const struct arc_opcode *opcode = NULL;
     int insn_len = -1;
@@ -1743,7 +694,7 @@ int print_insn_arc(bfd_vma memaddr, struct disassemble_info *info)
     uint32_t isa_mask;
     insn_t dis_insn;
 
-    insn_len = arc_read_mem(memaddr, &insn, &isa_mask, info);
+    insn_len = arc_read_mem_v2(memaddr, &insn, &isa_mask, info);
 
     if (insn_len < 2) {
         return -1;
@@ -1799,14 +750,14 @@ int print_insn_arc(bfd_vma memaddr, struct disassemble_info *info)
     /* Print the mnemonic. */
     (*info->fprintf_func)(info->stream, "%s", opcode->name);
 
-    print_flags(opcode, insn, info);
+    print_flags_v2(opcode, insn, info);
 
     if (opcode->operands[0] != 0) {
         (*info->fprintf_func)(info->stream, "\t");
     }
 
     /* Now extract and print the operands. */
-    print_operands(opcode, memaddr, insn, isa_mask, &dis_insn, info);
+    print_operands_v2(opcode, memaddr, insn, isa_mask, &dis_insn, info);
 
     /* Say how many bytes we consumed */
     return insn_len;

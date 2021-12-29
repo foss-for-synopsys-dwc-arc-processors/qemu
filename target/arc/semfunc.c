@@ -1513,7 +1513,7 @@ arc_gen_CMP(DisasCtxt *ctx, TCGv b, TCGv c)
 
 /*
  * AND
- *    Variables: @b, @c, @a
+ *    Variables: @a, @b, @c
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -1533,7 +1533,7 @@ arc_gen_CMP(DisasCtxt *ctx, TCGv b, TCGv c)
  */
 
 int
-arc_gen_AND(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_AND(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -1569,7 +1569,7 @@ arc_gen_AND(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 /*
  * OR
- *    Variables: @b, @c, @a
+ *    Variables: @a, @b, @c
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -1589,7 +1589,7 @@ arc_gen_AND(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  */
 
 int
-arc_gen_OR(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_OR(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -1625,7 +1625,7 @@ arc_gen_OR(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 /*
  * XOR
- *    Variables: @b, @c, @a
+ *    Variables: @a, @b, @c
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -1645,7 +1645,7 @@ arc_gen_OR(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  */
 
 int
-arc_gen_XOR(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_XOR(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -1681,7 +1681,7 @@ arc_gen_XOR(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 /*
  * MOV
- *    Variables: @b, @a
+ *    Variables: @a, @b
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -1701,7 +1701,7 @@ arc_gen_XOR(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  */
 
 int
-arc_gen_MOV(DisasCtxt *ctx, TCGv b, TCGv a)
+arc_gen_MOV(DisasCtxt *ctx, TCGv a, TCGv b)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -2485,7 +2485,7 @@ arc_gen_LSR8(DisasCtxt *ctx, TCGv b, TCGv a)
 
 /*
  * BIC
- *    Variables: @b, @c, @a
+ *    Variables: @a, @b, @c
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -2505,7 +2505,7 @@ arc_gen_LSR8(DisasCtxt *ctx, TCGv b, TCGv a)
  */
 
 int
-arc_gen_BIC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_BIC(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -2544,7 +2544,7 @@ arc_gen_BIC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 /*
  * BCLR
- *    Variables: @c, @b, @a
+ *    Variables: @c, @a, @b
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -2565,7 +2565,7 @@ arc_gen_BIC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  */
 
 int
-arc_gen_BCLR(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
+arc_gen_BCLR(DisasCtxt *ctx, TCGv c, TCGv a, TCGv b)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -2610,7 +2610,7 @@ arc_gen_BCLR(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
 
 /*
  * BMSK
- *    Variables: @c, @b, @a
+ *    Variables: @c, @a, @b
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -2639,7 +2639,7 @@ arc_gen_BCLR(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
  */
 
 int
-arc_gen_BMSK(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
+arc_gen_BMSK(DisasCtxt *ctx, TCGv c, TCGv a, TCGv b)
 {
     int ret = DISAS_NEXT;
     TCGv temp_5 = tcg_temp_local_new();
@@ -2701,7 +2701,7 @@ arc_gen_BMSK(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
 
 /*
  * BMSKN
- *    Variables: @c, @b, @a
+ *    Variables: @c, @a, @b
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -2730,7 +2730,7 @@ arc_gen_BMSK(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
  */
 
 int
-arc_gen_BMSKN(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
+arc_gen_BMSKN(DisasCtxt *ctx, TCGv c, TCGv a, TCGv b)
 {
     int ret = DISAS_NEXT;
     TCGv temp_5 = tcg_temp_local_new();
@@ -2795,7 +2795,7 @@ arc_gen_BMSKN(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
 
 /*
  * BSET
- *    Variables: @c, @b, @a
+ *    Variables: @c, @a, @b
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -2816,7 +2816,7 @@ arc_gen_BMSKN(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
  */
 
 int
-arc_gen_BSET(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
+arc_gen_BSET(DisasCtxt *ctx, TCGv c, TCGv a, TCGv b)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -2858,7 +2858,7 @@ arc_gen_BSET(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
 
 /*
  * BXOR
- *    Variables: @c, @b, @a
+ *    Variables: @c, @a, @b
  *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag
  * --- code ---
  * {
@@ -2879,7 +2879,7 @@ arc_gen_BSET(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
  */
 
 int
-arc_gen_BXOR(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
+arc_gen_BXOR(DisasCtxt *ctx, TCGv c, TCGv a, TCGv b)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -2918,7 +2918,7 @@ arc_gen_BXOR(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
 
 /*
  * ROL
- *    Variables: @src, @dest
+ *    Variables: @src, @dest, @n
  *    Functions: getCCFlag, rotateLeft, getFFlag, setZFlag, setNFlag, setCFlag,
  *               extractBits
  * --- code ---
@@ -2940,7 +2940,7 @@ arc_gen_BXOR(DisasCtxt *ctx, TCGv c, TCGv b, TCGv a)
  */
 
 int
-arc_gen_ROL(DisasCtxt *ctx, TCGv src, TCGv dest)
+arc_gen_ROL(DisasCtxt *ctx, TCGv src, TCGv dest, TCGv n)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -2963,7 +2963,7 @@ arc_gen_ROL(DisasCtxt *ctx, TCGv src, TCGv dest)
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
     tcg_gen_mov_tl(lsrc, src);
-    tcg_gen_movi_tl(temp_5, 1);
+    tcg_gen_andi_tl(temp_5, n, 31);
     rotateLeft(temp_4, lsrc, temp_5);
     tcg_gen_mov_tl(dest, temp_4);
     f_flag = getFFlag ();

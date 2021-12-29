@@ -20,7 +20,7 @@
 #ifndef ARC_CPU_PARAM_H
 #define ARC_CPU_PARAM_H 1
 
-#ifdef TARGET_ARCV2
+#ifdef TARGET_ARC32
 #define TARGET_LONG_BITS            32
 #define TARGET_PAGE_BITS            13
 #define TARGET_PHYS_ADDR_SPACE_BITS 32
@@ -28,7 +28,7 @@
 #define NB_MMU_MODES                2
 #endif
 
-#ifdef TARGET_ARCV3
+#ifdef TARGET_ARC64
 #define TARGET_LONG_BITS            64
 #define TARGET_PAGE_BITS            12
 #define TARGET_PHYS_ADDR_SPACE_BITS 48

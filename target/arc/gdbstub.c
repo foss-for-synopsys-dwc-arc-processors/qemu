@@ -31,7 +31,7 @@
 #define REG_ADDR(reg, processor_type) \
     arc_aux_reg_address_for((reg), (processor_type))
 
-#if defined(TARGET_ARCV2)
+#if defined(TARGET_ARC32)
 
 #define GDB_GET_REG        gdb_get_reg32
 #define GDB_TARGET_AUX_XML "arc-v2-aux.xml"
@@ -396,7 +396,7 @@ arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
 
 /* End of ARCv2 */
 
-#elif defined(TARGET_ARCV3)
+#elif defined(TARGET_ARC64)
 
 #define GDB_GET_REG            gdb_get_reg64
 #define GDB_TARGET_AUX_XML     "arc-v3_64-aux.xml"
@@ -724,7 +724,7 @@ void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
                              GDB_TARGET_AUX_XML,  /* feature file */
                              0);                  /* position in g packet */
 
-#if defined(TARGET_ARCV3)
+#if defined(TARGET_ARC64)
     gdb_register_coprocessor(cs,
                              arc_gdb_get_fpu,
                              arc_gdb_set_fpu,
