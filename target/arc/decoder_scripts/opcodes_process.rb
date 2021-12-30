@@ -103,7 +103,7 @@ flags.each_pair do |k, v|
   if(v.count > 0)
     puts "FLAGS_LIST(#{k}, #{v.count}, #{v.map { |a| "#{a}" }.join(", ")})"
   else
-    puts "FLAGS_LIST(#{k}, 0)"
+    puts "FLAGS_LIST(#{k}, 0, 0)"
   end
 end
 

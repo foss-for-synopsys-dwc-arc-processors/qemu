@@ -1005,14 +1005,6 @@ const struct arc_flag_operand arc_flag_operands[] = {
  * CLASS {FLAG_CODE}.
  */
 
-#define FLAG_CLASS(NAME, ...) C_##NAME,
-enum flag_class_enum {
-  F_CLASS_INVALID = -1,
-#include "flag-classes.def"
-  F_CLASS_SIZE
-};
-#undef FLAG_CLASS
-
 #define FLAG_CLASS(NAME, CLASS, EXTRACT_FN, ...) { \
   .flag_class = CLASS, \
   .extract = EXTRACT_FN, \
@@ -1131,7 +1123,7 @@ const char *opcode_name_str[OPCODE_SIZE] = {
 #define OPCODE(...)
 #define OPERANDS_LIST(...)
 #define FLAGS_LIST(NAME, COUNT, ...) \
-  { __VA_ARGS__ },
+  { __VA_ARGS__ , 0 },
 #define MNEMONIC(...)
 static unsigned char flags_arc[FLAGS_SIZE+1][MAX_INSN_FLGS] = {
 #include "target/arc/opcodes-full.def"
