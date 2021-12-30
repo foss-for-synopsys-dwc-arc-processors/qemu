@@ -414,7 +414,17 @@ struct arc_flag_class
     long long int (*extract) (unsigned long long instruction);
 };
 
-extern const struct arc_flag_class arc_flag_classes[];
+/*
+ * Table of the flag classes.
+ */
+#define FLAG_CLASS(NAME, ...) C_##NAME,
+enum flag_class_enum {
+  F_CLASS_INVALID = -1,
+#include "flag-classes.def"
+  F_CLASS_SIZE
+};
+#undef FLAG_CLASS
+extern const struct arc_flag_class arc_flag_classes[F_CLASS_SIZE];
 
 /* Structure for special cases.  */
 struct arc_flag_special
