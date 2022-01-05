@@ -375,6 +375,8 @@ void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
   if((cpu->family & ARC_OPCODE_ARC64) != 0) { \
     tcg_gen_add_tl(A, B, C); \
   } else if((cpu->family & ARC_OPCODE_ARC32) != 0) { \
+    /* TODO: TO REMOVE */ \
+    assert(0); \
     TCGv_i32 tA, tB, tC; \
     tA = tcg_temp_new_i32(); \
     tB = tcg_temp_new_i32(); \

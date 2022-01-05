@@ -306,6 +306,12 @@ unsigned int arc_insn_length_v2(uint16_t insn, uint16_t cpu_type)
         return (major_opcode > 0x7) ? 2 : 4;
         break;
 
+    case ARC_OPCODE_ARC32:
+        if(major_opcode == 0x0b)
+          return 4;
+        return (major_opcode > 0x7) ? 2 : 4;
+        break;
+
     default:
         g_assert_not_reached();
     }

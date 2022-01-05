@@ -382,14 +382,14 @@ static ObjectClass *arc_cpu_class_by_name(const char *cpu_model)
 static gchar *arc_gdb_arch_name(CPUState *cs)
 {
 #if defined(TARGET_ARC32)
-    return g_strdup(GDB_TARGET_STRING);
-#elif defined(TARGET_ARC64)
     ARCCPU *cpu = ARC_CPU(cs);
-    if(cpu->family & ARC_OPCODE_ARC64) {
-        return g_strdup(GDB_TARGET_STRING);
-    } else {
+    if(cpu->family & ARC_OPCODE_ARC32) {
         return g_strdup("arc64:32");
+    } else {
+      return g_strdup(GDB_TARGET_STRING);
     }
+#elif defined(TARGET_ARC64)
+    return g_strdup(GDB_TARGET_STRING);
 #else
 #error "Not possible to happen"
 #endif
@@ -478,6 +478,12 @@ static void archs_initfn(Object *obj)
     ARCCPU *cpu = ARC_CPU(obj);
     cpu->family = ARC_OPCODE_ARCv2HS;
 }
+
+static void arc_hs5x_initfn(Object *obj)
+{
+    ARCCPU *cpu = ARC_CPU(obj);
+    cpu->family = ARC_OPCODE_ARC32;
+}
 #endif
 
 #ifdef TARGET_ARC64
@@ -487,11 +493,6 @@ static void arc_hs6x_initfn(Object *obj)
     cpu->family = ARC_OPCODE_ARC64;
 }
 
-static void arc_hs5x_initfn(Object *obj)
-{
-    ARCCPU *cpu = ARC_CPU(obj);
-    cpu->family = ARC_OPCODE_ARC32;
-}
 #endif
 
 typedef struct ARCCPUInfo {
@@ -505,10 +506,10 @@ static const ARCCPUInfo arc_cpus[] = {
     { .name = "arc700", .initfn = arc700_initfn },
     { .name = "arcem", .initfn = arcem_initfn },
     { .name = "archs", .initfn = archs_initfn },
+    { .name = "hs5x", .initfn = arc_hs5x_initfn },
 #endif
 #ifdef TARGET_ARC64
     { .name = "hs6x", .initfn = arc_hs6x_initfn },
-    { .name = "hs5x", .initfn = arc_hs5x_initfn },
 #endif
     { .name = "any", .initfn = arc_any_initfn },
 };

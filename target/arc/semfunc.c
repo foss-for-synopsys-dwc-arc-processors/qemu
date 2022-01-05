@@ -2940,7 +2940,7 @@ arc_gen_BXOR(DisasCtxt *ctx, TCGv c, TCGv a, TCGv b)
  */
 
 int
-arc_gen_ROL(DisasCtxt *ctx, TCGv src, TCGv dest, TCGv n)
+arc_gen_ROL (DisasCtxt *ctx, TCGv src, TCGv n, TCGv dest)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();

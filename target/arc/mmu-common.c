@@ -40,13 +40,6 @@ struct mmu_callbacks_struct {
   void (*arc_mmu_disable_cb)(CPUARCState *env);
 };
 
-enum mmu_version {
-  MMU_VERSION_INVALID = -1,
-  MMU_VERSION_3,
-  MMU_VERSION_6,
-  MMU_VERSION_LAST
-};
-
 #ifdef CONFIG_USER_ONLY
 #define arc_mmu_debug_translate_v6 NULL
 #define arc_mmu_debug_translate_v3 NULL
@@ -69,19 +62,28 @@ const struct mmu_callbacks_struct mmu_callbacks[MMU_VERSION_LAST] = {
   }
 };
 
-static enum mmu_version get_mmu_version(void) {
+enum mmu_version get_mmu_version(CPUARCState *env) {
+    ARCCPU *cpu = env_archcpu(env);
+    switch(cpu->family) {
 #if defined(TARGET_ARC32)
-  // TODO: Make this correct for arc32.
-  return MMU_VERSION_3;
+      case ARC_OPCODE_ARC32:
+	return MMU_VERSION_6;
+	break;
+      default:
+	return MMU_VERSION_3;
+	break;
 #elif defined(TARGET_ARC64)
-  return MMU_VERSION_6;
+      default:
+	return MMU_VERSION_6;
+	break;
 #else
 #error "NOT POSSIBLE!!!!"
 #endif
+    }
 }
 
 #define MMU_CALLBACK(NAME, ...) \
-  mmu_callbacks[get_mmu_version()].NAME##_cb(__VA_ARGS__);
+  mmu_callbacks[get_mmu_version(env)].NAME##_cb(__VA_ARGS__);
 
 /* TODO: Fill in for v3 mmu as well */
 
@@ -94,6 +96,7 @@ arc_get_physical_addr(struct CPUState *cs, hwaddr *paddr, vaddr addr,
                   enum mmu_access_type rwe, bool probe,
                   uintptr_t retaddr)
 {
+    CPUARCState *env = &(ARC_CPU(cs)->env);
     return MMU_CALLBACK(arc_get_physical_addr, cs, paddr, addr, rwe, probe, retaddr);
 }
 
@@ -101,6 +104,7 @@ bool arc_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr)
 {
+  CPUARCState *env = &(ARC_CPU(cs)->env);
   return MMU_CALLBACK(arc_cpu_tlb_fill, cs, address, size, access_type, mmu_idx, probe, retaddr);
 }
 
