@@ -31,16 +31,11 @@ void arc_initializeIRQ(ARCCPU *);
 void arc_resetIRQ(ARCCPU *);
 
 #if defined(TARGET_ARC32)
-#define OFFSET_FOR_VECTOR(CPU, VECNO) (VECNO << 2)
+#define OFFSET_FOR_VECTOR(VECNO) (VECNO << 2)
 #elif defined(TARGET_ARC64)
-#define OFFSET_FOR_VECTOR(CPU, VECNO) \
-  ((cpu->family & ARC_OPCODE_ARC64) != 0) ? \
-  (VECNO << 3) : \
-  (VECNO << 2)
-
+#define OFFSET_FOR_VECTOR(VECNO) (VECNO << 3)
 #else
 #error Should never be reached
 #endif
-
 
 #endif

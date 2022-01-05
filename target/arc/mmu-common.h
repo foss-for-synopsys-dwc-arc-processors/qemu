@@ -26,6 +26,16 @@
 #define PAGE_SIZE       (1 << PAGE_SHIFT)
 #define PAGE_MASK       (~(PAGE_SIZE - 1))
 
+enum mmu_version {
+  MMU_VERSION_INVALID = -1,
+  MMU_VERSION_3,
+  MMU_VERSION_6,
+  MMU_VERSION_LAST
+};
+
+typedef struct CPUARCState CPUARCState;
+enum mmu_version get_mmu_version(CPUARCState *env);
+
 /* NOTE: Do not reorder, this is casted in tbl_fill function. */
 enum mmu_access_type {
     MMU_MEM_READ = 0,

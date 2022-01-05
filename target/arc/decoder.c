@@ -1263,6 +1263,7 @@ find_insn_for_opcode(uint64_t insn, uint16_t cpu_type, unsigned int len, enum op
       break;
     case ARC_OPCODE_ARC32:
       #include "v3_hs5x_dtree.def"
+      break;
 #elif defined TARGET_ARC64
     case ARC_OPCODE_ARC64:
       #include "v3_hs6x_dtree.def"

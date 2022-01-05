@@ -84,7 +84,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
         env->mpu.enabled = false;     /* no more MPU */
     }
     vectno = cs->exception_index & 0x0F;
-    offset = OFFSET_FOR_VECTOR(cpu, vectno);
+    offset = OFFSET_FOR_VECTOR(vectno);
 
     /* Generic computation for exceptions. */
     switch (cs->exception_index) {
@@ -211,24 +211,30 @@ void arc_cpu_do_interrupt(CPUState *cs)
     SET_STATUS_BIT(env->stat, SCf, 0);
 
     /* 15. The PC is set with the appropriate exception vector. */
+    switch(get_mmu_version(env)) {
 #if defined(TARGET_ARC32)
-    MemTxResult txres;
-
-    env->pc = address_space_ldl(cs->as, env->intvec + offset,
-                                MEMTXATTRS_UNSPECIFIED, &txres);
-    assert(txres == MEMTX_OK);
-#elif defined(TARGET_ARC64)
-    switch(cpu->family) {
-      case ARC_OPCODE_ARC64:
-        env->pc = cpu_ldq_data(env, env->intvec + offset);
-        break;
-      case ARC_OPCODE_ARC32:
+      case MMU_VERSION_6:
+        /* Interrupt vector table is translated by MMU in v6. */
         env->pc = cpu_ldl_data(env, env->intvec + offset);
         break;
-    }
+      case MMU_VERSION_3: {
+        MemTxResult txres;
+        env->pc = address_space_ldl(cs->as, env->intvec + offset,
+                                    MEMTXATTRS_UNSPECIFIED, &txres);
+        assert(txres == MEMTX_OK);
+        }
+        break;
+#elif defined(TARGET_ARC64)
+      case MMU_VERSION_6:
+        /* Interrupt vector table is translated by MMU in v6. */
+        env->pc = cpu_ldq_data(env, env->intvec + offset);
+        break;
 #else
 #error "This should never happen !!!!"
 #endif
+      default:
+        assert("Not possible" == 0);
+    }
 
     CPU_PCL(env) = env->pc & (~((target_ulong) 3));
 
