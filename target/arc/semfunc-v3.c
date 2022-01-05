@@ -4536,7 +4536,7 @@ arc_gen_PREFETCH (DisasCtxt *ctx, TCGv src1, TCGv src2)
         {
           high_part = HELPER (mpym, _b, _c);
           tmp1 = (high_part & 2147483648);
-          tmp2 = (@a & 2147483648);
+          tmp2 = (@a >> 31);
           setZFlag (@a);
           setNFlag32 (high_part);
           setVFlag ((tmp1 != tmp2));
@@ -4574,11 +4574,11 @@ arc_gen_MPY (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
   if ((getFFlag () == true))
     {
     ARC_HELPER(mpym, high_part, _b, _c);
-  tcg_gen_andi_tl(tmp1, high_part, 2147483648);
   tcg_gen_andi_tl(tmp2, a, 2147483648);
+        tcg_gen_sari_tl(tmp2, a, 31);
   setZFlag(a);
   setNFlag32(high_part);
-  tcg_gen_setcond_tl(TCG_COND_NE, temp_5, tmp1, tmp2);
+  tcg_gen_setcond_tl(TCG_COND_NE, temp_5, high_part, tmp2);
   setVFlag(temp_5);
 ;
     }
@@ -4749,10 +4749,10 @@ arc_gen_MPYM (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
       @a = (@a & 4294967295);
       if((getFFlag () == true))
         {
-          high_part = HELPER (mpym, _b, _c);
+          high_part = HELPER (mpymu, _b, _c);
           setZFlag (@a);
           setNFlag32 (0);
-          setVFlag ((high_part > 0));
+          setVFlag ((high_part != 0));
         };
     };
 }
@@ -4789,7 +4789,7 @@ arc_gen_MPYU (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
   setZFlag(a);
   tcg_gen_movi_tl(temp_5, 0);
   setNFlag32(temp_5);
-  tcg_gen_setcondi_tl(TCG_COND_GT, temp_6, high_part, 0);
+  tcg_gen_setcondi_tl(TCG_COND_NE, temp_6, high_part, 0);
   setVFlag(temp_6);
 ;
     }
