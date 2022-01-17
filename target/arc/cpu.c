@@ -495,6 +495,12 @@ static void arc_hs5x_initfn(Object *obj)
 {
     ARCCPU *cpu = ARC_CPU(obj);
     cpu->family = ARC_OPCODE_ARC32;
+    CPUClass *cc = &ARC_CPU_GET_CLASS(obj)->parent_class;
+    cc->gdb_core_xml_file = "arc-v3_32-core.xml";
+    cc->gdb_read_register = arc_cpu_gdb_read_register;
+    cc->gdb_write_register = arc_cpu_gdb_write_register;
+    cc->gdb_num_core_regs = GDB_REG_LAST;
+    cc->gdb_arch_name = arc_gdb_arch_name;
 }
 #endif
 
