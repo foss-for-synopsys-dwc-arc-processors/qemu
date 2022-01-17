@@ -34,7 +34,6 @@
 #if defined(TARGET_ARC32)
 
 #define GDB_GET_REG        gdb_get_reg32
-#define GDB_TARGET_AUX_XML "arc-v2-aux.xml"
 
 int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
 {
@@ -399,7 +398,6 @@ arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
 #elif defined(TARGET_ARC64)
 
 #define GDB_GET_REG            gdb_get_reg64
-#define GDB_TARGET_AUX_XML     "arc-v3_64-aux.xml"
 #define GDB_TARGET_FPU_XML     "arc-v3_64-fpu.xml"
 
 int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
@@ -716,12 +714,23 @@ arc_gdb_set_fpu(CPUARCState *env, uint8_t *mem_buf, int regnum)
 void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
 {
     CPUState *cs = CPU(cpu);
+    const char *gdb_aux_xml_name;
+
+    if (cpu->family & ARC_OPCODE_ARCV2) {
+        gdb_aux_xml_name = "arc-v2-aux.xml";
+    } else if (cpu->family & ARC_OPCODE_ARC32) {
+        gdb_aux_xml_name = "arc-v3_32-aux.xml";
+    } else if (cpu->family & ARC_OPCODE_ARC64) {
+        gdb_aux_xml_name = "arc-v3_64-aux.xml";
+    } else {
+        g_assert_not_reached();
+    }
 
     gdb_register_coprocessor(cs,
                              arc_aux_gdb_get_reg, /* getter */
                              arc_aux_gdb_set_reg, /* setter */
                              GDB_AUX_REG_LAST,    /* number of registers */
-                             GDB_TARGET_AUX_XML,  /* feature file */
+                             gdb_aux_xml_name,    /* feature file */
                              0);                  /* position in g packet */
 
 #if defined(TARGET_ARC64)
