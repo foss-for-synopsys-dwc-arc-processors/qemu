@@ -1,7 +1,7 @@
 /*
  * QEMU ARC CPU
  *
- * Copyright (c) 2020 Synppsys Inc.
+ * Copyright (c) 2022 Synppsys Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,11 +31,19 @@
 #define REG_ADDR(reg, processor_type) \
     arc_aux_reg_address_for((reg), (processor_type))
 
-#if defined(TARGET_ARC32)
+/*
+ * Select the correct bit length for handling data in common codes for
+ * arcv3_64 and arcv3_32.
+ */
+#ifdef TARGET_ARC64
+  #define ARCV3_LOAD_MEM(m)  ldq_p(m)
+  #define ARCV3_GET_REG(m,r) gdb_get_reg64(m,r)
+#else
+  #define ARCV3_LOAD_MEM(m)  ldl_p(m)
+  #define ARCV3_GET_REG(m,r) gdb_get_reg32(m,r)
+#endif
 
-#define GDB_GET_REG        gdb_get_reg32
-
-int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
+int gdb_v2_core_read(CPUState *cs, GByteArray *mem_buf, int n)
 {
     ARCCPU *cpu = ARC_CPU(cs);
     CPUARCState *env = &cpu->env;
@@ -45,26 +53,26 @@ int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
     case 0 ... 31:
        regval = env->r[n];
        break;
-    case GDB_REG_58:
+    case V2_CORE_R58:
        regval = env->r[58];
        break;
-    case GDB_REG_59:
+    case V2_CORE_R59:
        regval = env->r[59];
        break;
-    case GDB_REG_60:
+    case V2_CORE_R60:
        regval = env->r[60];
        break;
-    case GDB_REG_63:
+    case V2_CORE_R63:
        regval = env->r[63];
        break;
     default:
        assert(!"Unsupported register is being read.");
     }
 
-    return GDB_GET_REG(mem_buf, regval);
+    return gdb_get_reg32(mem_buf, regval);
 }
 
-int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
+int gdb_v2_core_write(CPUState *cs, uint8_t *mem_buf, int n)
 {
     ARCCPU *cpu = ARC_CPU(cs);
     CPUARCState *env = &cpu->env;
@@ -74,16 +82,16 @@ int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
     case 0 ... 31:
         env->r[n] = regval;
         break;
-    case GDB_REG_58:
+    case V2_CORE_R58:
         env->r[58] = regval;
         break;
-    case GDB_REG_59:
+    case V2_CORE_R59:
         env->r[59] = regval;
         break;
-    case GDB_REG_60:
+    case V2_CORE_R60:
         env->r[60] = regval;
         break;
-    case GDB_REG_63:
+    case V2_CORE_R63:
         env->r[63] = regval;
         break;
     default:
@@ -94,85 +102,85 @@ int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
 }
 
 static int
-arc_aux_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
+gdb_v2_aux_read(CPUARCState *env, GByteArray *mem_buf, int regnum)
 {
     ARCCPU *cpu = env_archcpu(env);
     target_ulong regval = 0;
 
     switch (regnum) {
-    case GDB_AUX_REG_PC:
+    case V2_AUX_PC:
         regval = env->pc;
         break;
-    case GDB_AUX_REG_LPS:
+    case V2_AUX_LPS:
         regval = helper_lr(env, REG_ADDR(AUX_ID_lp_start, cpu->family));
         break;
-    case GDB_AUX_REG_LPE:
+    case V2_AUX_LPE:
         regval = helper_lr(env, REG_ADDR(AUX_ID_lp_end, cpu->family));
         break;
-    case GDB_AUX_REG_STATUS:
+    case V2_AUX_STATUS:
         regval = pack_status32(&env->stat);
         break;
-    case GDB_AUX_REG_TIMER_BUILD:
+    case V2_AUX_TIMER_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_timer_build, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_BUILD:
+    case V2_AUX_IRQ_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_build, cpu->family));
         break;
-    case GDB_AUX_REG_MPY_BUILD:
+    case V2_AUX_MPY_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mpy_build, cpu->family));
         break;
-    case GDB_AUX_REG_VECBASE_BUILD:
+    case V2_AUX_VECBASE_BUILD:
         regval = cpu->vecbase_build;
         break;
-    case GDB_AUX_REG_ISA_CONFIG:
+    case V2_AUX_ISA_CONFIG:
         regval = cpu->isa_config;
         break;
-    case GDB_AUX_REG_TIMER_CNT0:
+    case V2_AUX_TIMER_CNT0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_count0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL0:
+    case V2_AUX_TIMER_CTRL0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_control0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM0:
+    case V2_AUX_TIMER_LIM0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_limit0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CNT1:
+    case V2_AUX_TIMER_CNT1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_count1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL1:
+    case V2_AUX_TIMER_CTRL1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_control1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM1:
+    case V2_AUX_TIMER_LIM1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_limit1, cpu->family));
         break;
     /* MMUv4 */
-    case GDB_AUX_REG_PID:
+    case V2_AUX_PID:
         regval = helper_lr(env, REG_ADDR(AUX_ID_pid, cpu->family));
         break;
-    case GDB_AUX_REG_TLBPD0:
+    case V2_AUX_TLBPD0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_tlbpd0, cpu->family));
         break;
-    case GDB_AUX_REG_TLBPD1:
+    case V2_AUX_TLBPD1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_tlbpd1, cpu->family));
         break;
-    case GDB_AUX_REG_TLB_INDEX:
+    case V2_AUX_TLB_INDEX:
         regval = helper_lr(env, REG_ADDR(AUX_ID_tlbindex, cpu->family));
         break;
-    case GDB_AUX_REG_TLB_CMD:
+    case V2_AUX_TLB_CMD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_tlbcommand, cpu->family));
         break;
     /* MPU */
-    case GDB_AUX_REG_MPU_BUILD:
+    case V2_AUX_MPU_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mpu_build, cpu->family));
         break;
-    case GDB_AUX_REG_MPU_EN:
+    case V2_AUX_MPU_EN:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mpuen, cpu->family));
         break;
-    case GDB_AUX_REG_MPU_ECR:
+    case V2_AUX_MPU_ECR:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mpuic, cpu->family));
         break;
-    case GDB_AUX_REG_MPU_BASE0 ... GDB_AUX_REG_MPU_BASE15: {
-        const uint8_t index = regnum - GDB_AUX_REG_MPU_BASE0;
+    case V2_AUX_MPU_BASE0 ... V2_AUX_MPU_BASE15: {
+        const uint8_t index = regnum - V2_AUX_MPU_BASE0;
         if (arc_mpu_is_rgn_reg_available(env, index)) {
             regval =
                 helper_lr(env, REG_ADDR(AUX_ID_mpurdb0 + index, cpu->family));
@@ -181,8 +189,8 @@ arc_aux_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
         }
         break;
     }
-    case GDB_AUX_REG_MPU_PERM0 ... GDB_AUX_REG_MPU_PERM15: {
-        const uint8_t index = regnum - GDB_AUX_REG_MPU_PERM0;
+    case V2_AUX_MPU_PERM0 ... V2_AUX_MPU_PERM15: {
+        const uint8_t index = regnum - V2_AUX_MPU_PERM0;
         if (arc_mpu_is_rgn_reg_available(env, index)) {
             regval =
                 helper_lr(env, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
@@ -192,140 +200,140 @@ arc_aux_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
         break;
     }
     /* exceptions */
-    case GDB_AUX_REG_ERSTATUS:
+    case V2_AUX_ERSTATUS:
         regval = helper_lr(env, REG_ADDR(AUX_ID_erstatus, cpu->family));
         break;
-    case GDB_AUX_REG_ERBTA:
+    case V2_AUX_ERBTA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_erbta, cpu->family));
         break;
-    case GDB_AUX_REG_ECR:
+    case V2_AUX_ECR:
         regval = helper_lr(env, REG_ADDR(AUX_ID_ecr, cpu->family));
         break;
-    case GDB_AUX_REG_ERET:
+    case V2_AUX_ERET:
         regval = helper_lr(env, REG_ADDR(AUX_ID_eret, cpu->family));
         break;
-    case GDB_AUX_REG_EFA:
+    case V2_AUX_EFA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_efa, cpu->family));
         break;
     /* interrupt */
-    case GDB_AUX_REG_ICAUSE:
+    case V2_AUX_ICAUSE:
         regval = helper_lr(env, REG_ADDR(AUX_ID_icause, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_CTRL:
+    case V2_AUX_IRQ_CTRL:
         regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_ctrl, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ACT:
+    case V2_AUX_IRQ_ACT:
         regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_act, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PRIO_PEND:
+    case V2_AUX_IRQ_PRIO_PEND:
         regval = env->irq_priority_pending;
         break;
-    case GDB_AUX_REG_IRQ_HINT:
+    case V2_AUX_IRQ_HINT:
         regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_hint, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_SELECT:
+    case V2_AUX_IRQ_SELECT:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_select, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ENABLE:
+    case V2_AUX_IRQ_ENABLE:
         regval = env->irq_bank[env->irq_select & 0xff].enable;
         break;
-    case GDB_AUX_REG_IRQ_TRIGGER:
+    case V2_AUX_IRQ_TRIGGER:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_trigger, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_STATUS:
+    case V2_AUX_IRQ_STATUS:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_status, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PULSE:
+    case V2_AUX_IRQ_PULSE:
         regval = 0; /* write only for clearing the pulse triggered interrupt */
         break;
-    case GDB_AUX_REG_IRQ_PENDING:
+    case V2_AUX_IRQ_PENDING:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_pending, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PRIO:
+    case V2_AUX_IRQ_PRIO:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_priority, cpu->family));
         break;
-    case GDB_AUX_REG_BTA:
+    case V2_AUX_BTA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_bta, cpu->family));
         break;
     default:
         assert(!"Unsupported auxiliary register is being read.");
     }
 
-    return GDB_GET_REG(mem_buf, regval);
+    return gdb_get_reg32(mem_buf, regval);
 }
 
 static int
-arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
+gdb_v2_aux_write(CPUARCState *env, uint8_t *mem_buf, int regnum)
 {
     ARCCPU *cpu = env_archcpu(env);
     target_ulong regval = ldl_p(mem_buf);
 
     switch (regnum) {
-    case GDB_AUX_REG_PC:
+    case V2_AUX_PC:
         env->pc = regval;
         break;
-    case GDB_AUX_REG_LPS:
+    case V2_AUX_LPS:
         helper_sr(env, regval, REG_ADDR(AUX_ID_lp_start, cpu->family));
         break;
-    case GDB_AUX_REG_LPE:
+    case V2_AUX_LPE:
         helper_sr(env, regval, REG_ADDR(AUX_ID_lp_end, cpu->family));
         break;
-    case GDB_AUX_REG_STATUS:
+    case V2_AUX_STATUS:
         unpack_status32(&env->stat, regval);
         break;
-    case GDB_AUX_REG_TIMER_BUILD:
-    case GDB_AUX_REG_IRQ_BUILD:
-    case GDB_AUX_REG_MPY_BUILD:
-    case GDB_AUX_REG_MPU_BUILD:
-    case GDB_AUX_REG_MPU_ECR:
-    case GDB_AUX_REG_IRQ_PENDING:
-    case GDB_AUX_REG_VECBASE_BUILD:
-    case GDB_AUX_REG_ISA_CONFIG:
-    case GDB_AUX_REG_ICAUSE:
-    case GDB_AUX_REG_IRQ_PRIO_PEND:
-    case GDB_AUX_REG_IRQ_STATUS:
+    case V2_AUX_TIMER_BUILD:
+    case V2_AUX_IRQ_BUILD:
+    case V2_AUX_MPY_BUILD:
+    case V2_AUX_MPU_BUILD:
+    case V2_AUX_MPU_ECR:
+    case V2_AUX_IRQ_PENDING:
+    case V2_AUX_VECBASE_BUILD:
+    case V2_AUX_ISA_CONFIG:
+    case V2_AUX_ICAUSE:
+    case V2_AUX_IRQ_PRIO_PEND:
+    case V2_AUX_IRQ_STATUS:
         /* builds/configs/exceptions/irqs cannot be changed */
         break;
-    case GDB_AUX_REG_TIMER_CNT0:
+    case V2_AUX_TIMER_CNT0:
         helper_sr(env, regval, REG_ADDR(AUX_ID_count0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL0:
+    case V2_AUX_TIMER_CTRL0:
         helper_sr(env, regval, REG_ADDR(AUX_ID_control0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM0:
+    case V2_AUX_TIMER_LIM0:
         helper_sr(env, regval, REG_ADDR(AUX_ID_limit0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CNT1:
+    case V2_AUX_TIMER_CNT1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_count1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL1:
+    case V2_AUX_TIMER_CTRL1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_control1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM1:
+    case V2_AUX_TIMER_LIM1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_limit1, cpu->family));
         break;
     /* MMUv4 */
-    case GDB_AUX_REG_PID:
+    case V2_AUX_PID:
         helper_sr(env, regval, REG_ADDR(AUX_ID_pid, cpu->family));
         break;
-    case GDB_AUX_REG_TLBPD0:
+    case V2_AUX_TLBPD0:
         helper_sr(env, regval, REG_ADDR(AUX_ID_tlbpd0, cpu->family));
         break;
-    case GDB_AUX_REG_TLBPD1:
+    case V2_AUX_TLBPD1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_tlbpd1, cpu->family));
         break;
-    case GDB_AUX_REG_TLB_INDEX:
+    case V2_AUX_TLB_INDEX:
         helper_sr(env, regval, REG_ADDR(AUX_ID_tlbindex, cpu->family));
         break;
-    case GDB_AUX_REG_TLB_CMD:
+    case V2_AUX_TLB_CMD:
         helper_sr(env, regval, REG_ADDR(AUX_ID_tlbcommand, cpu->family));
         break;
     /* MPU */
-    case GDB_AUX_REG_MPU_EN:
+    case V2_AUX_MPU_EN:
         helper_sr(env, regval, REG_ADDR(AUX_ID_mpuen, cpu->family));
         break;
-    case GDB_AUX_REG_MPU_BASE0 ... GDB_AUX_REG_MPU_BASE15: {
-        const uint8_t index = regnum - GDB_AUX_REG_MPU_BASE0;
+    case V2_AUX_MPU_BASE0 ... V2_AUX_MPU_BASE15: {
+        const uint8_t index = regnum - V2_AUX_MPU_BASE0;
         if (arc_mpu_is_rgn_reg_available(env, index)) {
             helper_sr(env, regval, REG_ADDR(AUX_ID_mpurdb0 + index, cpu->family));
         } else {
@@ -333,8 +341,8 @@ arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
         }
         break;
     }
-    case GDB_AUX_REG_MPU_PERM0 ... GDB_AUX_REG_MPU_PERM15: {
-        const uint8_t index = regnum - GDB_AUX_REG_MPU_PERM0;
+    case V2_AUX_MPU_PERM0 ... V2_AUX_MPU_PERM15: {
+        const uint8_t index = regnum - V2_AUX_MPU_PERM0;
         if (arc_mpu_is_rgn_reg_available(env, index)) {
             helper_sr(env, regval, REG_ADDR(AUX_ID_mpurdp0 + index, cpu->family));
         } else {
@@ -343,47 +351,47 @@ arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
         break;
     }
     /* exceptions */
-    case GDB_AUX_REG_ERSTATUS:
+    case V2_AUX_ERSTATUS:
         helper_sr(env, regval, REG_ADDR(AUX_ID_erstatus, cpu->family));
         break;
-    case GDB_AUX_REG_ERBTA:
+    case V2_AUX_ERBTA:
         helper_sr(env, regval, REG_ADDR(AUX_ID_erbta, cpu->family));
         break;
-    case GDB_AUX_REG_ECR:
+    case V2_AUX_ECR:
         helper_sr(env, regval, REG_ADDR(AUX_ID_ecr, cpu->family));
         break;
-    case GDB_AUX_REG_ERET:
+    case V2_AUX_ERET:
         helper_sr(env, regval, REG_ADDR(AUX_ID_eret, cpu->family));
         break;
-    case GDB_AUX_REG_EFA:
+    case V2_AUX_EFA:
         helper_sr(env, regval, REG_ADDR(AUX_ID_efa, cpu->family));
         break;
     /* interrupt */
-    case GDB_AUX_REG_IRQ_CTRL:
+    case V2_AUX_IRQ_CTRL:
         helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_ctrl, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ACT:
+    case V2_AUX_IRQ_ACT:
         helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_act, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_HINT:
+    case V2_AUX_IRQ_HINT:
         helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_hint, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_SELECT:
+    case V2_AUX_IRQ_SELECT:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_select, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ENABLE:
+    case V2_AUX_IRQ_ENABLE:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_enable, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_TRIGGER:
+    case V2_AUX_IRQ_TRIGGER:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_trigger, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PULSE:
+    case V2_AUX_IRQ_PULSE:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_pulse_cancel, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PRIO:
+    case V2_AUX_IRQ_PRIO:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_priority, cpu->family));
         break;
-    case GDB_AUX_REG_BTA:
+    case V2_AUX_BTA:
         helper_sr(env, regval, REG_ADDR(AUX_ID_bta, cpu->family));
         break;
     default:
@@ -395,12 +403,7 @@ arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
 
 /* End of ARCv2 */
 
-#elif defined(TARGET_ARC64)
-
-#define GDB_GET_REG            gdb_get_reg64
-#define GDB_TARGET_FPU_XML     "arc-v3_64-fpu.xml"
-
-int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
+int gdb_v3_core_read(CPUState *cs, GByteArray *mem_buf, int n)
 {
     ARCCPU *cpu = ARC_CPU(cs);
     CPUARCState *env = &cpu->env;
@@ -410,33 +413,33 @@ int arc_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
     case 0 ... 31:
        regval = env->r[n];
        break;
-    case GDB_REG_58:
+    case V3_CORE_R58:
        regval = env->r[58];
        break;
-    case GDB_REG_63:
+    case V3_CORE_R63:
        regval = env->r[63];
        break;
     default:
        assert(!"Unsupported register is being read.");
     }
 
-    return GDB_GET_REG(mem_buf, regval);
+    return ARCV3_GET_REG(mem_buf, regval);
 }
 
-int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
+int gdb_v3_core_write(CPUState *cs, uint8_t *mem_buf, int n)
 {
     ARCCPU *cpu = ARC_CPU(cs);
     CPUARCState *env = &cpu->env;
-    target_ulong regval = ldq_p(mem_buf);
+    target_ulong regval = ARCV3_LOAD_MEM(mem_buf);
 
     switch (n) {
     case 0 ... 31:
         env->r[n] = regval;
         break;
-    case GDB_REG_58:
+    case V3_CORE_R58:
         env->r[58] = regval;
         break;
-    case GDB_REG_63:
+    case V3_CORE_R63:
         env->r[63] = regval;
         break;
     default:
@@ -447,200 +450,200 @@ int arc_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
 }
 
 static int
-arc_aux_gdb_get_reg(CPUARCState *env, GByteArray *mem_buf, int regnum)
+gdb_v3_aux_read(CPUARCState *env, GByteArray *mem_buf, int regnum)
 {
     ARCCPU *cpu = env_archcpu(env);
     target_ulong regval = 0;
 
     switch (regnum) {
-    case GDB_AUX_REG_PC:
+    case V3_AUX_PC:
         regval = env->pc;
         break;
-    case GDB_AUX_REG_STATUS:
+    case V3_AUX_STATUS:
         regval = pack_status32(&env->stat);
         break;
-    case GDB_AUX_REG_TIMER_BUILD:
+    case V3_AUX_TIMER_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_timer_build, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_BUILD:
+    case V3_AUX_IRQ_BUILD:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_build, cpu->family));
         break;
-    case GDB_AUX_REG_VECBASE_BUILD:
+    case V3_AUX_VECBASE_BUILD:
         regval = cpu->vecbase_build;
         break;
-    case GDB_AUX_REG_ISA_CONFIG:
+    case V3_AUX_ISA_CONFIG:
         regval = cpu->isa_config;
         break;
-    case GDB_AUX_REG_TIMER_CNT0:
+    case V3_AUX_TIMER_CNT0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_count0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL0:
+    case V3_AUX_TIMER_CTRL0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_control0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM0:
+    case V3_AUX_TIMER_LIM0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_limit0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CNT1:
+    case V3_AUX_TIMER_CNT1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_count1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL1:
+    case V3_AUX_TIMER_CTRL1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_control1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM1:
+    case V3_AUX_TIMER_LIM1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_limit1, cpu->family));
         break;
     /* exceptions */
-    case GDB_AUX_REG_ERSTATUS:
+    case V3_AUX_ERSTATUS:
         regval = helper_lr(env, REG_ADDR(AUX_ID_erstatus, cpu->family));
         break;
-    case GDB_AUX_REG_ERBTA:
+    case V3_AUX_ERBTA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_erbta, cpu->family));
         break;
-    case GDB_AUX_REG_ECR:
+    case V3_AUX_ECR:
         regval = helper_lr(env, REG_ADDR(AUX_ID_ecr, cpu->family));
         break;
-    case GDB_AUX_REG_ERET:
+    case V3_AUX_ERET:
         regval = helper_lr(env, REG_ADDR(AUX_ID_eret, cpu->family));
         break;
-    case GDB_AUX_REG_EFA:
+    case V3_AUX_EFA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_efa, cpu->family));
         break;
     /* interrupt */
-    case GDB_AUX_REG_ICAUSE:
+    case V3_AUX_ICAUSE:
         regval = helper_lr(env, REG_ADDR(AUX_ID_icause, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_CTRL:
+    case V3_AUX_IRQ_CTRL:
         regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_ctrl, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ACT:
+    case V3_AUX_IRQ_ACT:
         regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_act, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PRIO_PEND:
+    case V3_AUX_IRQ_PRIO_PEND:
         regval = env->irq_priority_pending;
         break;
-    case GDB_AUX_REG_IRQ_HINT:
+    case V3_AUX_IRQ_HINT:
         regval = helper_lr(env, REG_ADDR(AUX_ID_aux_irq_hint, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_SELECT:
+    case V3_AUX_IRQ_SELECT:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_select, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ENABLE:
+    case V3_AUX_IRQ_ENABLE:
         regval = env->irq_bank[env->irq_select & 0xff].enable;
         break;
-    case GDB_AUX_REG_IRQ_TRIGGER:
+    case V3_AUX_IRQ_TRIGGER:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_trigger, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_STATUS:
+    case V3_AUX_IRQ_STATUS:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_status, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PULSE:
+    case V3_AUX_IRQ_PULSE:
         regval = 0; /* write only for clearing the pulse triggered interrupt */
         break;
-    case GDB_AUX_REG_IRQ_PRIO:
+    case V3_AUX_IRQ_PRIO:
         regval = helper_lr(env, REG_ADDR(AUX_ID_irq_priority, cpu->family));
         break;
-    case GDB_AUX_REG_BTA:
+    case V3_AUX_BTA:
         regval = helper_lr(env, REG_ADDR(AUX_ID_bta, cpu->family));
         break;
     /* MMUv6 */
-    case GDB_AUX_REG_MMU_CTRL:
+    case V3_AUX_MMU_CTRL:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_ctrl, cpu->family));
         break;
-    case GDB_AUX_REG_RTP0:
+    case V3_AUX_RTP0:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp0, cpu->family));
         break;
-    case GDB_AUX_REG_RTP1:
+    case V3_AUX_RTP1:
         regval = helper_lr(env, REG_ADDR(AUX_ID_mmu_rtp1, cpu->family));
         break;
     default:
         assert(!"Unsupported auxiliary register is being read.");
     }
 
-    return GDB_GET_REG(mem_buf, regval);
+    return ARCV3_GET_REG(mem_buf, regval);
 }
 
 static int
-arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
+gdb_v3_aux_write(CPUARCState *env, uint8_t *mem_buf, int regnum)
 {
     ARCCPU *cpu = env_archcpu(env);
-    target_ulong regval = ldl_p(mem_buf);
+    target_ulong regval = ARCV3_LOAD_MEM(mem_buf);
 
     switch (regnum) {
-    case GDB_AUX_REG_PC:
+    case V3_AUX_PC:
         env->pc = regval;
         break;
-    case GDB_AUX_REG_STATUS:
+    case V3_AUX_STATUS:
         unpack_status32(&env->stat, regval);
         break;
-    case GDB_AUX_REG_TIMER_BUILD:
-    case GDB_AUX_REG_IRQ_BUILD:
-    case GDB_AUX_REG_VECBASE_BUILD:
-    case GDB_AUX_REG_ISA_CONFIG:
-    case GDB_AUX_REG_ICAUSE:
-    case GDB_AUX_REG_IRQ_PRIO_PEND:
-    case GDB_AUX_REG_IRQ_STATUS:
+    case V3_AUX_TIMER_BUILD:
+    case V3_AUX_IRQ_BUILD:
+    case V3_AUX_VECBASE_BUILD:
+    case V3_AUX_ISA_CONFIG:
+    case V3_AUX_ICAUSE:
+    case V3_AUX_IRQ_PRIO_PEND:
+    case V3_AUX_IRQ_STATUS:
         /* builds/configs/exceptions/irqs cannot be changed */
         break;
-    case GDB_AUX_REG_TIMER_CNT0:
+    case V3_AUX_TIMER_CNT0:
         helper_sr(env, regval, REG_ADDR(AUX_ID_count0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL0:
+    case V3_AUX_TIMER_CTRL0:
         helper_sr(env, regval, REG_ADDR(AUX_ID_control0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM0:
+    case V3_AUX_TIMER_LIM0:
         helper_sr(env, regval, REG_ADDR(AUX_ID_limit0, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CNT1:
+    case V3_AUX_TIMER_CNT1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_count1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_CTRL1:
+    case V3_AUX_TIMER_CTRL1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_control1, cpu->family));
         break;
-    case GDB_AUX_REG_TIMER_LIM1:
+    case V3_AUX_TIMER_LIM1:
         helper_sr(env, regval, REG_ADDR(AUX_ID_limit1, cpu->family));
         break;
     /* exceptions */
-    case GDB_AUX_REG_ERSTATUS:
+    case V3_AUX_ERSTATUS:
         helper_sr(env, regval, REG_ADDR(AUX_ID_erstatus, cpu->family));
         break;
-    case GDB_AUX_REG_ERBTA:
+    case V3_AUX_ERBTA:
         helper_sr(env, regval, REG_ADDR(AUX_ID_erbta, cpu->family));
         break;
-    case GDB_AUX_REG_ECR:
+    case V3_AUX_ECR:
         helper_sr(env, regval, REG_ADDR(AUX_ID_ecr, cpu->family));
         break;
-    case GDB_AUX_REG_ERET:
+    case V3_AUX_ERET:
         helper_sr(env, regval, REG_ADDR(AUX_ID_eret, cpu->family));
         break;
-    case GDB_AUX_REG_EFA:
+    case V3_AUX_EFA:
         helper_sr(env, regval, REG_ADDR(AUX_ID_efa, cpu->family));
         break;
     /* interrupt */
-    case GDB_AUX_REG_IRQ_CTRL:
+    case V3_AUX_IRQ_CTRL:
         helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_ctrl, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ACT:
+    case V3_AUX_IRQ_ACT:
         helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_act, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_HINT:
+    case V3_AUX_IRQ_HINT:
         helper_sr(env, regval, REG_ADDR(AUX_ID_aux_irq_hint, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_SELECT:
+    case V3_AUX_IRQ_SELECT:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_select, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_ENABLE:
+    case V3_AUX_IRQ_ENABLE:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_enable, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_TRIGGER:
+    case V3_AUX_IRQ_TRIGGER:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_trigger, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PULSE:
+    case V3_AUX_IRQ_PULSE:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_pulse_cancel, cpu->family));
         break;
-    case GDB_AUX_REG_IRQ_PRIO:
+    case V3_AUX_IRQ_PRIO:
         helper_sr(env, regval, REG_ADDR(AUX_ID_irq_priority, cpu->family));
         break;
-    case GDB_AUX_REG_BTA:
+    case V3_AUX_BTA:
         helper_sr(env, regval, REG_ADDR(AUX_ID_bta, cpu->family));
         break;
     default:
@@ -650,13 +653,13 @@ arc_aux_gdb_set_reg(CPUARCState *env, uint8_t *mem_buf, int regnum)
 }
 
 static int
-arc_gdb_get_fpu(CPUARCState *env, GByteArray *mem_buf, int regnum)
+gdb_v3_fpu_read(CPUARCState *env, GByteArray *mem_buf, int regnum)
 {
     ARCCPU *cpu = env_archcpu(env);
     switch (regnum) {
     case 0 ... 31:
         return gdb_get_reg64(mem_buf, env->fpr[regnum]);
-    case GDB_FPU_REG_BUILD: {
+    case V3_FPU_BUILD: {
         /*
          * TODO FPU: when fpu module is implemented, this logic should
          * move there and here we should just call the fpu_getter.
@@ -675,9 +678,9 @@ arc_gdb_get_fpu(CPUARCState *env, GByteArray *mem_buf, int regnum)
         }
         return gdb_get_reg32(mem_buf, reg_bld);
     }
-    case GDB_FPU_REG_CTRL:
+    case V3_FPU_CTRL:
         return gdb_get_reg32(mem_buf, env->fp_ctrl);
-    case GDB_FPU_REG_STATUS:
+    case V3_FPU_STATUS:
         return gdb_get_reg32(mem_buf, env->fp_status);
     default:
         return 0;
@@ -685,19 +688,19 @@ arc_gdb_get_fpu(CPUARCState *env, GByteArray *mem_buf, int regnum)
 }
 
 static int
-arc_gdb_set_fpu(CPUARCState *env, uint8_t *mem_buf, int regnum)
+gdb_v3_fpu_write(CPUARCState *env, uint8_t *mem_buf, int regnum)
 {
     switch (regnum) {
     case 0 ... 31:
         env->fpr[regnum] = ldq_p(mem_buf);
         return sizeof(uint64_t);
-    case GDB_FPU_REG_BUILD:
+    case V3_FPU_BUILD:
         /* build register cannot be changed. */
         return 0;
-    case GDB_FPU_REG_CTRL:
+    case V3_FPU_CTRL:
         env->fp_ctrl = ldl_p(mem_buf);
         return sizeof(uint32_t);
-    case GDB_FPU_REG_STATUS:
+    case V3_FPU_STATUS:
         env->fp_status = ldl_p(mem_buf);
         return sizeof(uint32_t);
     default:
@@ -705,42 +708,40 @@ arc_gdb_set_fpu(CPUARCState *env, uint8_t *mem_buf, int regnum)
     }
 }
 
-/* Neither ARCv2 nor ARCv3 */
-#else
-    #error No target is selected.
-#endif
-
-
 void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu)
 {
     CPUState *cs = CPU(cpu);
-    const char *gdb_aux_xml_name;
 
     if (cpu->family & ARC_OPCODE_ARCV2) {
-        gdb_aux_xml_name = "arc-v2-aux.xml";
+        gdb_register_coprocessor(cs,
+          /* getter */           gdb_v2_aux_read,
+          /* setter */           gdb_v2_aux_write,
+          /* number of regs */   GDB_ARCV2_AUX_LAST,
+          /* feature file */     GDB_ARCV2_AUX_XML,
+          /* pos. in g packet */ 0);
     } else if (cpu->family & ARC_OPCODE_ARC32) {
-        gdb_aux_xml_name = "arc-v3_32-aux.xml";
+        gdb_register_coprocessor(cs,
+                                 gdb_v3_aux_read,
+                                 gdb_v3_aux_write,
+                                 GDB_ARCV3_AUX_LAST,
+                                 GDB_ARCV3_32_AUX_XML,
+                                 0);
     } else if (cpu->family & ARC_OPCODE_ARC64) {
-        gdb_aux_xml_name = "arc-v3_64-aux.xml";
+        gdb_register_coprocessor(cs,
+                                 gdb_v3_aux_read,
+                                 gdb_v3_aux_write,
+                                 GDB_ARCV3_AUX_LAST,
+                                 GDB_ARCV3_64_AUX_XML,
+                                 0);
+        gdb_register_coprocessor(cs,
+                                 gdb_v3_fpu_read,
+                                 gdb_v3_fpu_write,
+                                 GDB_ARCV3_FPU_LAST,
+                                 GDB_ARCV3_64_FPU_XML,
+                                 0);
     } else {
         g_assert_not_reached();
     }
-
-    gdb_register_coprocessor(cs,
-                             arc_aux_gdb_get_reg, /* getter */
-                             arc_aux_gdb_set_reg, /* setter */
-                             GDB_AUX_REG_LAST,    /* number of registers */
-                             gdb_aux_xml_name,    /* feature file */
-                             0);                  /* position in g packet */
-
-#if defined(TARGET_ARC64)
-    gdb_register_coprocessor(cs,
-                             arc_gdb_get_fpu,
-                             arc_gdb_set_fpu,
-                             GDB_FPU_REG_LAST,
-                             GDB_TARGET_FPU_XML,
-                             0);
-#endif
 }
 
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
