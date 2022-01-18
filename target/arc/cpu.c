@@ -1,7 +1,7 @@
 /*
  * QEMU ARC CPU
  *
- * Copyright (c) 2020 Synopsys Inc.
+ * Copyright (c) 2022 Synopsys Inc.
  * Contributed by Cupertino Miranda <cmiranda@synopsys.com>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -384,14 +384,14 @@ static gchar *arc_gdb_arch_name(CPUState *cs)
 #if defined(TARGET_ARC32)
     ARCCPU *cpu = ARC_CPU(cs);
     if(cpu->family & ARC_OPCODE_ARC32) {
-        return g_strdup("arc64:32");
+        return g_strdup(GDB_ARCV3_32_ARCH);
     } else {
-      return g_strdup(GDB_TARGET_STRING);
+      return g_strdup(GDB_ARCV2_ARCH);
     }
 #elif defined(TARGET_ARC64)
-    return g_strdup(GDB_TARGET_STRING);
+    return g_strdup(GDB_ARCV3_64_ARCH);
 #else
-#error "Not possible to happen"
+#error "Cannot determine architecture name for GDB."
 #endif
 }
 
@@ -439,19 +439,23 @@ static void arc_cpu_class_init(ObjectClass *oc, void *data)
     cc->memory_rw_debug = arc_cpu_memory_rw_debug;
 #endif
     cc->disas_set_info = arc_cpu_disas_set_info;
-    cc->gdb_read_register = arc_cpu_gdb_read_register;
-    cc->gdb_write_register = arc_cpu_gdb_write_register;
 #ifndef CONFIG_USER_ONLY
     cc->sysemu_ops = &arc_sysemu_ops;
 #endif
 
     /* Core GDB support */
 #ifdef TARGET_ARC32
-    cc->gdb_core_xml_file = "arc-v2-core.xml";
+    cc->gdb_core_xml_file = GDB_ARCV2_CORE_XML;
+    /* these can be still overwritten by hs5x. */
+    cc->gdb_num_core_regs = GDB_ARCV2_CORE_LAST;
+    cc->gdb_read_register = gdb_v2_core_read;
+    cc->gdb_write_register = gdb_v2_core_write;
 #else
-    cc->gdb_core_xml_file = "arc-v3_64-core.xml";
+    cc->gdb_core_xml_file = GDB_ARCV3_64_CORE_XML;
+    cc->gdb_num_core_regs = GDB_ARCV3_CORE_LAST;
+    cc->gdb_read_register = gdb_v3_core_read;
+    cc->gdb_write_register = gdb_v3_core_write;
 #endif
-    cc->gdb_num_core_regs = GDB_REG_LAST;
     cc->gdb_arch_name = arc_gdb_arch_name;
 
     cc->tcg_ops = &arc_tcg_ops;
@@ -496,11 +500,11 @@ static void arc_hs5x_initfn(Object *obj)
     ARCCPU *cpu = ARC_CPU(obj);
     cpu->family = ARC_OPCODE_ARC32;
     CPUClass *cc = &ARC_CPU_GET_CLASS(obj)->parent_class;
-    cc->gdb_core_xml_file = "arc-v3_32-core.xml";
-    cc->gdb_read_register = arc_cpu_gdb_read_register;
-    cc->gdb_write_register = arc_cpu_gdb_write_register;
-    cc->gdb_num_core_regs = GDB_REG_LAST;
+    cc->gdb_core_xml_file = GDB_ARCV3_32_CORE_XML;
     cc->gdb_arch_name = arc_gdb_arch_name;
+    cc->gdb_num_core_regs = GDB_ARCV3_CORE_LAST;
+    cc->gdb_read_register = gdb_v3_core_read;
+    cc->gdb_write_register = gdb_v3_core_write;
 }
 #endif
 
