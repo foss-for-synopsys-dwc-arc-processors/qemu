@@ -20,268 +20,269 @@
 #ifndef ARC_GDBSTUB_H
 #define ARC_GDBSTUB_H
 
-#ifdef TARGET_ARC32
+#define GDB_ARCV2_CORE_XML    "arc-v2-core.xml"
+#define GDB_ARCV3_32_CORE_XML "arc-v3_32-core.xml"
+#define GDB_ARCV3_64_CORE_XML "arc-v3_64-core.xml"
 
-#define GDB_TARGET_STRING "arc:ARCv2"
+#define GDB_ARCV2_AUX_XML     "arc-v2-aux.xml"
+#define GDB_ARCV3_32_AUX_XML  "arc-v3_32-aux.xml"
+#define GDB_ARCV3_64_AUX_XML  "arc-v3_64-aux.xml"
+#define GDB_ARCV3_64_FPU_XML  "arc-v3_64-fpu.xml"
+
+#define GDB_ARCV2_ARCH        "arc:ARCv2"
+#define GDB_ARCV3_32_ARCH     "arc64:32"
+#define GDB_ARCV3_64_ARCH     "arc64:64"
 
 /* The order here is strictly tied with gdb-xml/arc-v2-core.xml. */
-enum gdb_regs {
-    GDB_REG_0 = 0,
-    GDB_REG_1,
-    GDB_REG_2,
-    GDB_REG_3,
-    GDB_REG_4,
-    GDB_REG_5,
-    GDB_REG_6,
-    GDB_REG_7,
-    GDB_REG_8,
-    GDB_REG_9,
-    GDB_REG_10,
-    GDB_REG_11,
-    GDB_REG_12,
-    GDB_REG_13,
-    GDB_REG_14,
-    GDB_REG_15,
-    GDB_REG_16,
-    GDB_REG_17,
-    GDB_REG_18,
-    GDB_REG_19,
-    GDB_REG_20,
-    GDB_REG_21,
-    GDB_REG_22,
-    GDB_REG_23,
-    GDB_REG_24,
-    GDB_REG_25,
-    GDB_REG_26,         /* GP                         */
-    GDB_REG_27,         /* FP                         */
-    GDB_REG_28,         /* SP                         */
-    GDB_REG_29,         /* ILINK                      */
-    GDB_REG_30,         /* R30                        */
-    GDB_REG_31,         /* BLINK                      */
-    GDB_REG_58,         /* little_endian? ACCL : ACCH */
-    GDB_REG_59,         /* little_endian? ACCH : ACCL */
-    GDB_REG_60,         /* LP                         */
-    GDB_REG_63,         /* PCL                        */
+enum gdb_v2_core_regs {
+    V2_CORE_R0 = 0,
+    V2_CORE_R1,
+    V2_CORE_R2,
+    V2_CORE_R3,
+    V2_CORE_R4,
+    V2_CORE_R5,
+    V2_CORE_R6,
+    V2_CORE_R7,
+    V2_CORE_R8,
+    V2_CORE_R9,
+    V2_CORE_R10,
+    V2_CORE_R11,
+    V2_CORE_R12,
+    V2_CORE_R13,
+    V2_CORE_R14,
+    V2_CORE_R15,
+    V2_CORE_R16,
+    V2_CORE_R17,
+    V2_CORE_R18,
+    V2_CORE_R19,
+    V2_CORE_R20,
+    V2_CORE_R21,
+    V2_CORE_R22,
+    V2_CORE_R23,
+    V2_CORE_R24,
+    V2_CORE_R25,
+    V2_CORE_R26,         /* GP                         */
+    V2_CORE_R27,         /* FP                         */
+    V2_CORE_R28,         /* SP                         */
+    V2_CORE_R29,         /* ILINK                      */
+    V2_CORE_R30,         /* R30                        */
+    V2_CORE_R31,         /* BLINK                      */
+    V2_CORE_R58,         /* little_endian? ACCL : ACCH */
+    V2_CORE_R59,         /* little_endian? ACCH : ACCL */
+    V2_CORE_R60,         /* LP                         */
+    V2_CORE_R63,         /* PCL                        */
 
-    GDB_REG_LAST
+    GDB_ARCV2_CORE_LAST
 };
 
 /* The order here is strictly tied with gdb-xml/arc-v2-aux.xml. */
-enum gdb_aux_regs {
-    GDB_AUX_REG_PC = 0,        /* program counter */
-    GDB_AUX_REG_LPS,           /* loop body start */
-    GDB_AUX_REG_LPE,           /* loop body end   */
-    GDB_AUX_REG_STATUS,        /* status flag     */
-    GDB_AUX_REG_BTA,           /* branch target address */
+enum gdb_v2_aux_regs {
+    V2_AUX_PC = 0,        /* program counter */
+    V2_AUX_LPS,           /* loop body start */
+    V2_AUX_LPE,           /* loop body end   */
+    V2_AUX_STATUS,        /* status flag     */
+    V2_AUX_BTA,           /* branch target address */
     /* builds */
-    GDB_AUX_REG_TIMER_BUILD,   /* timer build                */
-    GDB_AUX_REG_IRQ_BUILD,     /* irq build                  */
-    GDB_AUX_REG_MPY_BUILD,     /* multiply configuration     */
-    GDB_AUX_REG_VECBASE_BUILD, /* vector base address config */
-    GDB_AUX_REG_ISA_CONFIG,    /* isa config                 */
-    GDB_AUX_REG_MPU_BUILD,     /* MPU build           */
+    V2_AUX_TIMER_BUILD,   /* timer build                */
+    V2_AUX_IRQ_BUILD,     /* irq build                  */
+    V2_AUX_MPY_BUILD,     /* multiply configuration     */
+    V2_AUX_VECBASE_BUILD, /* vector base address config */
+    V2_AUX_ISA_CONFIG,    /* isa config                 */
+    V2_AUX_MPU_BUILD,     /* MPU build           */
     /* timers */
-    GDB_AUX_REG_TIMER_CNT0,    /* timer 0 counter */
-    GDB_AUX_REG_TIMER_CTRL0,   /* timer 0 control */
-    GDB_AUX_REG_TIMER_LIM0,    /* timer 0 limit   */
-    GDB_AUX_REG_TIMER_CNT1,    /* timer 1 counter */
-    GDB_AUX_REG_TIMER_CTRL1,   /* timer 1 control */
-    GDB_AUX_REG_TIMER_LIM1,    /* timer 1 limit   */
+    V2_AUX_TIMER_CNT0,    /* timer 0 counter */
+    V2_AUX_TIMER_CTRL0,   /* timer 0 control */
+    V2_AUX_TIMER_LIM0,    /* timer 0 limit   */
+    V2_AUX_TIMER_CNT1,    /* timer 1 counter */
+    V2_AUX_TIMER_CTRL1,   /* timer 1 control */
+    V2_AUX_TIMER_LIM1,    /* timer 1 limit   */
     /* mmuv4 */
-    GDB_AUX_REG_PID,           /* process identity  */
-    GDB_AUX_REG_TLBPD0,        /* page descriptor 0 */
-    GDB_AUX_REG_TLBPD1,        /* page descriptor 1 */
-    GDB_AUX_REG_TLB_INDEX,     /* tlb index         */
-    GDB_AUX_REG_TLB_CMD,       /* tlb command       */
+    V2_AUX_PID,           /* process identity  */
+    V2_AUX_TLBPD0,        /* page descriptor 0 */
+    V2_AUX_TLBPD1,        /* page descriptor 1 */
+    V2_AUX_TLB_INDEX,     /* tlb index         */
+    V2_AUX_TLB_CMD,       /* tlb command       */
     /* mpu */
-    GDB_AUX_REG_MPU_EN,        /* MPU enable          */
-    GDB_AUX_REG_MPU_ECR,       /* MPU exception cause */
-    GDB_AUX_REG_MPU_BASE0,     /* MPU base 0          */
-    GDB_AUX_REG_MPU_BASE1,     /* MPU base 1          */
-    GDB_AUX_REG_MPU_BASE2,     /* MPU base 2          */
-    GDB_AUX_REG_MPU_BASE3,     /* MPU base 3          */
-    GDB_AUX_REG_MPU_BASE4,     /* MPU base 4          */
-    GDB_AUX_REG_MPU_BASE5,     /* MPU base 5          */
-    GDB_AUX_REG_MPU_BASE6,     /* MPU base 6          */
-    GDB_AUX_REG_MPU_BASE7,     /* MPU base 7          */
-    GDB_AUX_REG_MPU_BASE8,     /* MPU base 8          */
-    GDB_AUX_REG_MPU_BASE9,     /* MPU base 9          */
-    GDB_AUX_REG_MPU_BASE10,    /* MPU base 10         */
-    GDB_AUX_REG_MPU_BASE11,    /* MPU base 11         */
-    GDB_AUX_REG_MPU_BASE12,    /* MPU base 12         */
-    GDB_AUX_REG_MPU_BASE13,    /* MPU base 13         */
-    GDB_AUX_REG_MPU_BASE14,    /* MPU base 14         */
-    GDB_AUX_REG_MPU_BASE15,    /* MPU base 15         */
-    GDB_AUX_REG_MPU_PERM0,     /* MPU permission 0    */
-    GDB_AUX_REG_MPU_PERM1,     /* MPU permission 1    */
-    GDB_AUX_REG_MPU_PERM2,     /* MPU permission 2    */
-    GDB_AUX_REG_MPU_PERM3,     /* MPU permission 3    */
-    GDB_AUX_REG_MPU_PERM4,     /* MPU permission 4    */
-    GDB_AUX_REG_MPU_PERM5,     /* MPU permission 5    */
-    GDB_AUX_REG_MPU_PERM6,     /* MPU permission 6    */
-    GDB_AUX_REG_MPU_PERM7,     /* MPU permission 7    */
-    GDB_AUX_REG_MPU_PERM8,     /* MPU permission 8    */
-    GDB_AUX_REG_MPU_PERM9,     /* MPU permission 9    */
-    GDB_AUX_REG_MPU_PERM10,    /* MPU permission 10   */
-    GDB_AUX_REG_MPU_PERM11,    /* MPU permission 11   */
-    GDB_AUX_REG_MPU_PERM12,    /* MPU permission 12   */
-    GDB_AUX_REG_MPU_PERM13,    /* MPU permission 13   */
-    GDB_AUX_REG_MPU_PERM14,    /* MPU permission 14   */
-    GDB_AUX_REG_MPU_PERM15,    /* MPU permission 15   */
+    V2_AUX_MPU_EN,        /* MPU enable          */
+    V2_AUX_MPU_ECR,       /* MPU exception cause */
+    V2_AUX_MPU_BASE0,     /* MPU base 0          */
+    V2_AUX_MPU_BASE1,     /* MPU base 1          */
+    V2_AUX_MPU_BASE2,     /* MPU base 2          */
+    V2_AUX_MPU_BASE3,     /* MPU base 3          */
+    V2_AUX_MPU_BASE4,     /* MPU base 4          */
+    V2_AUX_MPU_BASE5,     /* MPU base 5          */
+    V2_AUX_MPU_BASE6,     /* MPU base 6          */
+    V2_AUX_MPU_BASE7,     /* MPU base 7          */
+    V2_AUX_MPU_BASE8,     /* MPU base 8          */
+    V2_AUX_MPU_BASE9,     /* MPU base 9          */
+    V2_AUX_MPU_BASE10,    /* MPU base 10         */
+    V2_AUX_MPU_BASE11,    /* MPU base 11         */
+    V2_AUX_MPU_BASE12,    /* MPU base 12         */
+    V2_AUX_MPU_BASE13,    /* MPU base 13         */
+    V2_AUX_MPU_BASE14,    /* MPU base 14         */
+    V2_AUX_MPU_BASE15,    /* MPU base 15         */
+    V2_AUX_MPU_PERM0,     /* MPU permission 0    */
+    V2_AUX_MPU_PERM1,     /* MPU permission 1    */
+    V2_AUX_MPU_PERM2,     /* MPU permission 2    */
+    V2_AUX_MPU_PERM3,     /* MPU permission 3    */
+    V2_AUX_MPU_PERM4,     /* MPU permission 4    */
+    V2_AUX_MPU_PERM5,     /* MPU permission 5    */
+    V2_AUX_MPU_PERM6,     /* MPU permission 6    */
+    V2_AUX_MPU_PERM7,     /* MPU permission 7    */
+    V2_AUX_MPU_PERM8,     /* MPU permission 8    */
+    V2_AUX_MPU_PERM9,     /* MPU permission 9    */
+    V2_AUX_MPU_PERM10,    /* MPU permission 10   */
+    V2_AUX_MPU_PERM11,    /* MPU permission 11   */
+    V2_AUX_MPU_PERM12,    /* MPU permission 12   */
+    V2_AUX_MPU_PERM13,    /* MPU permission 13   */
+    V2_AUX_MPU_PERM14,    /* MPU permission 14   */
+    V2_AUX_MPU_PERM15,    /* MPU permission 15   */
     /* excpetions */
-    GDB_AUX_REG_ERSTATUS,      /* exception return status  */
-    GDB_AUX_REG_ERBTA,         /* exception return BTA     */
-    GDB_AUX_REG_ECR,           /* exception cause register */
-    GDB_AUX_REG_ERET,          /* exception return address */
-    GDB_AUX_REG_EFA,           /* exception fault address  */
+    V2_AUX_ERSTATUS,      /* exception return status  */
+    V2_AUX_ERBTA,         /* exception return BTA     */
+    V2_AUX_ECR,           /* exception cause register */
+    V2_AUX_ERET,          /* exception return address */
+    V2_AUX_EFA,           /* exception fault address  */
     /* irq */
-    GDB_AUX_REG_ICAUSE,        /* interrupt cause        */
-    GDB_AUX_REG_IRQ_CTRL,      /* context saving control */
-    GDB_AUX_REG_IRQ_ACT,       /* active                 */
-    GDB_AUX_REG_IRQ_PRIO_PEND, /* priority pending       */
-    GDB_AUX_REG_IRQ_HINT,      /* hint                   */
-    GDB_AUX_REG_IRQ_SELECT,    /* select                 */
-    GDB_AUX_REG_IRQ_ENABLE,    /* enable                 */
-    GDB_AUX_REG_IRQ_TRIGGER,   /* trigger                */
-    GDB_AUX_REG_IRQ_STATUS,    /* status                 */
-    GDB_AUX_REG_IRQ_PULSE,     /* pulse cancel           */
-    GDB_AUX_REG_IRQ_PENDING,   /* pending                */
-    GDB_AUX_REG_IRQ_PRIO,      /* priority               */
+    V2_AUX_ICAUSE,        /* interrupt cause        */
+    V2_AUX_IRQ_CTRL,      /* context saving control */
+    V2_AUX_IRQ_ACT,       /* active                 */
+    V2_AUX_IRQ_PRIO_PEND, /* priority pending       */
+    V2_AUX_IRQ_HINT,      /* hint                   */
+    V2_AUX_IRQ_SELECT,    /* select                 */
+    V2_AUX_IRQ_ENABLE,    /* enable                 */
+    V2_AUX_IRQ_TRIGGER,   /* trigger                */
+    V2_AUX_IRQ_STATUS,    /* status                 */
+    V2_AUX_IRQ_PULSE,     /* pulse cancel           */
+    V2_AUX_IRQ_PENDING,   /* pending                */
+    V2_AUX_IRQ_PRIO,      /* priority               */
 
-    GDB_AUX_REG_LAST
+    GDB_ARCV2_AUX_LAST
 };
 
-/* ARCv3_64 */
-#else
-
-//#define GDB_TARGET_STRING "arc:ARCv3_64"
-#define GDB_TARGET_STRING "arc64:64"
-
 /* The order here is strictly tied with gdb-xml/arc-v3_{32,64}-core.xml. */
-enum gdb_regs {
-    GDB_REG_0 = 0,
-    GDB_REG_1,
-    GDB_REG_2,
-    GDB_REG_3,
-    GDB_REG_4,
-    GDB_REG_5,
-    GDB_REG_6,
-    GDB_REG_7,
-    GDB_REG_8,
-    GDB_REG_9,
-    GDB_REG_10,
-    GDB_REG_11,
-    GDB_REG_12,
-    GDB_REG_13,
-    GDB_REG_14,
-    GDB_REG_15,
-    GDB_REG_16,
-    GDB_REG_17,
-    GDB_REG_18,
-    GDB_REG_19,
-    GDB_REG_20,
-    GDB_REG_21,
-    GDB_REG_22,
-    GDB_REG_23,
-    GDB_REG_24,
-    GDB_REG_25,
-    GDB_REG_26,
-    GDB_REG_27,         /* FP          */
-    GDB_REG_28,         /* SP          */
-    GDB_REG_29,         /* ILINK       */
-    GDB_REG_30,         /* GP          */
-    GDB_REG_31,         /* BLINK       */
-    GDB_REG_58,         /* ACC0        */
-    GDB_REG_63,         /* PCL         */
+enum gdb_v3_core_regs {
+    V3_CORE_R0 = 0,
+    V3_CORE_R1,
+    V3_CORE_R2,
+    V3_CORE_R3,
+    V3_CORE_R4,
+    V3_CORE_R5,
+    V3_CORE_R6,
+    V3_CORE_R7,
+    V3_CORE_R8,
+    V3_CORE_R9,
+    V3_CORE_R10,
+    V3_CORE_R11,
+    V3_CORE_R12,
+    V3_CORE_R13,
+    V3_CORE_R14,
+    V3_CORE_R15,
+    V3_CORE_R16,
+    V3_CORE_R17,
+    V3_CORE_R18,
+    V3_CORE_R19,
+    V3_CORE_R20,
+    V3_CORE_R21,
+    V3_CORE_R22,
+    V3_CORE_R23,
+    V3_CORE_R24,
+    V3_CORE_R25,
+    V3_CORE_R26,
+    V3_CORE_R27,         /* FP          */
+    V3_CORE_R28,         /* SP          */
+    V3_CORE_R29,         /* ILINK       */
+    V3_CORE_R30,         /* GP          */
+    V3_CORE_R31,         /* BLINK       */
+    V3_CORE_R58,         /* ACC0        */
+    V3_CORE_R63,         /* PCL         */
 
-    GDB_REG_LAST
+    GDB_ARCV3_CORE_LAST
 };
 
 /* The order here is strictly tied with gdb-xml/arc-v3_{32,64}-aux.xml. */
-enum gdb_aux_regs {
-    GDB_AUX_REG_PC = 0,        /* program counter */
-    GDB_AUX_REG_STATUS,        /* status flag     */
-    GDB_AUX_REG_BTA,           /* branch target address */
+enum gdb_v3_aux_regs {
+    V3_AUX_PC = 0,        /* program counter */
+    V3_AUX_STATUS,        /* status flag     */
+    V3_AUX_BTA,           /* branch target address */
     /* builds */
-    GDB_AUX_REG_TIMER_BUILD,   /* timer build                */
-    GDB_AUX_REG_IRQ_BUILD,     /* irq build                  */
-    GDB_AUX_REG_VECBASE_BUILD, /* vector base address config */
-    GDB_AUX_REG_ISA_CONFIG,    /* isa config                 */
+    V3_AUX_TIMER_BUILD,   /* timer build                */
+    V3_AUX_IRQ_BUILD,     /* irq build                  */
+    V3_AUX_VECBASE_BUILD, /* vector base address config */
+    V3_AUX_ISA_CONFIG,    /* isa config                 */
     /* timers */
-    GDB_AUX_REG_TIMER_CNT0,    /* timer 0 counter */
-    GDB_AUX_REG_TIMER_CTRL0,   /* timer 0 control */
-    GDB_AUX_REG_TIMER_LIM0,    /* timer 0 limit   */
-    GDB_AUX_REG_TIMER_CNT1,    /* timer 1 counter */
-    GDB_AUX_REG_TIMER_CTRL1,   /* timer 1 control */
-    GDB_AUX_REG_TIMER_LIM1,    /* timer 1 limit   */
+    V3_AUX_TIMER_CNT0,    /* timer 0 counter */
+    V3_AUX_TIMER_CTRL0,   /* timer 0 control */
+    V3_AUX_TIMER_LIM0,    /* timer 0 limit   */
+    V3_AUX_TIMER_CNT1,    /* timer 1 counter */
+    V3_AUX_TIMER_CTRL1,   /* timer 1 control */
+    V3_AUX_TIMER_LIM1,    /* timer 1 limit   */
     /* excpetions */
-    GDB_AUX_REG_ERSTATUS,      /* exception return status  */
-    GDB_AUX_REG_ERBTA,         /* exception return BTA     */
-    GDB_AUX_REG_ECR,           /* exception cause register */
-    GDB_AUX_REG_ERET,          /* exception return address */
-    GDB_AUX_REG_EFA,           /* exception fault address  */
+    V3_AUX_ERSTATUS,      /* exception return status  */
+    V3_AUX_ERBTA,         /* exception return BTA     */
+    V3_AUX_ECR,           /* exception cause register */
+    V3_AUX_ERET,          /* exception return address */
+    V3_AUX_EFA,           /* exception fault address  */
     /* irq */
-    GDB_AUX_REG_ICAUSE,        /* interrupt cause        */
-    GDB_AUX_REG_IRQ_CTRL,      /* context saving control */
-    GDB_AUX_REG_IRQ_ACT,       /* active                 */
-    GDB_AUX_REG_IRQ_PRIO_PEND, /* priority pending       */
-    GDB_AUX_REG_IRQ_HINT,      /* hint                   */
-    GDB_AUX_REG_IRQ_SELECT,    /* select                 */
-    GDB_AUX_REG_IRQ_ENABLE,    /* enable                 */
-    GDB_AUX_REG_IRQ_TRIGGER,   /* trigger                */
-    GDB_AUX_REG_IRQ_STATUS,    /* status                 */
-    GDB_AUX_REG_IRQ_PULSE,     /* pulse cancel           */
-    GDB_AUX_REG_IRQ_PRIO,      /* priority               */
+    V3_AUX_ICAUSE,        /* interrupt cause        */
+    V3_AUX_IRQ_CTRL,      /* context saving control */
+    V3_AUX_IRQ_ACT,       /* active                 */
+    V3_AUX_IRQ_PRIO_PEND, /* priority pending       */
+    V3_AUX_IRQ_HINT,      /* hint                   */
+    V3_AUX_IRQ_SELECT,    /* select                 */
+    V3_AUX_IRQ_ENABLE,    /* enable                 */
+    V3_AUX_IRQ_TRIGGER,   /* trigger                */
+    V3_AUX_IRQ_STATUS,    /* status                 */
+    V3_AUX_IRQ_PULSE,     /* pulse cancel           */
+    V3_AUX_IRQ_PRIO,      /* priority               */
     /* mmuv6 */
-    GDB_AUX_REG_MMU_CTRL,      /* mmuv6 control */
-    GDB_AUX_REG_RTP0,          /* region 0 ptr  */
-    GDB_AUX_REG_RTP1,          /* region 1 ptr  */
+    V3_AUX_MMU_CTRL,      /* mmuv6 control */
+    V3_AUX_RTP0,          /* region 0 ptr  */
+    V3_AUX_RTP1,          /* region 1 ptr  */
 
-    GDB_AUX_REG_LAST
+    GDB_ARCV3_AUX_LAST
 };
 
 /* The order here is strictly tied with gdb-xml/arc-v3_64-fpu.xml. */
-enum gdb_fpu_regs {
-    GDB_FPU_REG_F0 = 0,
-    GDB_FPU_REG_F1,
-    GDB_FPU_REG_F2,
-    GDB_FPU_REG_F3,
-    GDB_FPU_REG_F4,
-    GDB_FPU_REG_F5,
-    GDB_FPU_REG_F6,
-    GDB_FPU_REG_F7,
-    GDB_FPU_REG_F8,
-    GDB_FPU_REG_F9,
-    GDB_FPU_REG_F10,
-    GDB_FPU_REG_F11,
-    GDB_FPU_REG_F12,
-    GDB_FPU_REG_F13,
-    GDB_FPU_REG_F14,
-    GDB_FPU_REG_F15,
-    GDB_FPU_REG_F16,
-    GDB_FPU_REG_F17,
-    GDB_FPU_REG_F18,
-    GDB_FPU_REG_F19,
-    GDB_FPU_REG_F20,
-    GDB_FPU_REG_F21,
-    GDB_FPU_REG_F22,
-    GDB_FPU_REG_F23,
-    GDB_FPU_REG_F24,
-    GDB_FPU_REG_F25,
-    GDB_FPU_REG_F26,
-    GDB_FPU_REG_F27,
-    GDB_FPU_REG_F28,
-    GDB_FPU_REG_F29,
-    GDB_FPU_REG_F30,
-    GDB_FPU_REG_F31,
-    GDB_FPU_REG_BUILD,
-    GDB_FPU_REG_CTRL,
-    GDB_FPU_REG_STATUS,
+enum gdb_v3_fpu_regs {
+    V3_FPU_0 = 0,
+    V3_FPU_1,
+    V3_FPU_2,
+    V3_FPU_3,
+    V3_FPU_4,
+    V3_FPU_5,
+    V3_FPU_6,
+    V3_FPU_7,
+    V3_FPU_8,
+    V3_FPU_9,
+    V3_FPU_10,
+    V3_FPU_11,
+    V3_FPU_12,
+    V3_FPU_13,
+    V3_FPU_14,
+    V3_FPU_15,
+    V3_FPU_16,
+    V3_FPU_17,
+    V3_FPU_18,
+    V3_FPU_19,
+    V3_FPU_20,
+    V3_FPU_21,
+    V3_FPU_22,
+    V3_FPU_23,
+    V3_FPU_24,
+    V3_FPU_25,
+    V3_FPU_26,
+    V3_FPU_27,
+    V3_FPU_28,
+    V3_FPU_29,
+    V3_FPU_30,
+    V3_FPU_31,
+    V3_FPU_BUILD,
+    V3_FPU_CTRL,
+    V3_FPU_STATUS,
 
-    GDB_FPU_REG_LAST
+    GDB_ARCV3_FPU_LAST
 };
-
-#endif /* ARCv2 or ARCv3_64 */
 
 /* add auxiliary registers to set of supported registers for GDB */
 void arc_cpu_register_gdb_regs_for_features(ARCCPU *cpu);
