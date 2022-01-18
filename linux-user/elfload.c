@@ -1605,6 +1605,8 @@ static inline void init_thread(struct target_pt_regs *regs,
 #define ELF_START_MMAP 0x20000000
 #define ELF_ARCH  EM_ARC_COMPACT2
 
+#define elf_check_arch(x) (((x) == EM_ARC_COMPACT3_32) || ((x) == ELF_ARCH))
+
 #define ELF_CLASS ELFCLASS32
 
 static inline void init_thread(struct target_pt_regs *regs,
