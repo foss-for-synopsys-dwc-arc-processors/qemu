@@ -4154,7 +4154,7 @@ arc_gen_PREFETCH(DisasCtxt *ctx, TCGv src1, TCGv src2)
  */
 
 int
-arc_gen_MPY(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_MPY(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
@@ -4317,7 +4317,7 @@ arc_gen_MPYM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
 /*
  * MPYU
- *    Variables: @b, @c, @a
+ *    Variables: @a, @b, @c
  *    Functions: getCCFlag, getFFlag, HELPER, setZFlag, setNFlag, setVFlag
  * --- code ---
  * {

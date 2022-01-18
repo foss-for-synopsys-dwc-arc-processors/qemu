@@ -4521,85 +4521,61 @@ arc_gen_PREFETCH (DisasCtxt *ctx, TCGv src1, TCGv src2)
 
 
 /* MPY
- *    Variables: @b, @c, @a
+ *    Variables: @a, @b, @c
  *    Functions: getCCFlag, getFFlag, HELPER, setZFlag, setNFlag32, setVFlag
---- code ---
-{
-  cc_flag = getCCFlag ();
-  if((cc_flag == true))
-    {
-      _b = @b;
-      _c = @c;
-      @a = ((_b * _c) & 4294967295);
-      @a = (@a & 4294967295);
-      if((getFFlag () == true))
-        {
-          high_part = HELPER (mpym, _b, _c);
-          tmp1 = (high_part & 2147483648);
-          tmp2 = (@a >> 31);
-          setZFlag (@a);
-          setNFlag32 (high_part);
-          setVFlag ((tmp1 != tmp2));
-        };
-    };
-}
+ *  HAND_TUNED FUNCTION - not really optimized yet
  */
 
 int
-arc_gen_MPY (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_MPY(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  int ret = DISAS_NEXT;
-  TCGv temp_3 = tcg_temp_local_new();
-  TCGv cc_flag = tcg_temp_local_new();
-  TCGv temp_1 = tcg_temp_local_new();
-  TCGv temp_2 = tcg_temp_local_new();
-  TCGv _b = tcg_temp_local_new();
-  TCGv _c = tcg_temp_local_new();
-  TCGv temp_4 = tcg_temp_local_new();
-  TCGv high_part = tcg_temp_local_new();
-  TCGv tmp1 = tcg_temp_local_new();
-  TCGv tmp2 = tcg_temp_local_new();
-  TCGv temp_5 = tcg_temp_local_new();
-  getCCFlag(temp_3);
-  tcg_gen_mov_tl(cc_flag, temp_3);
-  TCGLabel *done_1 = gen_new_label();
-  tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
-  tcg_gen_xori_tl(temp_2, temp_1, 1); tcg_gen_andi_tl(temp_2, temp_2, 1);;
-  tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);;
-  tcg_gen_mov_tl(_b, b);
-  tcg_gen_mov_tl(_c, c);
-  tcg_gen_mul_tl(temp_4, _b, _c);
-  tcg_gen_andi_tl(a, temp_4, 4294967295);
-  tcg_gen_andi_tl(a, a, 4294967295);
-  if ((getFFlag () == true))
-    {
-    ARC_HELPER(mpym, high_part, _b, _c);
-  tcg_gen_andi_tl(tmp2, a, 2147483648);
-        tcg_gen_sari_tl(tmp2, a, 31);
-  setZFlag(a);
-  setNFlag32(high_part);
-  tcg_gen_setcond_tl(TCG_COND_NE, temp_5, high_part, tmp2);
-  setVFlag(temp_5);
-;
+    int ret = DISAS_NEXT;
+    TCGv temp_3 = tcg_temp_local_new();
+    TCGv cc_flag = tcg_temp_local_new();
+    TCGv temp_1 = tcg_temp_local_new();
+    TCGv temp_2 = tcg_temp_local_new();
+    TCGv _b = tcg_temp_local_new();
+    TCGv _c = tcg_temp_local_new();
+    TCGv temp_4 = tcg_temp_local_new();
+    TCGv high_part = tcg_temp_local_new();
+    TCGv tmp1 = tcg_temp_local_new();
+    TCGv tmp2 = tcg_temp_local_new();
+    TCGv temp_5 = tcg_temp_local_new();
+    getCCFlag(temp_3);
+    tcg_gen_mov_tl(cc_flag, temp_3);
+    TCGLabel *done_1 = gen_new_label();
+    tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
+    tcg_gen_xori_tl(temp_2, temp_1, 1);
+    tcg_gen_andi_tl(temp_2, temp_2, 1);
+    tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
+    tcg_gen_andi_tl(_b, b, 0xffffffff);
+    tcg_gen_andi_tl(_c, c, 0xffffffff);
+    tcg_gen_ext32s_tl(_b, _b);
+    tcg_gen_ext32s_tl(_c, _c);
+    tcg_gen_mul_tl(temp_4, _b, _c);
+    tcg_gen_andi_tl(a, temp_4, 4294967295);
+    if ((getFFlag () == true)) {
+	tcg_gen_sari_tl(high_part, temp_4, 32);
+        tcg_gen_sari_tl(tmp2, temp_4, 31);
+        setZFlag(a);
+        setNFlag(high_part);
+        tcg_gen_setcond_tl(TCG_COND_NE, temp_5, high_part, tmp2);
+        setVFlag(temp_5);
     }
-  else
-    {
-  ;
-    }
-  gen_set_label(done_1);
-  tcg_temp_free(temp_3);
-  tcg_temp_free(cc_flag);
-  tcg_temp_free(temp_1);
-  tcg_temp_free(temp_2);
-  tcg_temp_free(_b);
-  tcg_temp_free(_c);
-  tcg_temp_free(temp_4);
-  tcg_temp_free(high_part);
-  tcg_temp_free(tmp1);
-  tcg_temp_free(tmp2);
-  tcg_temp_free(temp_5);
+    gen_set_label(done_1);
+    tcg_temp_free(temp_3);
+    tcg_temp_free(cc_flag);
+    tcg_temp_free(temp_1);
+    tcg_temp_free(temp_2);
+    tcg_temp_free(_b);
+    tcg_temp_free(_c);
+    tcg_temp_free(temp_4);
+    tcg_temp_free(high_part);
+    tcg_temp_free(tmp1);
+    tcg_temp_free(tmp2);
+    tcg_temp_free(temp_5);
 
-  return ret;
+    return ret;
 }
 
 
@@ -4736,7 +4712,7 @@ arc_gen_MPYM (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
 
 /* MPYU
- *    Variables: @b, @c, @a
+ *    Variables: @a, @b, @c
  *    Functions: getCCFlag, getFFlag, HELPER, setZFlag, setNFlag32, setVFlag
 --- code ---
 {
@@ -4759,7 +4735,7 @@ arc_gen_MPYM (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
  */
 
 int
-arc_gen_MPYU (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_MPYU (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
   int ret = DISAS_NEXT;
   TCGv temp_3 = tcg_temp_local_new();
