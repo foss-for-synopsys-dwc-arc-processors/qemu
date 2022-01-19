@@ -395,18 +395,29 @@ static gchar *arc_gdb_arch_name(CPUState *cs)
 #endif
 }
 
+#ifndef CONFIG_USER_ONLY
+#include "hw/core/sysemu-cpu-ops.h"
+
+static const struct SysemuCPUOps arc_sysemu_ops = {
+    .get_phys_page_debug = arc_cpu_get_phys_page_debug,
+    .legacy_vmsd = &vms_arc_cpu,
+};
+#endif
+
+#ifdef CONFIG_TCG
 #include "hw/core/tcg-cpu-ops.h"
 
 static struct TCGCPUOps arc_tcg_ops = {
     .initialize = arc_translate_init,
     .synchronize_from_tb = arc_cpu_synchronize_from_tb,
-    .cpu_exec_interrupt = arc_cpu_exec_interrupt,
-    .tlb_fill = arc_cpu_tlb_fill,
 
 #ifndef CONFIG_USER_ONLY
+    .tlb_fill = arc_cpu_tlb_fill,
+    .cpu_exec_interrupt = arc_cpu_exec_interrupt,
     .do_interrupt = arc_cpu_do_interrupt,
 #endif /* !CONFIG_USER_ONLY */
 };
+#endif /* CONFIG_TCG */
 
 static void arc_cpu_class_init(ObjectClass *oc, void *data)
 {
@@ -426,12 +437,13 @@ static void arc_cpu_class_init(ObjectClass *oc, void *data)
     cc->set_pc = arc_cpu_set_pc;
 #ifndef CONFIG_USER_ONLY
     cc->memory_rw_debug = arc_cpu_memory_rw_debug;
-    cc->get_phys_page_debug = arc_cpu_get_phys_page_debug;
-    cc->vmsd = &vms_arc_cpu;
 #endif
     cc->disas_set_info = arc_cpu_disas_set_info;
     cc->gdb_read_register = arc_cpu_gdb_read_register;
     cc->gdb_write_register = arc_cpu_gdb_write_register;
+#ifndef CONFIG_USER_ONLY
+    cc->sysemu_ops = &arc_sysemu_ops;
+#endif
 
     /* Core GDB support */
 #ifdef TARGET_ARC32

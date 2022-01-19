@@ -1,0 +1,5 @@
+config ARC32
+    bool
+
+config ARC64
+    bool
