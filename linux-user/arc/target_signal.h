@@ -1,6 +1,8 @@
 #ifndef ARC_TARGET_SIGNAL_H
 #define ARC_TARGET_SIGNAL_H
 
+#define TARGET_ARCH_HAS_SIGTRAMP_PAGE 0
+
 typedef struct target_sigaltstack {
     abi_ulong ss_sp;
     abi_int ss_flags;
