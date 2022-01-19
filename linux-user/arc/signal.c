@@ -239,7 +239,6 @@ long do_rt_sigreturn(CPUARCState *env)
 {
     abi_ulong sf_addr;
     struct target_rt_sigframe *sf;
-    unsigned int magic;
 
     sf_addr = CPU_SP(env);
 
@@ -251,16 +250,7 @@ long do_rt_sigreturn(CPUARCState *env)
     if (!lock_user_struct(VERIFY_READ, sf, sf_addr, 1))
         goto badfrm;
 
-    __get_user(magic, &sf->sigret_magic);
-
-    if (MAGIC_SIGALTSTK == magic) {
-        if (do_sigaltstack(sf_addr +
-                           offsetof(struct target_rt_sigframe, uc.uc_stack),
-                           0,
-                           get_sp_from_cpustate(env)) == -TARGET_EFAULT) {
-            goto badfrm;
-        }
-    }
+    target_restore_altstack(&sf->uc.uc_stack, env);
 
     restore_usr_regs(env, sf);
 
