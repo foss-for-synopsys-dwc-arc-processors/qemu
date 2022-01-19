@@ -255,9 +255,9 @@ static gint arc_cpu_list_compare(gconstpointer a, gconstpointer b)
 
     name_a = object_class_get_name(class_a);
     name_b = object_class_get_name(class_b);
-    if (strcmp(name_a, "any-" TYPE_ARC_CPU) == 0) {
+    if (strcmp(name_a, TYPE_ARC_CPU_ANY) == 0) {
         return 1;
-    } else if (strcmp(name_b, "any-" TYPE_ARC_CPU) == 0) {
+    } else if (strcmp(name_b, TYPE_ARC_CPU_ANY) == 0) {
         return -1;
     } else {
         return strcmp(name_a, name_b);
@@ -271,7 +271,7 @@ static void arc_cpu_list_entry(gpointer data, gpointer user_data)
     char *name;
 
     typename = object_class_get_name(oc);
-    name = g_strndup(typename, strlen(typename) - strlen("-" TYPE_ARC_CPU));
+    name = g_strndup(typename, strlen(typename) - strlen(ARC_CPU_TYPE_SUFFIX));
     qemu_printf("  %s\n", name);
     g_free(name);
 }

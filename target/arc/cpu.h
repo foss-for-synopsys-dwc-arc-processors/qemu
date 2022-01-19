@@ -33,8 +33,16 @@
 #include "hw/registerfields.h"
 
 #define ARC_CPU_TYPE_SUFFIX "-" TYPE_ARC_CPU
-#define ARC_CPU_TYPE_NAME(model) model ARC_CPU_TYPE_SUFFIX
+#define ARC_CPU_TYPE_NAME(name) (name ARC_CPU_TYPE_SUFFIX)
 #define CPU_RESOLVING_TYPE TYPE_ARC_CPU
+
+#define TYPE_ARC_CPU_ANY               ARC_CPU_TYPE_NAME("any")
+#define TYPE_ARC_CPU_ARC600            ARC_CPU_TYPE_NAME("arc600")
+#define TYPE_ARC_CPU_ARC700            ARC_CPU_TYPE_NAME("arc700")
+#define TYPE_ARC_CPU_ARCEM             ARC_CPU_TYPE_NAME("arcem")
+#define TYPE_ARC_CPU_ARCHS             ARC_CPU_TYPE_NAME("archs")
+#define TYPE_ARC_CPU_HS5X              ARC_CPU_TYPE_NAME("hs5x")
+#define TYPE_ARC_CPU_HS6X              ARC_CPU_TYPE_NAME("hs6x")
 
 /* U-Boot - kernel ABI */
 #define ARC_UBOOT_CMDLINE 1
