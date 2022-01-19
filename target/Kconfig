@@ -1,4 +1,5 @@
 source alpha/Kconfig
+source arc/Kconfig
 source arm/Kconfig
 source avr/Kconfig
 source cris/Kconfig

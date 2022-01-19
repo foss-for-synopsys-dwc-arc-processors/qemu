@@ -215,18 +215,6 @@ static void arc_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
-static bool arc_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,
-                                    const CPUBreakpoint *bp)
-{
-    DisasContext *dc = container_of(dcbase, DisasContext, base);
-
-    tcg_gen_movi_tl(cpu_pc, dc->cpc);
-    dc->base.is_jmp = DISAS_NORETURN;
-    gen_helper_debug(cpu_env);
-    dc->base.pc_next += 2;
-    return true;
-}
-
 static int arc_gen_INVALID(const DisasContext *ctx)
 {
     qemu_log_mask(LOG_UNIMP,
@@ -2035,7 +2023,7 @@ static void arc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 
     if (dc->base.num_insns == dc->base.max_insns &&
         (dc->base.tb->cflags & CF_LAST_IO)) {
-        gen_io_end();
+        dc->base.is_jmp = DISAS_NORETURN;
     }
 }
 
@@ -2052,7 +2040,6 @@ static const TranslatorOps arc_translator_ops = {
     .init_disas_context = arc_tr_init_disas_context,
     .tb_start           = arc_tr_tb_start,
     .insn_start         = arc_tr_insn_start,
-    .breakpoint_check   = arc_tr_breakpoint_check,
     .translate_insn     = arc_tr_translate_insn,
     .tb_stop            = arc_tr_tb_stop,
     .disas_log          = arc_tr_disas_log,
