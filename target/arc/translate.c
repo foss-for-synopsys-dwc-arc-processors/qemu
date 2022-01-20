@@ -77,18 +77,6 @@ TCGv cpu_exclusive_val_hi;
 #define ARRANGE_ENDIAN(endianess, buf)                  \
     ((endianess) ? ror32(buf, 16) : bswap32(buf))
 
-static inline bool use_goto_tb(const DisasContext *dc, target_ulong dest)
-{
-    if (unlikely(dc->base.singlestep_enabled)) {
-        return false;
-    }
-#ifndef CONFIG_USER_ONLY
-    return (dc->base.tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK);
-#else
-    return true;
-#endif
-}
-
 void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest)
 {
     tcg_gen_mov_tl(cpu_pc, dest);
