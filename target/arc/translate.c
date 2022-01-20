@@ -100,9 +100,9 @@ void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest)
     }
 }
 
-static void gen_gotoi_tb(const DisasContext *ctx, int n, target_ulong dest)
+static void gen_gotoi_tb(DisasContext *ctx, int n, target_ulong dest)
 {
-    if (use_goto_tb(ctx, dest)) {
+    if (translator_use_goto_tb(&ctx->base, dest)) {
         tcg_gen_goto_tb(n);
         tcg_gen_movi_tl(cpu_pc, dest);
         tcg_gen_movi_tl(cpu_pcl, dest & (~((target_ulong) 3)));
