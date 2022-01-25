@@ -4339,7 +4339,7 @@ arc_gen_MPYM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
  */
 
 int
-arc_gen_MPYU(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
+arc_gen_MPYU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
     int ret = DISAS_NEXT;
     TCGv temp_3 = tcg_temp_local_new();
