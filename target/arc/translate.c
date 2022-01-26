@@ -81,6 +81,7 @@ void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest)
 {
     tcg_gen_mov_tl(cpu_pc, dest);
     tcg_gen_andi_tl(cpu_pcl, dest, ~((target_ulong) 3));
+    /* TODO: is this really needed !!! */
     if (ctx->base.singlestep_enabled) {
         gen_helper_debug(cpu_env);
     } else {

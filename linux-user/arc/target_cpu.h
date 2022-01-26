@@ -19,7 +19,15 @@ static inline void cpu_clone_regs_parent(CPUARCState *env, unsigned flags)
 static inline void cpu_set_tls(CPUARCState *env, target_ulong newtls)
 {
 #if defined(TARGET_ARC32)
-    env->r[25] = newtls;
+    ARCCPU *cpu = env_archcpu(env);
+    switch (cpu->family) {
+    case ARC_OPCODE_ARC32:
+	env->r[30] = newtls;
+	break;
+    default:
+	env->r[25] = newtls;
+	break;
+    }
 #elif defined(TARGET_ARC64)
     env->r[30] = newtls;
 #else
