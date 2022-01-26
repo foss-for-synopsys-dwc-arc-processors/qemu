@@ -43,7 +43,6 @@ static const VMStateDescription vms_arc_cpu = {
 #endif
 
 static Property arc_cpu_properties[] = {
-/*
     DEFINE_PROP_UINT32("address-size", ARCCPU, cfg.addr_size, 32),
     DEFINE_PROP_BOOL("aps", ARCCPU, cfg.aps_feature, false),
     DEFINE_PROP_BOOL("byte-order", ARCCPU, cfg.byte_order, false),
@@ -117,7 +116,6 @@ static Property arc_cpu_properties[] = {
     DEFINE_PROP_BOOL("slc-datahalf", ARCCPU, cfg.slc_data_halfcycle_steal, false),
     DEFINE_PROP_BOOL("slc-dataadd", ARCCPU, cfg.slc_data_add_pre_pipeline, false),
     DEFINE_PROP_BOOL("uaux", ARCCPU, cfg.uaux_option, false),
-*/
     DEFINE_PROP_UINT32("freq_hz", ARCCPU, cfg.freq_hz, 4600000),
     DEFINE_PROP_END_OF_LIST(),
 };
