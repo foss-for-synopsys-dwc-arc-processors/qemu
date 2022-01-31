@@ -395,6 +395,9 @@ struct ARCCPU {
         bool     slc_data_halfcycle_steal;
         bool     slc_data_add_pre_pipeline;
         bool     uaux_option;
+
+        char	*mmuv6_version;
+        uint8_t	*mmuv3_pgsz0;
     } cfg;
 
     uint32_t family;

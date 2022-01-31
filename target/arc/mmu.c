@@ -26,6 +26,8 @@
 #include "exec/exec-all.h"
 #include "mmu.h"
 
+unsigned char mmu_v3_page_size = 13;
+
 target_ulong
 arc_mmu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
 {
@@ -41,6 +43,8 @@ arc_mmu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
          *        1K entries (256x4), 4 uITLB, 8 uDTLB
          */
         reg = 0x04e21a4a;
+	reg &= ~(0xf << 15); /* PGSZ0 */
+	reg |= ((mmu_v3_page_size - 9) << 15); /* 4K page size */
         break;
     case AUX_ID_tlbindex:
         reg = mmu->tlbindex;
@@ -122,8 +126,8 @@ arc_mmu_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 /* vaddr can't have top bit */
-#define VPN(addr) ((addr) & (PAGE_MASK & (~0x80000000)))
-#define PFN(addr) ((addr) & PAGE_MASK)
+#define VPN(addr) ((addr) & (MMU_V3_PAGE_MASK & (~0x80000000)))
+#define PFN(addr) ((addr) & MMU_V3_PAGE_MASK)
 
 static void
 arc_mmu_debug_tlb_for_set(CPUARCState *env, int set)
@@ -142,7 +146,7 @@ arc_mmu_debug_tlb_for_set(CPUARCState *env, int set)
             if (set_printed == true) {
                 printf(" way %d\n", j);
             }
-            printf("  tlppd0: %08x: vaddr=\t%08x %s %s%s asid=%02x\n",
+            printf("  tlppd0: %08x: vaddr=\t" TARGET_FMT_lx " %s %s%s asid=%02x\n",
                    tlb->pd0, VPN(tlb->pd0),
                    (char *) ((tlb->pd0 & PD0_SZ) != 0 ? "sz1" : "sz0"),
                    (char *) ((tlb->pd0 & PD0_V) != 0 ? "V" : ""),
@@ -175,7 +179,7 @@ arc_mmu_debug_tlb(CPUARCState *env)
 void
 arc_mmu_debug_tlb_for_vaddr(CPUARCState *env, uint32_t vaddr)
 {
-    uint32_t set = (vaddr >> PAGE_SHIFT) & (N_SETS - 1);
+    uint32_t set = (vaddr >> MMU_V3_PAGE_BITS) & (N_SETS - 1);
     arc_mmu_debug_tlb_for_set(env, set);
 }
 
@@ -206,7 +210,7 @@ arc_mmu_lookup_tlb(uint32_t vaddr, uint32_t compare_mask, struct arc_mmu *mmu,
                    int *num_finds, uint32_t *index)
 {
     struct arc_tlb_e *ret = NULL;
-    uint32_t set = (vaddr >> PAGE_SHIFT) & (N_SETS - 1);
+    uint32_t set = (vaddr >> MMU_V3_PAGE_BITS) & (N_SETS - 1);
     struct arc_tlb_e *tlb = &mmu->nTLB[set][0];
     int w;
 
@@ -370,8 +374,8 @@ arc_mmu_aux_set_tlbcmd(const struct arc_aux_reg_detail *aux_reg_detail,
 
             qemu_log_mask(CPU_LOG_MMU,
                           "[MMU] Insert at 0x" TARGET_FMT_lx
-                          ", PID = %d, VPN = 0x%08x, "
-                          "PFN = 0x%08x, pd0 = 0x%08x, pd1 = 0x%08x\n",
+                          ", PID = %d, VPN = 0x" TARGET_FMT_lx ", "
+                          "PFN = 0x" TARGET_FMT_lx ", pd0 = 0x%08x, pd1 = 0x%08x\n",
                           env->pc,
                           pd0 & 0xff,
                           VPN(pd0), PFN(pd1),
@@ -517,11 +521,11 @@ arc_mmu_translate(struct CPUARCState *env,
     if (match == true) {
         if (rwe != MMU_MEM_IRRELEVANT_TYPE) {
             qemu_log_mask(CPU_LOG_MMU,
-                          "[MMU] Translated to 0x%08x, pd0=0x%08x, pd1=0x%08x\n",
-                          (tlb->pd1 & PAGE_MASK) | (vaddr & (~PAGE_MASK)),
+                          "[MMU] Translated to 0x" TARGET_FMT_lx ", pd0=0x%08x, pd1=0x%08x\n",
+                          (tlb->pd1 & MMU_V3_PAGE_MASK) | (vaddr & (~MMU_V3_PAGE_MASK)),
                           tlb->pd0, tlb->pd1);
         }
-        *paddr = (tlb->pd1 & PAGE_MASK) | (vaddr & (~PAGE_MASK));
+        *paddr = (tlb->pd1 & MMU_V3_PAGE_MASK) | (vaddr & (~MMU_V3_PAGE_MASK));
         return true;
     } else {
         if (rwe != MMU_MEM_IRRELEVANT_TYPE) {
@@ -562,17 +566,6 @@ arc_mmu_translate(struct CPUARCState *env,
 }
 
 #ifndef CONFIG_USER_ONLY
-
-static uint32_t
-arc_mmu_page_address_for(uint32_t vaddr)
-{
-    uint32_t ret = VPN(vaddr);
-    if (vaddr >= 0x80000000) {
-        ret |= 0x80000000;
-    }
-    return ret;
-}
-
 static int
 arc_mmu_get_prot_for_index(uint32_t index, CPUARCState *env)
 {
@@ -711,6 +704,8 @@ static int decide_action(const CPUARCState *env,
 
 void arc_mmu_init_v3(CPUARCState *env)
 {
+    ARCCPU *cpu = env_archcpu(env);
+
     env->mmu.v3.enabled = 0;
     env->mmu.v3.pid_asid = 0;
     env->mmu.v3.sasid0 = 0;
@@ -722,6 +717,11 @@ void arc_mmu_init_v3(CPUARCState *env)
     env->mmu.v3.tlbindex = 0;
     env->mmu.v3.tlbcmd = 0;
     env->mmu.v3.scratch_data0 = 0;
+
+    mmu_v3_page_size = cpu->cfg.mmu_page_size_sel0;
+    if(mmu_v3_page_size < 12 || mmu_v3_page_size > 24) {
+	assert("mmu-pagesize0 should be between 12 and 24." == 0);
+    }
 
     memset(env->mmu.v3.nTLB, 0, sizeof(env->mmu.v3.nTLB));
 }
@@ -791,7 +791,7 @@ bool arc_cpu_tlb_fill_v3(CPUState *cs, vaddr address, int size,
     case DIRECT_ACTION:
         tlb_set_page(cs, address & PAGE_MASK, address & PAGE_MASK,
                      PAGE_READ | PAGE_WRITE | PAGE_EXEC,
-                     mmu_idx, TARGET_PAGE_SIZE);
+                     mmu_idx, PAGE_SIZE);
         break;
     case MPU_ACTION:
         if (arc_mpu_translate(env, address, access_type, mmu_idx, &excp)) {
@@ -806,9 +806,10 @@ bool arc_cpu_tlb_fill_v3(CPUState *cs, vaddr address, int size,
         hwaddr paddr;
         if(arc_mmu_translate(env, &paddr, address, rwe, &index, &excp)) {
             int prot = arc_mmu_get_prot_for_index(index, env);
-            address = arc_mmu_page_address_for(address);
+            //address = arc_mmu_page_address_for(address);
+	    address = address & PAGE_MASK;
             tlb_set_page(cs, address, paddr & PAGE_MASK, prot,
-                         mmu_idx, TARGET_PAGE_SIZE);
+                         mmu_idx, PAGE_SIZE);
         } else {
             if (probe) {
                 return false;

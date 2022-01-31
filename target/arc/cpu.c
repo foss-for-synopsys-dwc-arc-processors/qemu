@@ -83,7 +83,7 @@ static Property arc_cpu_properties[] = {
     DEFINE_PROP_UINT32("lpc-size", ARCCPU, cfg.lpc_size, 32),
     DEFINE_PROP_UINT8("mpu-numreg", ARCCPU, cfg.mpu_num_regions, 0),
     DEFINE_PROP_UINT8("mpy-option", ARCCPU, cfg.mpy_option, 2),
-    DEFINE_PROP_UINT32("mmu-pagesize0", ARCCPU, cfg.mmu_page_size_sel0, -1),
+    DEFINE_PROP_UINT32("mmu-pagesize0", ARCCPU, cfg.mmu_page_size_sel0, 13),
     DEFINE_PROP_UINT32("mmu-pagesize1", ARCCPU, cfg.mmu_page_size_sel1, -1),
     DEFINE_PROP_UINT32("mmu-pae", ARCCPU, cfg.mmu_pae_enabled, -1),
     DEFINE_PROP_UINT32("ntlb-numentries", ARCCPU, cfg.ntlb_num_entries, -1),
@@ -117,6 +117,9 @@ static Property arc_cpu_properties[] = {
     DEFINE_PROP_BOOL("slc-dataadd", ARCCPU, cfg.slc_data_add_pre_pipeline, false),
     DEFINE_PROP_BOOL("uaux", ARCCPU, cfg.uaux_option, false),
     DEFINE_PROP_UINT32("freq_hz", ARCCPU, cfg.freq_hz, 4600000),
+
+    DEFINE_PROP_STRING("mmuv6-version", ARCCPU, cfg.mmuv6_version),
+
     DEFINE_PROP_END_OF_LIST(),
 };
 
