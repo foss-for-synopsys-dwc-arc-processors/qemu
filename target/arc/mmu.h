@@ -24,6 +24,10 @@
 
 #include "target/arc/mmu-common.h"
 
+extern unsigned char mmu_v3_page_size;
+#define MMU_V3_PAGE_BITS (mmu_v3_page_size)
+#define MMU_V3_PAGE_MASK ((target_ulong) (((target_long) -1) << MMU_V3_PAGE_BITS))
+
 /* PD0 flags */
 #define PD0_VPN 0x7ffff000
 #define PD0_ASID 0x000000ff
