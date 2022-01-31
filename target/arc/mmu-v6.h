@@ -33,4 +33,5 @@ struct arc_mmuv6 {
 
 int mmuv6_enabled(void);
 
+
 #endif /* ARC64_MMUV6_H */

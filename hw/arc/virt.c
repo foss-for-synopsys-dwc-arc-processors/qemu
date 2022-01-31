@@ -121,7 +121,7 @@ static void virt_init(MachineState *machine)
 
     for (n = 0; n < smp_cpus; n++) {
 #if defined(TARGET_ARC32)
-        cpu = ARC_CPU(cpu_create("archs-" TYPE_ARC_CPU));
+        cpu = ARC_CPU(cpu_create(machine->cpu_type));
 #elif defined(TARGET_ARC64)
         cpu = ARC_CPU(cpu_create("hs6x-" TYPE_ARC_CPU));
 #else
