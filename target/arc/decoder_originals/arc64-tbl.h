@@ -2450,6 +2450,9 @@
 /* breql_s b,0,s8 11101bbb0sssssss.  */
 { "breql_s", 0x0000E800, 0x0000F880, ARC_OPCODE_ARC64, ARITH, NONE, { RB_S, ZB_S, SIMM8_A16_9_S }, { 0 }},
 
+/* breq_s b,0,s8 11101bbb0sssssss.  */
+{ "breq_s", 0x0000E800, 0x0000F880, ARC_OPCODE_ARC32, ARITH, NONE, { RB_S, ZB_S, SIMM8_A16_9_S }, { 0 }},
+
 /* brge<.d>CC_GE b,c,s9 00001bbbsssssss1SBBBCCCCCCN00011.  */
 { "brge", 0x08010003, 0xF801001F, ARC_OPCODE_ARC32 | ARC_OPCODE_ARC64, BRCC, NONE, { RB, RC, SIMM9_A16_8 }, { C_D, C_CC_GE }},
 
@@ -2668,6 +2671,9 @@
 
 /* brnel_s b,0,s8 11101bbb1sssssss.  */
 { "brnel_s", 0x0000E880, 0x0000F880, ARC_OPCODE_ARC64, ARITH, NONE, { RB_S, ZB_S, SIMM8_A16_9_S }, { 0 }},
+
+/* brne_s b,0,s8 11101bbb1sssssss.  */
+{ "brne_s", 0x0000E880, 0x0000F880, ARC_OPCODE_ARC32, ARITH, NONE, { RB_S, ZB_S, SIMM8_A16_9_S }, { 0 }},
 
 /* bset<.f> a,b,c 00100bbb00001111FBBBCCCCCCAAAAAA.  */
 { "bset", 0x200F0000, 0xF8FF0000,ARC_OPCODE_ARC32 | ARC_OPCODE_ARC64, LOGICAL, NONE, { RA, RB, RC }, { C_F }},
