@@ -7674,10 +7674,9 @@ arc_gen_SCONDD(DisasCtxt *ctx, TCGv addr, TCGv value)
     TCGLabel *fail_label = gen_new_label();
     TCGLabel *done_label = gen_new_label();
 
-    tcg_gen_ext_i32_i64(temp_3, pair);
-    tcg_gen_ext_i32_i64(temp_4, value);
+    tcg_gen_ext_i32_i64(temp_3, cpu_exclusive_val_hi);
+    tcg_gen_ext_i32_i64(temp_4, cpu_exclusive_val);
     tcg_gen_shli_i64(temp_3, temp_3, 32);
-
 
     tcg_gen_brcond_tl(TCG_COND_NE, addr, cpu_exclusive_addr, fail_label);
 

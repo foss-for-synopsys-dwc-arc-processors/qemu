@@ -201,8 +201,8 @@ target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
     qemu_mutex_lock(env->arconnect.locked_mutex);
     target_ulong ret = !(entry->lpa_lf & 0x1);
     addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
-    target_ulong rvalue = cpu_ldq_data(env, addr);
-    target_ulong rvalue1 = cpu_ldq_data(env, addr+4);
+    target_ulong rvalue = cpu_ldl_data(env, addr);
+    target_ulong rvalue1 = cpu_ldl_data(env, addr+4);
     if(entry->lpa_lf == (haddr + 1)
        && entry->read_value == rvalue
        && entry->read_value1 == rvalue1
