@@ -248,9 +248,6 @@ void helper_sr(CPUARCState *env, target_ulong val, target_ulong aux)
                       "\n", aux);
         arc_raise_exception(env, GETPC(), EXCP_INST_ERROR);
     }
-#ifndef CONFIG_USER_ONLY
-    cpu_outl(aux, val);
-#endif
 }
 
 
