@@ -7,22 +7,22 @@
       return 0; \
   }
 #define SEMANTIC_FUNCTION_PROTOTYPE_1(NAME) \
-  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv) { \
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *ctx, TCGv a) { \
       assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
       return 0; \
   }
 #define SEMANTIC_FUNCTION_PROTOTYPE_2(NAME) \
-  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv, TCGv) { \
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *ctx, TCGv a, TCGv b) { \
       assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
       return 0; \
   }
 #define SEMANTIC_FUNCTION_PROTOTYPE_3(NAME) \
-  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv, TCGv, TCGv) { \
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) { \
       assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
       return 0; \
   }
 #define SEMANTIC_FUNCTION_PROTOTYPE_4(NAME) \
-  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv, TCGv, TCGv, TCGv) { \
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) { \
       assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
       return 0; \
   }
