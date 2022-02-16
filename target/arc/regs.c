@@ -128,26 +128,16 @@ arc_aux_reg_struct_for_address(int address, int isa_mask)
     return NULL;
 }
 
-
-target_ulong __not_implemented_getter(
-            const struct arc_aux_reg_detail *aux_reg_detail ATTRIBUTE_UNUSED,
-            void *data ATTRIBUTE_UNUSED) {
-       assert("SOME AUX_REG_GETTER NOT IMPLEMENTED " == 0);
-}
-void __not_implemented_setter(
-            const struct arc_aux_reg_detail *aux_reg_detail ATTRIBUTE_UNUSED,
-            target_ulong value ATTRIBUTE_UNUSED,
-            void *data ATTRIBUTE_UNUSED) {
-  assert("SOME AUX_REG_SETTER NOT IMPLEMENTED " == 0);
-}
-
 #define AUX_REG_GETTER(GET_FUNC) \
-    target_ulong GET_FUNC(const struct arc_aux_reg_detail *a, void *b) \
-         __attribute__ ((weak, alias("__not_implemented_getter")));
+    target_ulong __attribute__((weak)) \
+    GET_FUNC(const struct arc_aux_reg_detail *a, void *b) { \
+	assert("SOME AUX_REG_GETTER NOT IMPLEMENTED " == 0); \
+    }
 #define AUX_REG_SETTER(SET_FUNC) \
-    void SET_FUNC(const struct arc_aux_reg_detail *a, target_ulong b, \
-                   void *c) \
-                   __attribute__ ((weak, alias("__not_implemented_setter")));
+    void __attribute__ ((weak)) \
+    SET_FUNC(const struct arc_aux_reg_detail *a, target_ulong b, void *c) { \
+	assert("SOME AUX_REG_SETTER NOT IMPLEMENTED " == 0); \
+    }
 #define AUX_REG(NAME, GET, SET)
 
 #include "target/arc/regs.def"
