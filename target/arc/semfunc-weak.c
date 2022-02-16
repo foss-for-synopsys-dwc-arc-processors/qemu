@@ -1,38 +1,31 @@
 #include "qemu/osdep.h"
 #include "target/arc/semfunc.h"
 
-#define DEF_NOT_IMPLEMENT(COUNT, ...) \
-int __not_implemented_semfunc_##COUNT(DisasCtxt *ctx, __VA_ARGS__) \
-{ \
-  assert("SOME SEMFUNC " #COUNT " WAS NOT IMPLEMENTED" == 0); \
-  return 0; \
-}
-int __not_implemented_semfunc_0(DisasCtxt *ctx)
-{
-  assert("SOME SEMFUNC 0 WAS NOT IMPLEMENTED" == 0);
-  return 0;
-}
-DEF_NOT_IMPLEMENT(1, TCGv a)
-DEF_NOT_IMPLEMENT(2, TCGv a, TCGv b)
-DEF_NOT_IMPLEMENT(3, TCGv a, TCGv b, TCGv c)
-DEF_NOT_IMPLEMENT(4, TCGv a, TCGv b, TCGv c, TCGv d)
-#undef DEF_NOT_IMPLEMENT
-
 #define SEMANTIC_FUNCTION_PROTOTYPE_0(NAME) \
-  int arc_gen_##NAME (DisasCtxt *ctx) \
-         __attribute__ ((weak, alias("__not_implemented_semfunc_0")));
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *ctx) { \
+      assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
+      return 0; \
+  }
 #define SEMANTIC_FUNCTION_PROTOTYPE_1(NAME) \
-  int arc_gen_##NAME (DisasCtxt *, TCGv) \
-         __attribute__ ((weak, alias("__not_implemented_semfunc_1")));
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv) { \
+      assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
+      return 0; \
+  }
 #define SEMANTIC_FUNCTION_PROTOTYPE_2(NAME) \
-  int arc_gen_##NAME (DisasCtxt *, TCGv, TCGv) \
-         __attribute__ ((weak, alias("__not_implemented_semfunc_2")));
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv, TCGv) { \
+      assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
+      return 0; \
+  }
 #define SEMANTIC_FUNCTION_PROTOTYPE_3(NAME) \
-  int arc_gen_##NAME (DisasCtxt *, TCGv, TCGv, TCGv) \
-         __attribute__ ((weak, alias("__not_implemented_semfunc_3")));
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv, TCGv, TCGv) { \
+      assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
+      return 0; \
+  }
 #define SEMANTIC_FUNCTION_PROTOTYPE_4(NAME) \
-  int arc_gen_##NAME (DisasCtxt *, TCGv, TCGv, TCGv, TCGv) \
-         __attribute__ ((weak, alias("__not_implemented_semfunc_4")));
+  int __attribute__ ((weak)) arc_gen_##NAME (DisasCtxt *, TCGv, TCGv, TCGv, TCGv) { \
+      assert("SOME SEMFUNC " #NAME " WAS NOT IMPLEMENTED" == 0); \
+      return 0; \
+  }
 
 #define MAPPING(MNEMONIC, NAME, NOPS, ...)
 #define CONSTANT(...)
