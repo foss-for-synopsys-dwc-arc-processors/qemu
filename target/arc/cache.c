@@ -25,6 +25,15 @@
 #include "cpu.h"
 #include "target/arc/regs.h"
 #include "target/arc/cache.h"
+#include "exec/exec-all.h"
+
+/* TODO: Revisit this code to optimize which addresses get invalidated. */
+static void
+arc_invalidate_cache(CPUARCState *env)
+{
+    CPUState *cs = env_cpu(env);
+    tlb_flush(cs);
+}
 
 void arc_cache_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
                        target_ulong val, void *data)
@@ -41,18 +50,21 @@ void arc_cache_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
     case AUX_ID_dc_flsh:
     case AUX_ID_dc_fldl:
     case AUX_ID_dc_startr:
-       /* Do nothing as we don't simulate cache memories */
-       break;
+	arc_invalidate_cache(env);
+	break;
 
     case AUX_ID_ic_ctrl:
+	arc_invalidate_cache(env);
         cache->ic_disabled = val & 1;
         break;
 
     case AUX_ID_ic_ivir:
+	arc_invalidate_cache(env);
         cache->ic_ivir = val & 0xffffff00;
         break;
 
     case AUX_ID_ic_endr:
+	arc_invalidate_cache(env);
         cache->ic_endr = val & 0xffffff00;
         break;
 
