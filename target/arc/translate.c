@@ -774,6 +774,16 @@ arc_gen_SYNC(DisasCtxt *ctx)
 }
 
 
+int
+arc_gen_HALT(DisasCtxt *ctx)
+{
+    int ret = DISAS_NEXT;
+    TCGv npc = tcg_const_local_tl(ctx->cpc);
+    gen_helper_halt(cpu_env, npc);
+    tcg_temp_free(npc);
+    return ret;
+}
+
 #ifdef TARGET_ARC64
 /*
  * The mpyl instruction is a 64x64 signed multipler that produces
