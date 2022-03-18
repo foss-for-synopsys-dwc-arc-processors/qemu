@@ -344,6 +344,11 @@ static enum arc_opcode_map arc_map_opcode(const struct arc_opcode *opcode)
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
     default:
+        /* TODO: This should be later taken out since default behaviour should
+           be an invalid instruction exception. */
+        qemu_log_mask(LOG_UNIMP,
+                      "Instruction %s is not mapped to semantic function.\n",
+                      opcode->name);
         assert("This should not happen" == 0);
     }
 
