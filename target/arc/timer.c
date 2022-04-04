@@ -67,6 +67,17 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
 
     delta = env->timer[timer].T_Limit - t_count;
 
+    /*
+     * Artificially limit timeout rate to something achievable under
+     * QEMU. Otherwise, QEMU spends all its time generating timer
+     * interrupts, and there is no forward progress. About ten
+     * microseconds is the fastest that really works on the current
+     * generation of host machines.
+     */
+    if (delta < TIMEOUT_LIMIT) {
+        delta = TIMEOUT_LIMIT;
+    }
+
 #ifndef CONFIG_USER_ONLY
     timer_mod_ns(env->cpu_timer[timer], now + CYCLES_TO_NS((uint64_t)delta));
 #endif
@@ -224,9 +235,6 @@ static void cpu_arc_count_reset(CPUARCState *env, uint32_t timer)
 static uint32_t cpu_arc_count_get(CPUARCState *env, uint32_t timer)
 {
     uint32_t count = T_COUNT(timer);
-    if((env->timer[timer].T_Cntrl & TMR_IP) != 0) {
-      count = env->timer[timer].T_Limit;
-    }
     qemu_log_mask(LOG_UNIMP, "[TMR%d] Timer count %d.\n", timer, count);
     return count;
 }
@@ -265,7 +273,6 @@ static void cpu_arc_store_limit(CPUARCState *env,
         break;
     }
     env->timer[timer].T_Limit = value;
-    qemu_log_mask(LOG_UNIMP, "[TMR%d] Set Timer limit "TARGET_FMT_ld".\n", timer, env->timer[timer].T_Limit);
     cpu_arc_timer_update(env, timer);
 }
 
