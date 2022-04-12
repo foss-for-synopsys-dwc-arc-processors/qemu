@@ -970,7 +970,7 @@ const struct arc_operand arc_operands[] = {
     { 0, 0, 0, 0 },
 #define ARC_OPERAND(NAME, BITS, SHIFT, RELO, FLAGS, FUN)       \
     { BITS, SHIFT, FLAGS, FUN },
-#include "target/arc/operands-full.def"
+#include "target/arc/operands.def"
 #undef ARC_OPERAND
     { 0, 0, 0, 0}
 };
@@ -978,7 +978,7 @@ const struct arc_operand arc_operands[] = {
 enum arc_operands_map {
     OPERAND_UNUSED = 0,
 #define ARC_OPERAND(NAME, BITS, SHIFT, RELO, FLAGS, FUN) OPERAND_##NAME,
-#include "target/arc/operands-full.def"
+#include "target/arc/operands.def"
 #undef ARC_OPERAND
     OPERAND_LAST
 };
@@ -993,7 +993,7 @@ const struct arc_flag_operand arc_flag_operands[] = {
     { 0, 0, 0, 0, 0},
 #define ARC_FLAG(NAME, MNEMONIC, CODE, BITS, SHIFT, AVAIL)      \
     { MNEMONIC, CODE, BITS, SHIFT, AVAIL },
-#include "target/arc/flags-full.def"
+#include "target/arc/flags.def"
 #undef ARC_FLAG
     { 0, 0, 0, 0, 0}
 };
@@ -1098,7 +1098,7 @@ const unsigned arc_num_flag_special = ARRAY_SIZE (arc_flag_special_cases);
 #define FLAGS_LIST(...)
 #define MNEMONIC(...)
 static unsigned char operands[OPERANDS_LIST_SIZE+1][MAX_INSN_ARGS] = {
-#include "target/arc/opcodes-full.def"
+#include "target/arc/opcodes.def"
     { 0 } /* NO OPERANDS */
 };
 #undef OPCODE
@@ -1112,7 +1112,7 @@ static unsigned char operands[OPERANDS_LIST_SIZE+1][MAX_INSN_ARGS] = {
 #define FLAGS_LIST(...)
 #define MNEMONIC(...)
 const char *opcode_name_str[OPCODE_SIZE] = {
-    #include "target/arc/opcodes-full.def"
+    #include "target/arc/opcodes.def"
 };
 #undef OPCODE
 #undef OPERANDS_LIST
@@ -1126,7 +1126,7 @@ const char *opcode_name_str[OPCODE_SIZE] = {
   { __VA_ARGS__ , 0 },
 #define MNEMONIC(...)
 static unsigned char flags_arc[FLAGS_SIZE+1][MAX_INSN_FLGS] = {
-#include "target/arc/opcodes-full.def"
+#include "target/arc/opcodes.def"
     { 0 }
 };
 #undef OPCODE
@@ -1141,7 +1141,7 @@ static unsigned char flags_arc[FLAGS_SIZE+1][MAX_INSN_FLGS] = {
 #define FLAGS_LIST(...)
 #define MNEMONIC(...)
 const char *opcode_enum_strs[OPCODE_SIZE] = {
-    #include "target/arc/opcodes-full.def"
+    #include "target/arc/opcodes.def"
 };
 #undef OPCODE
 #undef OPERANDS_LIST
@@ -1165,7 +1165,7 @@ const char *opcode_enum_strs[OPCODE_SIZE] = {
 #define FLAGS_LIST(...)
 #define MNEMONIC(...)
 const struct arc_opcode arc_opcodes[OPCODE_SIZE+1] = {
-#include "target/arc/opcodes-full.def"
+#include "target/arc/opcodes.def"
     { "INVALID", 0, 0, 0, 0, 0, 0, 0 }
 };
 #undef OPCODE

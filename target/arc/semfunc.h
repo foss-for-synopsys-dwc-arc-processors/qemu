@@ -56,7 +56,7 @@ int __not_implemented_semfunc_4(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d);
 #define SEMANTIC_FUNCTION(NAME, NOPS) \
   SEMANTIC_FUNCTION_PROTOTYPE_##NOPS(NAME)
 
-#include "target/arc/semfunc-full_mapping.def"
+#include "target/arc/semfunc-mapping.def"
 
 #undef MAPPING
 #undef CONSTANT

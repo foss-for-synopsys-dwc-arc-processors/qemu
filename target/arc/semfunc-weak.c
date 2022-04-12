@@ -32,7 +32,7 @@
 #define SEMANTIC_FUNCTION(NAME, NOPS) \
   SEMANTIC_FUNCTION_PROTOTYPE_##NOPS(NAME)
 
-#include "semfunc-full_mapping.def"
+#include "semfunc-mapping.def"
 
 #undef MAPPING
 #undef CONSTANT

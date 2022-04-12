@@ -312,7 +312,7 @@ enum arc_opcode_map {
 #define SEMANTIC_FUNCTION(...)
 #define CONSTANT(...)
 #define MAPPING(MNEMONIC, NAME, NOPS, ...) MAP_##MNEMONIC##_##NAME,
-#include "target/arc/semfunc-full_mapping.def"
+#include "target/arc/semfunc-mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -324,7 +324,7 @@ const char number_of_ops_semfunc[MAP_LAST + 1] = {
 #define SEMANTIC_FUNCTION(...)
 #define CONSTANT(...)
 #define MAPPING(MNEMONIC, NAME, NOPS, ...) NOPS,
-#include "target/arc/semfunc-full_mapping.def"
+#include "target/arc/semfunc-mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -339,7 +339,7 @@ static enum arc_opcode_map arc_map_opcode(const struct arc_opcode *opcode)
 #define MAPPING(INSN_NAME, NAME, ...)         \
     case MNEMONIC_##INSN_NAME: \
         return MAP_##INSN_NAME##_##NAME;
-#include "target/arc/semfunc-full_mapping.def"
+#include "target/arc/semfunc-mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -399,7 +399,7 @@ static void init_constants(void)
 #define MAPPING(...)
 #define CONSTANT(NAME, MNEMONIC, OP_NUM, VALUE) \
   add_constant_operand(MAP_##MNEMONIC##_##NAME, OP_NUM, VALUE);
-#include "target/arc/semfunc-full_mapping.def"
+#include "target/arc/semfunc-mapping.def"
 #undef MAPPING
 #undef CONSTANT
 #undef SEMANTIC_FUNCTION
@@ -1858,7 +1858,7 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
                 ret = SEMANTIC_FUNCTION_CALL_##NOPS(NAME, __VA_ARGS__); \
                 break;
         switch (mapping) {
-#include "target/arc/semfunc-full_mapping.def"
+#include "target/arc/semfunc-mapping.def"
 
         default:
             arc_debug_opcode(opcode, ctx, "No handle for map opcode");

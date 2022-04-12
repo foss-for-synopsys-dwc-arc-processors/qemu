@@ -31,7 +31,7 @@ extern "C" {
   MNEMONIC_##NAME,
 enum insn_mnemonic {
     MNEMONIC_INVALID = -1,
-    #include "opcodes-full.def"
+    #include "opcodes.def"
     MNEMONIC_SIZE
 };
 #undef OPCODE
@@ -47,7 +47,7 @@ enum insn_mnemonic {
 #define MNEMONIC(...)
 enum opcode {
     OPCODE_INVALID = -1,
-    #include "opcodes-full.def"
+    #include "opcodes.def"
     OPCODE_SIZE
 };
 #undef OPCODE
@@ -65,7 +65,7 @@ extern const char *opcode_name_str[OPCODE_SIZE];
 #define MNEMONIC(...)
 enum arc_operands {
     OPERANDS_LIST_INVALID = -1,
-    #include "opcodes-full.def"
+    #include "opcodes.def"
     OPERANDS_LIST_SIZE
 };
 #undef OPCODE
@@ -81,7 +81,7 @@ enum arc_operands {
 #define MNEMONIC(...)
 enum arc_flags {
     FLAGS_INVALID = -1,
-    #include "opcodes-full.def"
+    #include "opcodes.def"
     FLAGS_SIZE
 };
 #undef OPCODE
@@ -93,7 +93,7 @@ enum arc_flags {
 enum arc_flags_map {
     F_NULL = 0,
 #define ARC_FLAG(NAME, MNEMONIC, CODE, BITS, SHIFT, AVAIL) F_##NAME,
-#include "target/arc/flags-full.def"
+#include "target/arc/flags.def"
 #undef ARC_FLAG
     F_LAST
 };
