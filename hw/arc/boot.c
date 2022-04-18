@@ -42,12 +42,19 @@ void arc_cpu_reset(void *opaque)
      */
 
     if (info->kernel_cmdline && strlen(info->kernel_cmdline)) {
+        /* Load "cmdline" far enough from the kernel image. */
+        hwaddr cmdline_offset, cmdline_addr;
+        const hwaddr max_page_size = 64 * KiB;
+
         /*
-         * Load "cmdline" far enough from the kernel image.
-         * Round by MAX page size for ARC - 16 KiB.
+         * During early boot only first 1 GiB is mapped by kernel.
+         * So do not place cmdline after that point.
          */
-        hwaddr cmdline_addr = info->ram_start +
-            QEMU_ALIGN_UP(info->ram_size / 2, 16 * KiB);
+        cmdline_offset = MIN(1 * GiB, info->ram_size) -
+            strlen(info->kernel_cmdline);
+        cmdline_addr = info->ram_start +
+            QEMU_ALIGN_DOWN(cmdline_offset, max_page_size);
+
         cpu_physical_memory_write(cmdline_addr, info->kernel_cmdline,
                                   strlen(info->kernel_cmdline));
 
