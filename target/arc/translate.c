@@ -331,6 +331,32 @@ const char number_of_ops_semfunc[MAP_LAST + 1] = {
     2
 };
 
+#if 0
+static void arc_list_unimplemented_mnemonics(void)
+{
+    int i;
+    bool implemented[MNEMONIC_SIZE];
+    memset(implemented, 0, sizeof(implemented));
+
+#define SEMANTIC_FUNCTION(...)
+#define CONSTANT(...)
+#define MAPPING(INSN_NAME, NAME, ...)         \
+    implemented[MNEMONIC_##INSN_NAME] = true;
+#include "target/arc/semfunc-mapping.def"
+
+#undef MAPPING
+#undef CONSTANT
+#undef SEMANTIC_FUNCTION
+    for(i = 0; i < MNEMONIC_SIZE; i++) {
+        if(implemented[i] == 0) {
+            qemu_log_mask(LOG_UNIMP,
+                  "Instruction %s is not mapped\n",
+                  insn_mnemonic_str[i]);
+        }
+    }
+}
+#endif
+
 static enum arc_opcode_map arc_map_opcode(const struct arc_opcode *opcode)
 {
     switch(opcode->mnemonic) {

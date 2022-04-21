@@ -51,7 +51,7 @@ typedef struct {
     bool limm_split_16_p;
 #define unsigned_limm_p limm_p
     bool signed_limm_p;
-    operand_t operands[3];
+    operand_t operands[4];
     uint8_t n_ops;
     uint8_t cc;
     uint8_t aa;
