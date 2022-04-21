@@ -20,9 +20,22 @@
 
 #include "qemu/osdep.h"
 #include "target/arc/decoder.h"
-#include "qemu/osdep.h"
 #include "qemu/bswap.h"
 #include "cpu.h"
+
+/* Mnemonic string */
+#define OPCODE(...)
+#define OPERANDS_LIST(...)
+#define FLAGS_LIST(...)
+#define MNEMONIC(NAME) #NAME,
+const char * insn_mnemonic_str[] = {
+    #include "opcodes.def"
+    "LAST_INVALID"
+};
+#undef OPCODE
+#undef OPERANDS_LIST
+#undef FLAGS_LIST
+#undef MNEMONIC
 
 /* Register names. */
 static const char * const regnames[64] = {
@@ -38,9 +51,23 @@ static const char * const regnames[64] = {
     "r48", "r49", "r50", "r51", "r52", "r53", "r54", "r55",
     "r56", "r57", "r58", "r59", "lp_count", "rezerved", "LIMM", "pcl"
 };
+
+static const char * const fpnames[32] =
+{
+    "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
+    "f8", "f9", "f10", "f1", "f12", "f13", "f14", "f15",
+    "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
+    "f24", "f25", "f26", "f27", "f28", "f29", "f30", "f31"
+};
+
 const char *get_register_name(int value)
 {
     return regnames[value];
+}
+
+const char *get_fpregister_name(int value)
+{
+    return fpnames[value];
 }
 
 static long long int
@@ -952,11 +979,22 @@ extract_rbb (unsigned long long  insn,
 /* Extract address writeback mode for 128-bit loads.  */
 
 static long long
-extract_qq (unsigned long long  insn)
+extract_qq (unsigned long long  insn,
+	    bfd_boolean *invalid ATTRIBUTE_UNUSED)
 {
   long long value;
   value = ((insn & 0x800) >> 11) | ((insn & 0x40) >> (6-1));
   return value;
+}
+
+/* Extract the floating point register number from fs2 slot.  */
+static long long
+extract_fs2 (unsigned long long  insn,
+	         bfd_boolean *invalid ATTRIBUTE_UNUSED)
+{
+    long long value;
+    value = (((insn >> 12) & 0x03) << 3) | ((insn >> 24) & 0x07);
+    return value;
 }
 
 /*

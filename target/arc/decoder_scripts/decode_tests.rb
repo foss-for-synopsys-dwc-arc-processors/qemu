@@ -265,7 +265,7 @@ end
 #
 
 files = {
-  'opcodes-full.def' => [
+  'opcodes.def' => [
     { arch: "ARCv2HS", file: "v2_hs_dtree.def" },
     { arch: "ARCv2EM", file: "v2_em_dtree.def" },
     { arch: "ARC64", file: "v3_hs6x_dtree.def" },

@@ -160,7 +160,8 @@ load_insninfo_if_valid_v2(uint64_t insn,
             }
 
             if (cl_flags->extract) {
-                value = (*cl_flags->extract)(insn);
+                bool tmp = false;
+                value = (*cl_flags->extract)(insn, &tmp);
             } else {
                 value = (insn >> flg_operand->shift) &
                         ((1 << flg_operand->bits) - 1);
@@ -399,7 +400,8 @@ static void print_flags_v2(const struct arc_opcode *opcode,
             }
 
             if (cl_flags->extract) {
-                value = (*cl_flags->extract)(insn);
+                bool invalid = false;
+                value = (*cl_flags->extract)(insn, &invalid);
             } else {
                 value = (insn >> flg_operand->shift) &
                         ((1 << flg_operand->bits) - 1);
