@@ -43,7 +43,7 @@ unsigned int arc_insn_length_v3(uint16_t insn, uint16_t cpu_type)
 
     switch (cpu_type) {
       case ARC_OPCODE_ARC64:
-          if(major_opcode == 0x0b)
+          if(major_opcode == 0x0b || major_opcode == 0x1c)
             return 4;
           return (major_opcode > 0x7) ? 2 : 4;
           break;
@@ -216,7 +216,8 @@ load_insninfo_if_valid_v3(uint64_t insn,
             }
 
             if (cl_flags->extract) {
-                value = (*cl_flags->extract)(insn);
+                bool tmp = false;
+                value = (*cl_flags->extract)(insn, &tmp);
             } else {
                 value = (insn >> flg_operand->shift) &
                         ((1 << flg_operand->bits) - 1);
@@ -404,7 +405,8 @@ static void print_flags_v3(const struct arc_opcode *opcode,
             }
 
             if (cl_flags->extract) {
-                value = (*cl_flags->extract)(insn);
+                bool invalid = false;
+                value = (*cl_flags->extract)(insn, &invalid);
             } else {
                 value = (insn >> flg_operand->shift) &
                         ((1 << flg_operand->bits) - 1);
@@ -521,7 +523,11 @@ static void print_operands_v3(const struct arc_opcode *opcode,
             const char *rname;
 
             assert(value >= 0 && value < 64);
-            rname = get_register_name(value);
+            if (operand->flags & ARC_OPERAND_FP) {
+                rname = get_fpregister_name(value);
+            } else {
+                rname = get_register_name(value);
+            }
             /* A single register. */
             if ((operand->flags & ARC_OPERAND_TRUNCATE) == 0) {
                 (*info->fprintf_func)(info->stream, "%s", rname);

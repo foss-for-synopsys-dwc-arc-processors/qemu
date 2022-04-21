@@ -9,6 +9,8 @@
 #ifndef ARC_DECODER_V3_H
 #define ARC_DECODER_V3_H
 
+#include "qemu/osdep.h"
+#include "exec/cpu-defs.h"
 #include "arc-common.h"
 
 #ifdef __cplusplus
@@ -22,6 +24,8 @@ extern "C" {
 #ifndef MAX_INSN_FLGS
 #define MAX_INSN_FLGS	     10
 #endif
+
+extern const char * insn_mnemonic_str[];
 
 /* Mnemonic enum */
 #define OPCODE(...)
@@ -142,7 +146,8 @@ typedef enum {
     SJLI,
     STORE,
     SUB,
-    XY
+    XY,
+    FLOAT
 } insn_class_t;
 
 /* Instruction Subclass.  */
@@ -292,7 +297,10 @@ const struct arc_opcode *arc_find_format(insn_t *insnd,
 #define ARC_OPERAND_BRAKET      0x1000
 
 /* Replicate value in 16bit chunks. */
-#define ARC_OPERAND_16_SPLIT      0x2000
+#define ARC_OPERAND_16_SPLIT    0x2000
+
+/* Mark a floating point register.  */
+#define ARC_OPERAND_FP          0x8000
 
 /* Mask for selecting the type for typecheck purposes. */
 #define ARC_OPERAND_TYPECHECK_MASK               \
@@ -411,7 +419,8 @@ struct arc_flag_class
      * Some special cases needs to use insert/extract functions for
      * flags as well.
      */
-    long long int (*extract) (unsigned long long instruction);
+    long long int (*extract) (unsigned long long instruction,
+			      bfd_boolean * invalid ATTRIBUTE_UNUSED);
 };
 
 /*
@@ -445,6 +454,7 @@ extern const struct arc_opcode arc_opcodes[];
 unsigned char
 find_insn_for_opcode(uint64_t insn, uint16_t cpu_type, unsigned int len, enum opcode *multi_match);
 const char *get_register_name(int value);
+const char *get_fpregister_name(int value);
 
 /* ARCv3 prototypes */
 unsigned int arc_insn_length_v3(uint16_t insn, uint16_t cpu_type);

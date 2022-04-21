@@ -73,6 +73,16 @@ FLAG_CLASS(AAHARD13,  F_CLASS_OPTIONAL, 0, F_ASFAKE)
 
 FLAG_CLASS(NE,        F_CLASS_REQUIRED | F_CLASS_COND, 0, F_NE)
 
+/* Conditinal Flags used by floating point conditional move instruction. */
+FLAG_CLASS(FPCC,      F_CLASS_OPTIONAL | F_CLASS_EXTEND | F_CLASS_COND,
+		      extract_fs2,
+      		      F_ALWAYS, F_RA, F_EQUAL, F_ZERO, F_NOTEQUAL,
+        	      F_NOTZERO, F_POZITIVE, F_PL, F_NEGATIVE, F_MINUS,
+        	      F_CARRY, F_CARRYSET, F_LOWER, F_CARRYCLR,
+        	      F_NOTCARRY, F_HIGHER, F_OVERFLOWSET, F_OVERFLOW,
+        	      F_NOTOVERFLOW, F_OVERFLOWCLR, F_GT, F_GE, F_LT,
+        	      F_LE, F_HI, F_LS, F_PNZ, F_NJ, F_NM, F_NO_T, F_NULL)
+
 /* The address writeback for 128-bit loads.  */
 FLAG_CLASS(AA_128,    F_CLASS_OPTIONAL | F_CLASS_WB, 0, F_AA128, F_AA128W,
 							F_AA128B, F_AA128S)
