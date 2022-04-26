@@ -67,17 +67,6 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
 
     delta = env->timer[timer].T_Limit - t_count;
 
-    /*
-     * Artificially limit timeout rate to something achievable under
-     * QEMU. Otherwise, QEMU spends all its time generating timer
-     * interrupts, and there is no forward progress. About ten
-     * microseconds is the fastest that really works on the current
-     * generation of host machines.
-     */
-    if (delta < TIMEOUT_LIMIT) {
-        delta = TIMEOUT_LIMIT;
-    }
-
 #ifndef CONFIG_USER_ONLY
     timer_mod_ns(env->cpu_timer[timer], now + CYCLES_TO_NS((uint64_t)delta));
 #endif
