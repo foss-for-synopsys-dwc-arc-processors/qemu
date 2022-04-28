@@ -1,0 +1,9 @@
+This directory contains files copied from binutils project and a script that
+convert the decoding tables in more usable macro definitions. Those macro files
+are produced only during building, and define the following:
+
+  <build>/target/arc/opcodes.def -> instrution decoding definitions.
+  <build>/target/arc/v2_hs_dtree.def -> decision tree macros for ARCv2 HS processors.
+  <build>/target/arc/v2_em_dtree.def -> decision tree macros for ARCv2 EM processors.
+  <build>/target/arc/v3_hs5x_dtree.def -> decision tree macros for ARCv3 HS5x processors.
+  <build>/target/arc/v3_hs6x_dtree.def -> decision tree macros for ARCv3 HS6x processors.
