@@ -1043,9 +1043,9 @@ arc_gen_LDDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv dest_lo)
 
     /* Load the data. */
     if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
-        tcg_gen_qemu_ld_tl(data_lo, addr, ctx->mem_idx, MO_Q);
+        tcg_gen_qemu_ld_tl(data_lo, addr, ctx->mem_idx, MO_UQ);
         tcg_gen_addi_tl(addr, addr, 8);
-        tcg_gen_qemu_ld_tl(data_hi, addr, ctx->mem_idx, MO_Q);
+        tcg_gen_qemu_ld_tl(data_hi, addr, ctx->mem_idx, MO_UQ);
     }
 
     /*
@@ -1158,9 +1158,9 @@ arc_gen_STDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv src)
     }
 
     /* Store the data. */
-    tcg_gen_qemu_st_tl(data_lo, addr, ctx->mem_idx, MO_Q);
+    tcg_gen_qemu_st_tl(data_lo, addr, ctx->mem_idx, MO_UQ);
     tcg_gen_addi_tl(addr, addr, 8);
-    tcg_gen_qemu_st_tl(data_hi, addr, ctx->mem_idx, MO_Q);
+    tcg_gen_qemu_st_tl(data_hi, addr, ctx->mem_idx, MO_UQ);
 
     if (ctx->insn.aa == 2) { /* Post-memory access increment. */
         tcg_gen_add_tl(addr, base, offset);

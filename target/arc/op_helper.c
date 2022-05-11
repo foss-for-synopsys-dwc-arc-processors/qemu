@@ -33,6 +33,7 @@
 #include "sysemu/sysemu.h"
 #include "exec/exec-all.h"
 #include "target/arc/arconnect.h"
+#include "qemu/log.h"
 
 
 static target_ulong get_status32(CPUARCState *env)

@@ -54,6 +54,6 @@ struct arc_arcconnect_info {
     
 extern struct lpa_lf_entry lpa_lfs[LPA_LFS_SIZE];
 
-void arc_arconnect_init(struct ARCCPU *cpu);
+void arc_arconnect_init(ARCCPU *cpu);
 
 #endif /* __ARC_ARCONNECT_H__ */

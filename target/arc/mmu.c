@@ -24,6 +24,7 @@
 //#include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
+#include "qemu/log.h"
 #include "mmu.h"
 
 unsigned char mmu_v3_page_size = 13;
@@ -426,7 +427,7 @@ arc_mmu_have_permission(CPUARCState *env,
 
 /* Translation function to get physical address from virtual address. */
 static bool
-arc_mmu_translate(struct CPUARCState *env,
+arc_mmu_translate(CPUARCState *env,
                   hwaddr *paddr,
                   uint32_t vaddr, enum mmu_access_type rwe,
                   uint32_t *index,

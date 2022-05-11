@@ -8206,7 +8206,7 @@ arc_gen_LLOCKL(DisasCtxt *ctx, TCGv dest, TCGv src)
 #ifndef ARM_LIKE_LLOCK_SCOND
     gen_helper_llockl(dest, cpu_env, src);
 #else
-    tcg_gen_qemu_ld_tl(cpu_exclusive_val, src, ctx->mem_idx, MO_Q);
+    tcg_gen_qemu_ld_tl(cpu_exclusive_val, src, ctx->mem_idx, MO_UQ);
     tcg_gen_mov_tl(dest, cpu_exclusive_val);
     tcg_gen_mov_tl(cpu_exclusive_addr, src);
 #endif
@@ -13589,7 +13589,7 @@ arc_gen_EXL (DisasCtxt *ctx, TCGv b, TCGv c)
   int ret = DISAS_NEXT;
   TCGv temp = tcg_temp_local_new();
   tcg_gen_mov_tl(temp, b);
-  tcg_gen_atomic_xchg_tl(b, c, temp, ctx->mem_idx, MO_Q);
+  tcg_gen_atomic_xchg_tl(b, c, temp, ctx->mem_idx, MO_UQ);
   tcg_temp_free(temp);
 
   return ret;

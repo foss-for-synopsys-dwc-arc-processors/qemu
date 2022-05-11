@@ -101,9 +101,9 @@ void cpu_loop(CPUARCState *env)
                                          env->r[6],
                                          env->r[7]);
                         //}
-                        if (ret == -TARGET_ERESTARTSYS) {
+                        if (ret == -QEMU_ERESTARTSYS) {
                             env->pc -= 2;
-                        } else if (ret != -TARGET_QEMU_ESIGRETURN) {
+                        } else if (ret != -QEMU_ESIGRETURN) {
                             env->r[0] = ret;
                         }
                         CPU_PCL(env) = env->pc & (~1);

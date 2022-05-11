@@ -24,6 +24,7 @@
 #include "exec/exec-all.h"
 #include "mmu-v6.h"
 #include "qemu/error-report.h"
+#include "qemu/log.h"
 
 enum mmuv6_version_enum {
   MMUV6_VERSION_INVALID = -1,
@@ -460,7 +461,7 @@ root_ptr_for_vaddr(uint64_t vaddr, bool *valid)
 #define RESTRICT_TBL_KERNEL_EXECUTE_NEVER (1 << 0)
 
 static bool
-protv_violation(struct CPUARCState *env, uint64_t pte, int level, int table_perm_overwride, enum mmu_access_type rwe)
+protv_violation(CPUARCState *env, uint64_t pte, int level, int table_perm_overwride, enum mmu_access_type rwe)
 {
     bool in_kernel_mode = !(GET_STATUS_BIT(env->stat, Uf)); /* Read status for user mode. */
     bool trigger_prot_v = false;
@@ -509,7 +510,7 @@ protv_violation(struct CPUARCState *env, uint64_t pte, int level, int table_perm
 }
 
 static int
-get_prot_for_pte(struct CPUARCState *env, uint64_t pte,
+get_prot_for_pte(CPUARCState *env, uint64_t pte,
                  int overwrite_permitions)
 {
     int ret = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
@@ -559,7 +560,7 @@ get_prot_for_pte(struct CPUARCState *env, uint64_t pte,
 }
 
 static target_ulong
-page_table_traverse(struct CPUARCState *env,
+page_table_traverse(CPUARCState *env,
 		   target_ulong vaddr, enum mmu_access_type rwe,
            int *prot,
            struct mem_exception *excp)
@@ -725,7 +726,7 @@ void arc_mmu_init_v6(CPUARCState *env)
 #ifndef CONFIG_USER_ONLY
 
 static target_ulong
-arc_mmuv6_translate(struct CPUARCState *env,
+arc_mmuv6_translate(CPUARCState *env,
 		            target_ulong vaddr, enum mmu_access_type rwe,
                     int *prot, struct mem_exception *excp)
 {
@@ -754,7 +755,7 @@ typedef enum {
     MMU_ACTION,
 } ACTION;
 
-static int mmuv6_decide_action(const struct CPUARCState *env,
+static int mmuv6_decide_action(const CPUARCState *env,
                   target_ulong       addr,
                   int                mmu_idx)
 {
