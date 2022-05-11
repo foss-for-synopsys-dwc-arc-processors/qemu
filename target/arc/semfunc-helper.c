@@ -136,8 +136,8 @@ const MemOp memop_for_size_sign[2][3] = {
 
 #ifdef TARGET_ARC64
 const MemOp memop_for_size_sign[2][4] = {
-    { MO_UL, MO_UB, MO_UW, MO_Q }, /* non sign-extended */
-    { MO_SL, MO_SB, MO_SW, MO_Q } /* sign-extended */
+    { MO_UL, MO_UB, MO_UW, MO_UQ }, /* non sign-extended */
+    { MO_SL, MO_SB, MO_SW, MO_SQ } /* sign-extended */
 };
 #endif
 

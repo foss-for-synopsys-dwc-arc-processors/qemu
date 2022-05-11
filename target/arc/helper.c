@@ -31,6 +31,7 @@
 #include "exec/helper-proto.h"
 #include "irq.h"
 #include "semihosting/semihost.h"
+#include "qemu/log.h"
 
 #ifndef CONFIG_USER_ONLY
 void arc_cpu_do_interrupt(CPUState *cs)

@@ -23,6 +23,9 @@
 #include "exec/cpu-defs.h"
 #include "fpu/softfloat.h"
 
+struct CPUArchState;
+typedef struct CPUArchState CPUARCState;
+
 #include "target/arc/arc-common.h"
 #include "target/arc/mmu-v6.h"
 #include "target/arc/mmu.h"
@@ -212,7 +215,7 @@ typedef struct {
     target_ulong status;
 } ARCIrq;
 
-typedef struct CPUARCState {
+struct CPUArchState {
     target_ulong        r[64];
     uint64_t            fpr[32];      /* assume both F and D extensions. */
 
@@ -275,8 +278,8 @@ typedef struct CPUARCState {
       struct arc_mmu v3;
       struct arc_mmuv6 v6;
     } mmu;
-    ARCMPU mpu;               /* mpu.h */
-    struct arc_arcconnect_info arconnect;
+    struct ARCMPU mpu;        /* mpu.h */
+    struct arc_arcconnect_info arconnect; /* arconnect.h */
     struct arc_cache cache;   /* cache.h */
 
     bool      stopped;
@@ -304,8 +307,87 @@ typedef struct CPUARCState {
     target_ulong exclusive_addr;
     target_ulong exclusive_val;
     target_ulong exclusive_val_hi;
+};
 
-} CPUARCState;
+struct ARCCPUConfig {
+    uint32_t addr_size;
+    uint32_t br_bc_entries;
+    uint32_t br_pt_entries;
+    uint32_t br_bc_tag_size;
+    uint32_t external_interrupts;
+    uint32_t intvbase_preset;
+    uint32_t lpc_size;
+    uint32_t mmu_page_size_sel0;
+    uint32_t mmu_page_size_sel1;
+    uint32_t mmu_pae_enabled;
+    uint32_t ntlb_num_entries;
+    uint32_t num_actionpoints;
+    uint32_t number_of_interrupts;
+    uint32_t number_of_levels;
+    uint32_t pct_counters;
+    uint32_t pct_interrupt;
+    uint32_t pc_size;
+    uint32_t rgf_num_regs;
+    uint32_t rgf_banked_regs;
+    uint32_t rgf_num_banks;
+    uint32_t rtt_feature_level;
+    uint32_t smar_stack_entries;
+    uint32_t smart_implementation;
+    uint32_t stlb_num_entries;
+    uint32_t slc_size;
+    uint32_t slc_line_size;
+    uint32_t slc_ways;
+    uint32_t slc_tag_banks;
+    uint32_t slc_tram_delay;
+    uint32_t slc_dbank_width;
+    uint32_t slc_data_banks;
+    uint32_t slc_dram_delay;
+    uint32_t slc_ecc_option;
+    uint32_t freq_hz; /* CPU frequency in hz, needed for timers. */
+    uint8_t  br_rs_entries;
+    uint8_t  br_tosq_entries;
+    uint8_t  br_fb_entries;
+    uint8_t  dccm_mem_cycles;
+    uint8_t  dccm_mem_bancks;
+    uint8_t  dc_mem_cycles;
+    uint8_t  ecc_option;
+    uint8_t  mpu_num_regions;
+    uint8_t  mpy_option;
+    bool     aps_feature;
+    bool     byte_order;
+    bool     bitscan_option;
+    bool     br_bc_full_tag;
+    bool     code_density;
+    bool     code_protect;
+    bool     dccm_posedge;
+    bool     dc_posedge;
+    bool     dmp_unaligned;
+    bool     ecc_exception;
+    bool     firq_option;
+    bool     fpu_dp_option;
+    bool     fpu_fma_option;
+    bool     fpu_div_option;
+    bool     has_actionpoints;
+    bool     has_fpu;
+    bool     has_interrupts;
+    bool     has_mmu;
+    bool     has_mpu;
+    bool     has_timer_0;
+    bool     has_timer_1;
+    bool     has_pct;
+    bool     has_rtt;
+    bool     has_smart;
+    bool     rtc_option;
+    bool     stack_checking;
+    bool     swap_option;
+    bool     slc_mem_bus_width;
+    bool     slc_data_halfcycle_steal;
+    bool     slc_data_add_pre_pipeline;
+    bool     uaux_option;
+
+    char     *mmuv6_version;
+    uint8_t  *mmuv3_pgsz0;
+};
 
 /*
  * ArcCPU:
@@ -313,92 +395,14 @@ typedef struct CPUARCState {
  *
  * An ARC CPU.
  */
-struct ARCCPU {
+struct ArchCPU {
     /*< private >*/
     CPUState parent_obj;
 
     /*< public >*/
 
     /* ARC Configuration Settings. */
-    struct {
-        uint32_t addr_size;
-        uint32_t br_bc_entries;
-        uint32_t br_pt_entries;
-        uint32_t br_bc_tag_size;
-        uint32_t external_interrupts;
-        uint32_t intvbase_preset;
-        uint32_t lpc_size;
-        uint32_t mmu_page_size_sel0;
-        uint32_t mmu_page_size_sel1;
-        uint32_t mmu_pae_enabled;
-        uint32_t ntlb_num_entries;
-        uint32_t num_actionpoints;
-        uint32_t number_of_interrupts;
-        uint32_t number_of_levels;
-        uint32_t pct_counters;
-        uint32_t pct_interrupt;
-        uint32_t pc_size;
-        uint32_t rgf_num_regs;
-        uint32_t rgf_banked_regs;
-        uint32_t rgf_num_banks;
-        uint32_t rtt_feature_level;
-        uint32_t smar_stack_entries;
-        uint32_t smart_implementation;
-        uint32_t stlb_num_entries;
-        uint32_t slc_size;
-        uint32_t slc_line_size;
-        uint32_t slc_ways;
-        uint32_t slc_tag_banks;
-        uint32_t slc_tram_delay;
-        uint32_t slc_dbank_width;
-        uint32_t slc_data_banks;
-        uint32_t slc_dram_delay;
-        uint32_t slc_ecc_option;
-        uint32_t freq_hz; /* CPU frequency in hz, needed for timers. */
-        uint8_t  br_rs_entries;
-        uint8_t  br_tosq_entries;
-        uint8_t  br_fb_entries;
-        uint8_t  dccm_mem_cycles;
-        uint8_t  dccm_mem_bancks;
-        uint8_t  dc_mem_cycles;
-        uint8_t  ecc_option;
-        uint8_t  mpu_num_regions;
-        uint8_t  mpy_option;
-        bool     aps_feature;
-        bool     byte_order;
-        bool     bitscan_option;
-        bool     br_bc_full_tag;
-        bool     code_density;
-        bool     code_protect;
-        bool     dccm_posedge;
-        bool     dc_posedge;
-        bool     dmp_unaligned;
-        bool     ecc_exception;
-        bool     firq_option;
-        bool     fpu_dp_option;
-        bool     fpu_fma_option;
-        bool     fpu_div_option;
-        bool     has_actionpoints;
-        bool     has_fpu;
-        bool     has_interrupts;
-        bool     has_mmu;
-        bool     has_mpu;
-        bool     has_timer_0;
-        bool     has_timer_1;
-        bool     has_pct;
-        bool     has_rtt;
-        bool     has_smart;
-        bool     rtc_option;
-        bool     stack_checking;
-        bool     swap_option;
-        bool     slc_mem_bus_width;
-        bool     slc_data_halfcycle_steal;
-        bool     slc_data_add_pre_pipeline;
-        bool     uaux_option;
-
-        char	*mmuv6_version;
-        uint8_t	*mmuv3_pgsz0;
-    } cfg;
+    struct ARCCPUConfig cfg;
 
     uint32_t family;
 
@@ -433,9 +437,6 @@ static inline bool is_user_mode(const CPUARCState *env)
 #define cpu_list            arc_cpu_list
 #define cpu_signal_handler  cpu_arc_signal_handler
 #define cpu_init(cpu_model) cpu_generic_init(TYPE_ARC_CPU, cpu_model)
-
-typedef CPUARCState CPUArchState;
-typedef ARCCPU ArchCPU;
 
 #include "exec/cpu-all.h"
 

@@ -26,6 +26,7 @@
 #include "hw/arc/cpudevs.h"
 #include "timer.h"
 #include "qemu/main-loop.h"
+#include "qemu/log.h"
 
 #define NANOSECONDS_PER_SECOND 1000000000LL
 #define TIMER_PERIOD(hz) (1000000000LL / (hz))

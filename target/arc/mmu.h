@@ -104,10 +104,8 @@ struct arc_mmu {
 };
 
 
-struct CPUARCState;
-
-void arc_mmu_debug_tlb(struct CPUARCState *env);
-void arc_mmu_debug_tlb_for_vaddr(struct CPUARCState *env, uint32_t vaddr);
+void arc_mmu_debug_tlb(CPUARCState *env);
+void arc_mmu_debug_tlb_for_vaddr(CPUARCState *env, uint32_t vaddr);
 
 
 #endif /* ARC_MMU_H */

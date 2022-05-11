@@ -21,9 +21,9 @@
 
 #include "qemu/osdep.h"
 #include "mpu.h"
-#include "cpu.h"
 #include "exec/exec-all.h"
 #include "mmu.h"
+#include "qemu/log.h"
 
 #ifndef CONFIG_USER_ONLY
 /*
@@ -194,10 +194,10 @@ static void unpack_perm_reg(MPUPermReg *mpurdp, uint32_t value)
 
 
 /* Extern function: To be called at reset() */
-void arc_mpu_init(struct ARCCPU *cpu)
+void arc_mpu_init(ARCCPU *cpu)
 {
     static const MPUPermissions INITIAL_PERMS = {0};
-    ARCMPU *mpu = &cpu->env.mpu;
+    struct ARCMPU *mpu = &cpu->env.mpu;
     size_t idx = 0;
 
     /* Maybe the version must be determinded also based on CPU type */
@@ -253,7 +253,7 @@ static void validate_mpu_regs_access(CPUARCState *env)
 }
 
 /* If 'rgn' is higher than configured region number, throw an exception */
-static inline void validate_region_number(const ARCMPU *mpu, uint8_t rgn)
+static inline void validate_region_number(const struct ARCMPU *mpu, uint8_t rgn)
 {
     if (!(rgn < mpu->reg_bcr.regions)) {
         arc_raise_exception(container_of(mpu, CPUARCState, mpu), /* env */
@@ -267,7 +267,7 @@ target_ulong
 arc_mpu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
 {
     validate_mpu_regs_access((CPUARCState *) data);
-    ARCMPU *mpu = &(((CPUARCState *) data)->mpu);
+    struct ARCMPU *mpu = &(((CPUARCState *) data)->mpu);
     uint32_t reg = 0;
 
     switch (aux_reg_detail->id) {
@@ -299,7 +299,7 @@ arc_mpu_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
 }
 
 /* Log the MPU sensitive information */
-static void log_mpu_data(const ARCMPU *mpu)
+static void log_mpu_data(const struct ARCMPU *mpu)
 {
     char suffix[4] = " B";
     uint32_t size;
@@ -359,7 +359,7 @@ arc_mpu_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
                 const target_ulong value, void *data)
 {
     validate_mpu_regs_access((CPUARCState *) data);
-    ARCMPU *mpu = &(((CPUARCState *) data)->mpu);
+    struct ARCMPU *mpu = &(((CPUARCState *) data)->mpu);
 
     switch (aux_reg_detail->id) {
     case AUX_ID_mpuen:
@@ -490,7 +490,7 @@ static void set_exception(CPUARCState *env, uint32_t addr,
  * Since regions with lower index has higher priority, the first match
  * is the correct one even if there is overlap among regions.
  */
-static uint8_t get_matching_region(const ARCMPU *mpu, uint32_t addr)
+static uint8_t get_matching_region(const struct ARCMPU *mpu, uint32_t addr)
 {
     qemu_log_mask(CPU_LOG_MMU, "[MPU] looking up: addr=0x%08x\n", addr);
     for (uint8_t r = 0; r < mpu->reg_bcr.regions; ++r) {
@@ -516,7 +516,7 @@ static uint8_t get_matching_region(const ARCMPU *mpu, uint32_t addr)
  * If 'region' is MPU_DEFAULT_REGION_NR, then the default permission
  * from MPU_EN register is returned.
  */
-static const MPUPermissions *get_permission(const ARCMPU *mpu,
+static const MPUPermissions *get_permission(const struct ARCMPU *mpu,
                                             uint8_t region)
 {
     if (region < mpu->reg_bcr.regions) {
@@ -549,7 +549,7 @@ static const MPUPermissions *get_permission(const ARCMPU *mpu,
  * The logic is to check if any of the valid regions is contained in
  * the page that 'addr' belongs to.
  */
-static bool is_overlap_free(const ARCMPU *mpu, target_ulong addr,
+static bool is_overlap_free(const struct ARCMPU *mpu, target_ulong addr,
                             uint8_t current_region)
 {
     /* Nothing has higher priority than region 0 */
@@ -639,7 +639,7 @@ arc_mpu_translate(CPUARCState *env, target_ulong addr,
                   MMUAccessType access, int mmu_idx,
                   struct mem_exception *excp)
 {
-    ARCMPU *mpu = &env->mpu;
+    struct ARCMPU *mpu = &env->mpu;
 
     uint8_t region = get_matching_region(mpu, addr);
     const MPUPermissions *perms = get_permission(mpu, region);
@@ -655,7 +655,7 @@ arc_mpu_translate(CPUARCState *env, target_ulong addr,
 
 /* See declaration in mpu.h. */
 bool
-arc_mpu_is_rgn_reg_available(const struct CPUARCState *env,
+arc_mpu_is_rgn_reg_available(const CPUARCState *env,
                              const uint8_t region)
 {
     return (env->mpu.reg_bcr.version != 0 &&

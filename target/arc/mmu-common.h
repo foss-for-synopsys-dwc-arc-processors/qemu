@@ -22,6 +22,8 @@
 #ifndef ARC_MMU_COMMON_H
 #define ARC_MMU_COMMON_H
 
+#include "target/arc/cpu-qom.h"
+
 #define PAGE_SHIFT      TARGET_PAGE_BITS
 #define PAGE_SIZE       (1 << PAGE_SHIFT)
 #define PAGE_MASK       (~(PAGE_SIZE - 1))
@@ -33,7 +35,6 @@ enum mmu_version {
   MMU_VERSION_LAST
 };
 
-typedef struct CPUARCState CPUARCState;
 enum mmu_version get_mmu_version(CPUARCState *env);
 
 /* NOTE: Do not reorder, this is casted in tbl_fill function. */
@@ -82,7 +83,7 @@ struct mem_exception {
 struct CPUARCState;
 
 /* ARCv2 MMU functions */
-void arc_mmu_init_v3(struct CPUARCState *env);
+void arc_mmu_init_v3(CPUARCState *env);
 bool
 arc_get_physical_addr_v3(struct CPUState *cs, hwaddr *paddr, vaddr addr,
                   enum mmu_access_type rwe, bool probe,
@@ -90,11 +91,11 @@ arc_get_physical_addr_v3(struct CPUState *cs, hwaddr *paddr, vaddr addr,
 bool arc_cpu_tlb_fill_v3(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr);
-hwaddr arc_mmu_debug_translate_v3(struct CPUARCState *env, vaddr addr);
-void arc_mmu_disable_v3(struct CPUARCState *env);
+hwaddr arc_mmu_debug_translate_v3(CPUARCState *env, vaddr addr);
+void arc_mmu_disable_v3(CPUARCState *env);
 
 /* ARCv3 MMU functions */
-void arc_mmu_init_v6(struct CPUARCState *env);
+void arc_mmu_init_v6(CPUARCState *env);
 bool
 arc_get_physical_addr_v6(struct CPUState *cs, hwaddr *paddr, vaddr addr,
                   enum mmu_access_type rwe, bool probe,
@@ -102,7 +103,7 @@ arc_get_physical_addr_v6(struct CPUState *cs, hwaddr *paddr, vaddr addr,
 bool arc_cpu_tlb_fill_v6(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr);
-hwaddr arc_mmu_debug_translate_v6(struct CPUARCState *env, vaddr addr);
-void arc_mmu_disable_v6(struct CPUARCState *env);
+hwaddr arc_mmu_debug_translate_v6(CPUARCState *env, vaddr addr);
+void arc_mmu_disable_v6(CPUARCState *env);
 
 #endif /* ARC_MMU_COMMON_H */

@@ -22,9 +22,9 @@
 #ifndef ARC_MPU_H
 #define ARC_MPU_H
 
+#include "target/arc/cpu-qom.h"
 #include "target/arc/regs.h"
 #include "target/arc/mmu-common.h"
-#include "cpu-qom.h"
 
 /* These values are based on ARCv2 ISA PRM for ARC HS processors */
 #define ARC_MPU_VERSION         0x03    /* MPU version supported          */
@@ -90,7 +90,7 @@ typedef struct MPUPermReg {
     MPUPermissions permission; /* region's permissions */
 } MPUPermReg;
 
-typedef struct ARCMPU {
+struct ARCMPU {
     bool         enabled;
 
     MPUBCR       reg_bcr;
@@ -99,18 +99,15 @@ typedef struct ARCMPU {
     /* Base and permission registers are paired */
     MPUBaseReg   reg_base[ARC_MPU_MAX_NR_REGIONS];
     MPUPermReg   reg_perm[ARC_MPU_MAX_NR_REGIONS];
-} ARCMPU;
+};
 
 enum ARCMPUVerifyRet {
   MPU_SUCCESS,
   MPU_FAULT
 };
 
-struct ARCCPU;
-struct CPUARCState;
-
 /* Used during a reset */
-extern void arc_mpu_init(struct ARCCPU *cpu);
+extern void arc_mpu_init(ARCCPU *cpu);
 
 /*
  * Verifies if 'access' to 'addr' is allowed or not.
@@ -119,7 +116,7 @@ extern void arc_mpu_init(struct ARCCPU *cpu);
  * MPU_FAULT   - not allowed; corresponding exception parameters are set
  */
 extern int
-arc_mpu_translate(struct CPUARCState *env, target_ulong addr,
+arc_mpu_translate(CPUARCState *env, target_ulong addr,
                   MMUAccessType access, int mmu_idx,
                   struct mem_exception *excp);
 
@@ -128,7 +125,7 @@ arc_mpu_translate(struct CPUARCState *env, target_ulong addr,
  * is mainly used when those region registers are queried by gdbstub.
  */
 extern bool
-arc_mpu_is_rgn_reg_available(const struct CPUARCState *env,
+arc_mpu_is_rgn_reg_available(const CPUARCState *env,
                              const uint8_t region);
 
 #endif /* ARC_MPU_H */

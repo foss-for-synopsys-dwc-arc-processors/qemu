@@ -256,7 +256,7 @@ long do_rt_sigreturn(CPUARCState *env)
 
     unlock_user_struct(sf, sf_addr, 0);
 
-    return -TARGET_QEMU_ESIGRETURN;
+    return -QEMU_ESIGRETURN;
 badfrm:
     unlock_user_struct(sf, sf_addr, 0);
     force_sig(TARGET_SIGSEGV);
