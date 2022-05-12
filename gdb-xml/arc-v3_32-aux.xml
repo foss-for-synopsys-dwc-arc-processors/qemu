@@ -33,18 +33,18 @@
     <field name="p0"      start="16" end="19"/>
     <field name="p1"      start="20" end="23"/>
   </flags>
-  <flags id="irq_build_type" size="8">
+  <flags id="irq_build_type" size="4">
     <field name="version" start="0"  end="7"/>
     <field name="IRQs"    start="8"  end="15"/>
     <field name="exts"    start="16" end="23"/>
     <field name="p"       start="24" end="27"/>
     <field name="f"       start="28" end="28"/>
   </flags>
-  <flags id="vecbase_build_type" size="8">
+  <flags id="vecbase_build_type" size="4">
     <field name="version" start="2"  end="9"/>
     <field name="addr"    start="10" end="31"/>
   </flags>
-  <flags id="isa_config_type" size="8">
+  <flags id="isa_config_type" size="4">
     <field name="version"   start="0"  end="7"/>
     <field name="va_size"   start="8"  end="11"/>
     <field name="pa_size"   start="16" end="19"/>
@@ -55,7 +55,7 @@
     <field name="c"         start="26" end="27"/>
     <field name="d"         start="28" end="29"/>
   </flags>
-  <flags id="timer_ctrl_type" size="8">
+  <flags id="timer_ctrl_type" size="4">
     <field name="ie" start="0" end="0"/>
     <field name="nh" start="1" end="1"/>
     <field name="w"  start="2" end="2"/>
@@ -68,15 +68,7 @@
     <field name="wx"  start="2" end="2"/>
     <field name="tce" start="3" end="3"/>
   </struct>
-  <struct id="tlbindex_type" size="4">
-    <field name="index" start="0"  end="15"/>
-    <field name="rc"    start="28" end="30"/>
-    <field name="e"     start="31" end="31"/>
-  </struct>
-  <struct id="tlbcmd_type" size="4">
-    <field name="cmd" start="0" end="5"/>
-  </struct>
-  <flags id="erstatus_type" size="8">
+  <flags id="erstatus_type" size="4">
     <field name="e"  start="1"  end="4" />
     <field name="ae" start="5"  end="5" />
     <field name="de" start="6"  end="6" />
@@ -94,21 +86,21 @@
     <field name="us" start="20" end="20"/>
     <field name="ie" start="31" end="31"/>
   </flags>
-  <flags id="ecr_type" size="8">
+  <flags id="ecr_type" size="4">
     <field name="parameter"    start="0"  end="7" />
     <field name="causecode"    start="8"  end="15"/>
     <field name="vectornumber" start="16" end="23"/>
     <field name="u"            start="30" end="30"/>
     <field name="p"            start="31" end="31"/>
   </flags>
-  <flags id="irq_ctrl_type" size="8">
+  <flags id="irq_ctrl_type" size="4">
     <field name="nr" start="0"  end="4"/>
     <field name="b"  start="9"  end="9"/>
     <field name="l"  start="10" end="10"/>
     <field name="u"  start="11" end="11"/>
     <field name="lp" start="13" end="13"/>
   </flags>
-  <flags id="irq_act_type" size="8">
+  <flags id="irq_act_type" size="4">
     <field name="active" start="0" end="15"/>
     <field name="u" start="31" end="31"/>
   </flags>
