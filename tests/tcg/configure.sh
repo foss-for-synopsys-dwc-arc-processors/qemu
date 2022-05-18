@@ -106,6 +106,11 @@ for target in $target_list; do
       container_image=debian-alpha-cross
       container_cross_cc=alpha-linux-gnu-gcc
       ;;
+    arc-*)
+      container_hosts=x86_64
+      container_image=debian-arc-cross
+      container_cross_cc=arc64-linux-gnu-gcc
+      ;;
     arm-*)
       # We don't have any bigendian build tools so we only use this for ARM
       container_hosts="x86_64 aarch64"

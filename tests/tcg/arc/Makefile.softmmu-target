@@ -6,38 +6,42 @@ ARC_SRC = $(SRC_PATH)/tests/tcg/arc
 ARC_ALL = $(filter-out $(ARC_SRC)/ivt.S,$(wildcard $(ARC_SRC)/*.S))
 ARC_TESTS = $(patsubst $(ARC_SRC)/%.S, %, $(ARC_ALL))
 
+TEST_DIR = ${BUILD_DIR}/tests/tcg/${TARGET}
+
 # Filter out common blobs and broken tests
-ARC_BROKEN_TESTS = check_carry check_excp_jumpdl_mmu
+#ARC_BROKEN_TESTS = check_carry check_excp_jumpdl_mmu
+ARC_BROKEN_TESTS = check_enter_leave check_excp_jumpdl_mmu check_lddl check_ldstx \
+                   check_lp check_lp02 check_lp03 check_lp04 check_lp05 check_lp06 \
+				   check_stdl check_swapl check_swirq1 \
+				   check_big_tb check_manip_10_mmu check_manip_4_mmu check_manip_5_mmu check_timer0_sleep check_timerX_freq                # QEMU ERRORS
 ARC_USABLE_TESTS = $(filter-out $(ARC_BROKEN_TESTS), $(ARC_TESTS))
 
 # add to the list of tests
 TESTS += $(ARC_USABLE_TESTS)
 VPATH += $(ARC_SRC)
 
-QEMU_OPTS+=-M arc-sim -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
+QEMU_OPTS+=-M arc-sim -cpu hs5x -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
 
-CROSS = arc-elf32-
-
-ASFLAGS = -mcpu=archs
-LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
-MMU_LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc_mmu.ld -nostartfiles -nostdlib
+ASFLAGS = -mcpu=hs5x
+#LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
+LDFLAGS = --specs=nsim.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
+#MMU_LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc_mmu.ld -nostartfiles -nostdlib
 CRT = ivt.o
 
-SIM = ../../../qemu-system-arc
-SIM_FLAGS = -M arc-sim -m 3G -nographic -no-reboot -monitor none \
-	            -serial stdio -global cpu.mpu-numreg=8 -kernel
+#$ arc64-elf-gcc --specs=nsim.specs hello.c -o hello
+#$ qemu-system-arc64 -semihosting -cpu hs6x -kernel hello
 
 $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
 
 # special rule for common blobs
 %.o: %.S
-	cd ${BUILD_DIR} && \
+	cd ${TEST_DIR} && \
 	$(CC) -I$(ARC_SRC) $($*ASFLAGS) $(ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
 
-%_mmu: %_mmu.o
-	cd ${BUILD_DIR} && \
-	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT)
+#%_mmu: %_mmu.o
+#	cd ${BUILD_DIR} && \
+#	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT)
 
 %: %.o
-	cd ${BUILD_DIR} && \
+	cd ${TEST_DIR} && \
 	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT)
