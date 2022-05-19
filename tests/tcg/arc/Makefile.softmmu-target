@@ -3,45 +3,72 @@
 #
 
 ARC_SRC = $(SRC_PATH)/tests/tcg/arc
-ARC_ALL = $(filter-out $(ARC_SRC)/ivt.S,$(wildcard $(ARC_SRC)/*.S))
-ARC_TESTS = $(patsubst $(ARC_SRC)/%.S, %, $(ARC_ALL))
-
 TEST_DIR = ${BUILD_DIR}/tests/tcg/${TARGET}
 
-# Filter out common blobs and broken tests
-#ARC_BROKEN_TESTS = check_carry check_excp_jumpdl_mmu
-ARC_BROKEN_TESTS = check_enter_leave check_excp_jumpdl_mmu check_lddl check_ldstx \
-                   check_lp check_lp02 check_lp03 check_lp04 check_lp05 check_lp06 \
-				   check_stdl check_swapl check_swirq1 \
-				   check_big_tb check_manip_10_mmu check_manip_4_mmu check_manip_5_mmu check_timer0_sleep check_timerX_freq                # QEMU ERRORS
-ARC_USABLE_TESTS = $(filter-out $(ARC_BROKEN_TESTS), $(ARC_TESTS))
+# ARC GENERIC (HS and HS5X)
+ARC_GEN_SRC = ${ARC_SRC}/generic
+ARC_GEN_FILES = $(filter-out $(ARC_GEN_SRC)/ivt.S,$(wildcard $(ARC_GEN_SRC)/*.S))
+ARC_GEN_TESTS = $(patsubst $(ARC_GEN_SRC)/%.S, %_gen, $(ARC_GEN_FILES))
+
+# ARC HS
+ARC_HS_SRC = ${ARC_SRC}/hs
+ARC_HS_FILES = $(wildcard $(ARC_HS_SRC)/*.S)
+ARC_HS_TESTS = $(patsubst %, %_hs, $(ARC_GEN_TESTS))
+ARC_HS_TESTS += $(patsubst $(ARC_HS_SRC)/%.S, %_hs, $(ARC_HS_FILES))
+ARC_HS_ASFLAGS = -mcpu=archs
+ARC_HS_CC = arc-elf32-gcc
+
+# ARC HS5X
+ARC_HS5X_SRC = ${ARC_SRC}/hs5x
+ARC_HS5X_FILES = $(wildcard $(ARC_HS5X_SRC)/*.S)
+ARC_HS5X_TESTS = $(patsubst %, %_hs5x, $(ARC_GEN_TESTS))
+ARC_HS5X_TESTS += $(patsubst $(ARC_HS5X_SRC)/%.S, %_hs5x, $(ARC_HS5X_FILES))
+ARC_HS5X_ASFLAGS = -mcpu=hs5x
+ARC_HS5X_CC = arc64-elf-gcc
+
+ARC_USABLE_TESTS = ${ARC_HS_TESTS} ${ARC_HS5X_TESTS}
 
 # add to the list of tests
 TESTS += $(ARC_USABLE_TESTS)
 VPATH += $(ARC_SRC)
 
-QEMU_OPTS+=-M arc-sim -cpu hs5x -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
-
-ASFLAGS = -mcpu=hs5x
-#LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
 LDFLAGS = --specs=nsim.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
-#MMU_LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc_mmu.ld -nostartfiles -nostdlib
-CRT = ivt.o
+CRT_HS = ivt_gen_hs.o
+CRT_HS5X = ivt_gen_hs5x.o
 
-#$ arc64-elf-gcc --specs=nsim.specs hello.c -o hello
-#$ qemu-system-arc64 -semihosting -cpu hs6x -kernel hello
+$(ARC_USABLE_TESTS): $(CRT_HS) $(CRT_HS5X) Makefile.softmmu-target
 
-$(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
-
-# special rule for common blobs
-%.o: %.S
+%_gen_hs.o: generic/%.S 
 	cd ${TEST_DIR} && \
-	$(CC) -I$(ARC_SRC) $($*ASFLAGS) $(ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
+	$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
 
-#%_mmu: %_mmu.o
-#	cd ${BUILD_DIR} && \
-#	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT)
-
-%: %.o
+%_gen_hs: %gen_hs.o
 	cd ${TEST_DIR} && \
-	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT)
+	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
+
+%_gen_hs5x.o: generic/%.S
+	cd ${TEST_DIR} && \
+	$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
+
+%_gen_hs5x: %gen_hs5x.o
+	cd ${TEST_DIR} && \
+	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
+
+%_hs.o: hs/%.S
+	cd ${TEST_DIR} && \
+	$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
+
+%_hs: %_hs.o
+	cd ${TEST_DIR} && \
+	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
+
+%_hs5x.o: hs5x/%.S
+	cd ${TEST_DIR} && \
+	$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
+
+%_hs5x: %_hs5x.o
+	cd ${TEST_DIR} && \
+	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
+
+run-%_hs: QEMU_OPTS+=-M arc-sim -cpu archs -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
+run-%_hs5x: QEMU_OPTS+=-M arc-sim -cpu hs5x -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
