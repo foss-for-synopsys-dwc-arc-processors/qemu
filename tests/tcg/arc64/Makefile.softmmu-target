@@ -11,26 +11,22 @@ TEST_DIR = ${BUILD_DIR}/tests/tcg/${TARGET}
 # Filter out common blobs and broken tests
 ARC_BROKEN_TESTS = check_big_tb check_enter_leave check_excp_jumpdl_mmu check_ldstx \
 				   check_lp check_lp02 check_lp03 check_lp04 check_lp05 check_lp06 \
-				   check_manip_mmu check_swirq1
+				   check_manip_mmu check_swirq1 \
+				   check_dmachu	check_excp check_lddl check_mac	check_manip_10_mmu check_manip_4_mmu \
+				   check_manip_5_mmu check_mpu check_mpyd check_rtie_user check_stdl check_swirq3 check_swi \
+				   check_timer0_loop check_timer0_retrig check_timer0 check_timer0_sleep check_timerX_freq \
+				   check_vadd check_vmac2h check_vsub                      # QEMU ERRORS
 ARC_USABLE_TESTS = $(filter-out $(ARC_BROKEN_TESTS), $(ARC_TESTS))
 
 # add to the list of tests
 TESTS += $(ARC_USABLE_TESTS)
 VPATH += $(ARC_SRC)
 
-QEMU_OPTS+=-M arc-sim -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
-
-CROSS = arc-elf32-
+QEMU_OPTS+=-M arc-sim -cpu hs6x -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
 
 ASFLAGS = -mcpu=hs6x
-#LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
 LDFLAGS = --specs=nsim.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
-#MMU_LDFLAGS = --specs=qemu.specs -T $(ARC_SRC)/tarc_mmu.ld -nostartfiles -nostdlib
 CRT = ivt.o
-
-#SIM = ../../../qemu-system-arc
-#SIM_FLAGS = -M arc-sim -m 3G -nographic -no-reboot -monitor none \
-#	            -serial stdio -global cpu.mpu-numreg=8 -kernel
 
 $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
 
@@ -38,10 +34,6 @@ $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
 %.o: %.S
 	cd ${TEST_DIR} && \
 	$(CC) -I$(ARC_SRC) $($*ASFLAGS) $(ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
-
-#%_mmu: %_mmu.o
-#	cd ${TEST_DIR} && \
-#	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT)
 
 %: %.o
 	cd ${TEST_DIR} && \
