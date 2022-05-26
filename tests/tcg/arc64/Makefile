@@ -85,6 +85,10 @@ TESTCASES += check_vsub.tst
 TESTCASES += check_mpyd.tst
 TESTCASES += check_bi.tst
 TESTCASES += check_bih.tst
+TESTCASES += check_vpack2wl.tst
+TESTCASES += check_vpack2wm.tst
+TESTCASES += check_vpack4hl.tst
+TESTCASES += check_vpack4hm.tst
 # arc64
 #TESTCASES += check_swapl.tst
 #TESTCASES += check_lddl.tst
