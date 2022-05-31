@@ -30,6 +30,7 @@
 #include "hw/arc/cpudevs.h"
 #include "timer.h"
 #include "gdbstub.h"
+#include "fpu.h"
 
 #ifndef CONFIG_USER_ONLY
 static const VMStateDescription vms_arc_cpu = {
@@ -174,6 +175,9 @@ static void arc_cpu_reset(DeviceState *dev)
     /* ARConnect clear */
     arc_arconnect_init(cpu);
 
+    /* FPU init */
+    /* TODO: Make init_fpu parameters based on options. */
+    init_fpu(true, true, true);
 
     arc_resetTIMER(cpu);
     arc_resetIRQ(cpu);
@@ -191,6 +195,9 @@ static void arc_cpu_reset(DeviceState *dev)
      * DSP=0x1: MPY_OPTION 7
      */
     cpu->mpy_build = 0x00001006;
+
+    set_default_nan_mode(1, &env->fp_status);
+    set_float_rounding_mode(float_round_nearest_even, &env->fp_status);
 }
 
 int print_insn_arc_v3(bfd_vma memaddr, struct disassemble_info *info);

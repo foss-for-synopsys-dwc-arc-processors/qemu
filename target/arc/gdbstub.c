@@ -26,6 +26,7 @@
 #include "gdbstub.h"
 #include "mpu.h"
 #include "exec/helper-proto.h"
+#include "fpu.h"
 
 /* gets the register address for a particular processor */
 #define REG_ADDR(reg, processor_type) \
@@ -679,9 +680,10 @@ gdb_v3_fpu_read(CPUARCState *env, GByteArray *mem_buf, int regnum)
         return gdb_get_reg32(mem_buf, reg_bld);
     }
     case V3_FPU_CTRL:
-        return gdb_get_reg32(mem_buf, env->fp_ctrl);
+        return gdb_get_reg32(mem_buf,
+                             arc_fpu_ctrl_get_internal(env));
     case V3_FPU_STATUS:
-        return gdb_get_reg32(mem_buf, env->fp_status);
+        return gdb_get_reg32(mem_buf, arc_fpu_status_get_internal(env));
     default:
         return 0;
     }
@@ -698,10 +700,10 @@ gdb_v3_fpu_write(CPUARCState *env, uint8_t *mem_buf, int regnum)
         /* build register cannot be changed. */
         return 0;
     case V3_FPU_CTRL:
-        env->fp_ctrl = ldl_p(mem_buf);
+        arc_fpu_ctrl_set_internal(env, ldl_p(mem_buf));
         return sizeof(uint32_t);
     case V3_FPU_STATUS:
-        env->fp_status = ldl_p(mem_buf);
+        arc_fpu_status_set_interval(env, ldl_p(mem_buf));
         return sizeof(uint32_t);
     default:
         return 0;

@@ -309,6 +309,11 @@ TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg)
             return cpu_r[i + 1];
         }
     }
+    for (i = 0; i < 32; i += 2) {
+        if (reg == cpu_fpr[i]) {
+            return cpu_fpr[i + 1];
+        }
+    }
     /* Check if REG is an odd register. */
     for (i = 1; i < 64; i += 2) {
         /* If so, that is unsanctioned. */

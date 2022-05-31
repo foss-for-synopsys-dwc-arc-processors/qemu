@@ -443,3 +443,12 @@ AUX_REG (mcip_cmd, arconnect_regs_get, arconnect_regs_set)
 AUX_REG (mcip_wdata, arconnect_regs_get, arconnect_regs_set)
 AUX_REG (mcip_readback, arconnect_regs_get, NULL)
 
+/* Floating point unit aux registers */
+
+AUX_REG_GETTER(arc_fpu_status_get)
+AUX_REG_SETTER(arc_fpu_status_set)
+AUX_REG_GETTER(arc_fpu_ctrl_get)
+AUX_REG_SETTER(arc_fpu_ctrl_set)
+
+AUX_REG (fpu_status, arc_fpu_status_get, arc_fpu_status_set)
+AUX_REG (fpu_ctrl,   arc_fpu_ctrl_get, arc_fpu_ctrl_set)

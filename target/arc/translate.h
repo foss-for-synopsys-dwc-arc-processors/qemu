@@ -116,6 +116,7 @@ extern TCGv     cpu_npc;
 extern TCGv     cpu_bta;
 
 extern TCGv     cpu_r[64];
+extern TCGv     cpu_fpr[32];
 
 extern TCGv     cpu_intvec;
 

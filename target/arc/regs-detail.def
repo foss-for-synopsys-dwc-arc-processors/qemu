@@ -578,3 +578,8 @@ DEF (0x46c, ARC_OPCODE_V3_ALL,   NONE, mmu_fault_status)
 DEF (0xc1,  ARC_OPCODE_V3_ALL,   NONE, isa_config)
 DEF (0x6f,  ARC_OPCODE_V3_ALL,   NONE, mmuv6_build)
 DEF (0x4f,  ARC_OPCODE_V3_ALL,   NONE, hw_pf_ctrl)
+
+/* Floating point defitions */
+
+DEF (0x300,  ARC_OPCODE_V3_ALL,   NONE, fpu_ctrl)
+DEF (0x301,  ARC_OPCODE_V3_ALL,   NONE, fpu_status)

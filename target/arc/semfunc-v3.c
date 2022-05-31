@@ -14416,3 +14416,897 @@ arc_gen_BBIT1L (DisasCtxt *ctx, TCGv b, TCGv c, TCGv rd)
 
   return ret;
 }
+
+/* Floating point instructions */
+
+#define FLOAT_MV_DIRECT(NAME, SIZE) \
+inline int arc_gen_##NAME (DisasCtxt *ctx, TCGv a, TCGv b) \
+{ \
+  int ret = DISAS_NEXT; \
+  TCGv cc_flag = tcg_temp_new(); \
+  getCCFlag(cc_flag); \
+  TCGLabel *done_1 = gen_new_label(); \
+  tcg_gen_brcond_tl(TCG_COND_NE, cc_flag, arc_true, done_1);; \
+  tcg_gen_andi_tl(a, b, SIZE < 64 ? (1ull << SIZE) - 1 : -1ll); \
+  gen_set_label(done_1); \
+  tcg_temp_free(cc_flag); \
+  return ret; \
+}
+
+FLOAT_MV_DIRECT(FMVL2D, 64)
+FLOAT_MV_DIRECT(FMVD2L, 64)
+FLOAT_MV_DIRECT(FDMOV, 64)
+
+FLOAT_MV_DIRECT(FMVI2S, 32)
+FLOAT_MV_DIRECT(FMVS2I, 32)
+FLOAT_MV_DIRECT(FSMOV, 32)
+
+FLOAT_MV_DIRECT(FHMOV, 16)
+
+static void
+arc_gen_ldst_pre(DisasCtxt *ctx, TCGv address, TCGv src1, TCGv src2, int ZZ)
+{
+    int AA = getAAFlag ();
+    tcg_gen_movi_tl(address, 0);
+
+    if (((AA == 0) || (AA == 1))) {
+	tcg_gen_add_tl(address, src1, src2);
+    }
+    if ((AA == 2)) {
+	tcg_gen_mov_tl(address, src1);
+    }
+    if(AA == 3) {
+	if (ZZ == 0) {
+	    tcg_gen_shli_tl(address, src2, 2);
+	    tcg_gen_add_tl(address, src1, address);
+	}
+	if (ZZ == 1 || ZZ == 3) {
+	    tcg_gen_shli_tl(address, src2, 3);
+	    tcg_gen_add_tl(address, src1, address);
+	}
+	if (ZZ == 2) {
+	    tcg_gen_shli_tl(address, src2, 1);
+	    tcg_gen_add_tl(address, src1, address);
+	}
+    }
+}
+
+static void
+arc_gen_ldst_post(DisasCtxt *ctx, TCGv dest, TCGv src1, TCGv src2)
+{
+    int AA = getAAFlag ();
+    if (((AA == 1) || (AA == 2))) {
+	tcg_gen_add_tl(dest, src1, src2);
+    }
+}
+
+int
+arc_gen_FLD16 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 2 /* 16bit */;
+  TCGv address = tcg_temp_local_new();
+  TCGv l_src1 = tcg_temp_local_new();
+  TCGv l_src2 = tcg_temp_local_new();
+  TCGv new_dest = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, src1, src2, ZZ);
+
+  tcg_gen_mov_tl(l_src1, src1);
+  tcg_gen_mov_tl(l_src2, src2);
+
+  getMemory(new_dest, address, ZZ);
+
+  arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
+
+  tcg_gen_mov_tl(dest, new_dest);
+
+  tcg_temp_free(address);
+  tcg_temp_free(l_src1);
+  tcg_temp_free(l_src2);
+  tcg_temp_free(new_dest);
+
+  return ret;
+}
+
+int
+arc_gen_FST16 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 2; /* 32bit */
+  TCGv address = tcg_temp_local_new();
+  TCGv l_src1 = tcg_temp_local_new();
+  TCGv l_src2 = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, src1, src2, ZZ);
+
+  tcg_gen_mov_tl(l_src1, src1);
+  tcg_gen_mov_tl(l_src2, src2);
+
+  setMemory(address, ZZ, dest);
+
+  arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
+
+  tcg_temp_free(address);
+  tcg_temp_free(l_src1);
+  tcg_temp_free(l_src2);
+
+  return ret;
+}
+
+int
+arc_gen_FLD32 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 0 /* 32bit */;
+  TCGv address = tcg_temp_local_new();
+  TCGv l_src1 = tcg_temp_local_new();
+  TCGv l_src2 = tcg_temp_local_new();
+  TCGv new_dest = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, src1, src2, ZZ);
+
+  tcg_gen_mov_tl(l_src1, src1);
+  tcg_gen_mov_tl(l_src2, src2);
+
+  getMemory(new_dest, address, ZZ);
+
+  arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
+
+  tcg_gen_mov_tl(dest, new_dest);
+
+  tcg_temp_free(address);
+  tcg_temp_free(l_src1);
+  tcg_temp_free(l_src2);
+  tcg_temp_free(new_dest);
+
+  return ret;
+}
+
+int
+arc_gen_FST32 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 0; /* 32bit */
+  TCGv address = tcg_temp_local_new();
+  TCGv l_src1 = tcg_temp_local_new();
+  TCGv l_src2 = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, src1, src2, ZZ);
+
+  tcg_gen_mov_tl(l_src1, src1);
+  tcg_gen_mov_tl(l_src2, src2);
+
+  setMemory(address, ZZ, dest);
+
+  arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
+
+  tcg_temp_free(address);
+  tcg_temp_free(l_src1);
+  tcg_temp_free(l_src2);
+
+  return ret;
+}
+
+int
+arc_gen_FLD64 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 3; /* 64 bit */
+  TCGv address = tcg_temp_local_new();
+  TCGv l_src1 = tcg_temp_local_new();
+  TCGv l_src2 = tcg_temp_local_new();
+  TCGv new_dest = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, src1, src2, ZZ);
+
+  tcg_gen_mov_tl(l_src1, src1);
+  tcg_gen_mov_tl(l_src2, src2);
+
+  getMemory(new_dest, address, ZZ);
+
+  arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
+
+  tcg_gen_mov_tl(dest, new_dest);
+
+  tcg_temp_free(address);
+  tcg_temp_free(l_src1);
+  tcg_temp_free(l_src2);
+  tcg_temp_free(new_dest);
+
+  return ret;
+}
+
+
+
+int
+arc_gen_FST64 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 3; /* 64 bit */
+  TCGv address = tcg_temp_local_new();
+  TCGv l_src1 = tcg_temp_local_new();
+  TCGv l_src2 = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, src1, src2, ZZ);
+
+  tcg_gen_mov_tl(l_src1, src1);
+  tcg_gen_mov_tl(l_src2, src2);
+
+  setMemory(address, ZZ, dest);
+
+  arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
+
+  tcg_temp_free(address);
+  tcg_temp_free(l_src1);
+  tcg_temp_free(l_src2);
+
+  return ret;
+}
+
+int
+arc_gen_FLDD64 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 3; /* 64 bit */
+  TCGv address = tcg_temp_local_new();
+  TCGv l_src1 = tcg_temp_local_new();
+  TCGv l_src2 = tcg_temp_local_new();
+  TCGv new_dest = tcg_temp_local_new();
+  TCGv new_dest_hi = tcg_temp_local_new();
+  TCGv address_high = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, src1, src2, ZZ);
+
+  tcg_gen_mov_tl(l_src1, src1);
+  tcg_gen_mov_tl(l_src2, src2);
+
+  getMemory(new_dest, address, ZZ);
+  tcg_gen_addi_tl(address_high, address, 8);
+  getMemory(new_dest_hi, address_high, ZZ);
+
+  arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
+
+  tcg_gen_mov_tl(dest, new_dest);
+  tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), new_dest_hi);
+
+  tcg_temp_free(address_high);
+  tcg_temp_free(address);
+  tcg_temp_free(l_src1);
+  tcg_temp_free(l_src2);
+  tcg_temp_free(new_dest);
+  tcg_temp_free(new_dest_hi);
+
+  return ret;
+}
+
+
+
+int
+arc_gen_FSTD64 (DisasCtxt *ctx, TCGv data_reg, TCGv dest, TCGv offset)
+{
+  int ret = DISAS_NEXT;
+  int ZZ = 3; /* 64 bit */
+  TCGv address = tcg_temp_local_new();
+  TCGv l_dest = tcg_temp_local_new();
+  TCGv l_offset = tcg_temp_local_new();
+  TCGv address_high = tcg_temp_local_new();
+
+  arc_gen_ldst_pre (ctx, address, dest, offset, ZZ);
+
+  tcg_gen_mov_tl(l_dest, dest);
+  tcg_gen_mov_tl(l_offset, offset);
+
+  setMemory(address, ZZ, data_reg);
+  tcg_gen_addi_tl(address_high, address, 8);
+  setMemory(address_high, ZZ, arc_gen_next_reg(ctx, data_reg));
+
+  arc_gen_ldst_post (ctx, dest, l_dest, l_offset);
+
+  tcg_temp_free(address_high);
+  tcg_temp_free(address);
+  tcg_temp_free(l_dest);
+  tcg_temp_free(l_offset);
+
+  return ret;
+}
+
+#define FLOAT_INSTRUCTION4(NAME, HELPER) \
+inline int \
+arc_gen_##NAME (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
+{ \
+  int ret = DISAS_NEXT; \
+  gen_helper_##HELPER(a, cpu_env, b, c, d); \
+  return ret; \
+}
+
+FLOAT_INSTRUCTION4(FDMADD, fdmadd)
+FLOAT_INSTRUCTION4(FDMSUB, fdmsub)
+FLOAT_INSTRUCTION4(FDNMADD, fdnmadd)
+FLOAT_INSTRUCTION4(FDNMSUB, fdnmsub)
+
+FLOAT_INSTRUCTION4(FSMADD, fsmadd)
+FLOAT_INSTRUCTION4(FSMSUB, fsmsub)
+FLOAT_INSTRUCTION4(FSNMADD, fsnmadd)
+FLOAT_INSTRUCTION4(FSNMSUB, fsnmsub)
+
+FLOAT_INSTRUCTION4(FHMADD, fhmadd)
+FLOAT_INSTRUCTION4(FHMSUB, fhmsub)
+FLOAT_INSTRUCTION4(FHNMADD, fhnmadd)
+FLOAT_INSTRUCTION4(FHNMSUB, fhnmsub)
+
+
+#define FLOAT_INSTRUCTION3(NAME, HELPER) \
+int \
+arc_gen_##NAME (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  gen_helper_##HELPER(a, cpu_env, b, c); \
+  return ret; \
+}
+
+FLOAT_INSTRUCTION3(FDADD, fdadd)
+FLOAT_INSTRUCTION3(FDSUB, fdsub)
+FLOAT_INSTRUCTION3(FDMUL, fdmul)
+FLOAT_INSTRUCTION3(FDDIV, fddiv)
+FLOAT_INSTRUCTION3(FDMIN, fdmin)
+FLOAT_INSTRUCTION3(FDMAX, fdmax)
+
+FLOAT_INSTRUCTION3(FSADD, fsadd)
+FLOAT_INSTRUCTION3(FSSUB, fssub)
+FLOAT_INSTRUCTION3(FSMUL, fsmul)
+FLOAT_INSTRUCTION3(FSDIV, fsdiv)
+FLOAT_INSTRUCTION3(FSMIN, fsmin)
+FLOAT_INSTRUCTION3(FSMAX, fsmax)
+
+FLOAT_INSTRUCTION3(FHADD, fhadd)
+FLOAT_INSTRUCTION3(FHSUB, fhsub)
+FLOAT_INSTRUCTION3(FHMUL, fhmul)
+FLOAT_INSTRUCTION3(FHDIV, fhdiv)
+FLOAT_INSTRUCTION3(FHMIN, fhmin)
+FLOAT_INSTRUCTION3(FHMAX, fhmax)
+
+#define FLOAT_INSTRUCTION2(NAME, HELPER) \
+inline int \
+arc_gen_##NAME (DisasCtxt *ctx, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  gen_helper_##HELPER(cpu_env, b, c); \
+  return ret; \
+}
+
+FLOAT_INSTRUCTION2(FDCMP, fdcmp)
+FLOAT_INSTRUCTION2(FDCMPF, fdcmpf)
+FLOAT_INSTRUCTION2(FSCMP, fscmp)
+FLOAT_INSTRUCTION2(FSCMPF, fscmpf)
+FLOAT_INSTRUCTION2(FHCMP, fhcmp)
+FLOAT_INSTRUCTION2(FHCMPF, fhcmpf)
+
+#define FLOAT_INSTRUCTION2_WRET(NAME, HELPER) \
+inline int \
+arc_gen_##NAME (DisasCtxt *ctx, TCGv a, TCGv b) \
+{ \
+  int ret = DISAS_NEXT; \
+  gen_helper_##HELPER(a, cpu_env, b); \
+  return ret; \
+}
+
+FLOAT_INSTRUCTION2_WRET(FDSQRT, fdsqrt)
+FLOAT_INSTRUCTION2_WRET(FSSQRT, fssqrt)
+FLOAT_INSTRUCTION2_WRET(FHSQRT, fhsqrt)
+
+FLOAT_INSTRUCTION2_WRET(FS2D, fs2d)
+FLOAT_INSTRUCTION2_WRET(FD2S, fd2s)
+
+FLOAT_INSTRUCTION2_WRET(FL2D, fl2d)
+FLOAT_INSTRUCTION2_WRET(FD2L, fd2l)
+FLOAT_INSTRUCTION2_WRET(FD2L_RZ, fd2l_rz)
+FLOAT_INSTRUCTION2_WRET(FUL2D, ful2d)
+FLOAT_INSTRUCTION2_WRET(FD2UL, fd2ul)
+FLOAT_INSTRUCTION2_WRET(FD2UL_RZ, fd2ul_rz)
+
+FLOAT_INSTRUCTION2_WRET(FINT2D, fint2d)
+FLOAT_INSTRUCTION2_WRET(FD2INT, fd2int)
+FLOAT_INSTRUCTION2_WRET(FD2INT_RZ, fd2int_rz)
+FLOAT_INSTRUCTION2_WRET(FUINT2D, fuint2d)
+FLOAT_INSTRUCTION2_WRET(FD2UINT, fd2uint)
+FLOAT_INSTRUCTION2_WRET(FD2UINT_RZ, fd2uint_rz)
+
+FLOAT_INSTRUCTION2_WRET(FL2S,     fl2s)
+FLOAT_INSTRUCTION2_WRET(FS2L,     fs2l)
+FLOAT_INSTRUCTION2_WRET(FS2L_RZ,  fs2l_rz)
+FLOAT_INSTRUCTION2_WRET(FUL2S,    ful2s)
+FLOAT_INSTRUCTION2_WRET(FS2UL,    fs2ul)
+FLOAT_INSTRUCTION2_WRET(FS2UL_RZ, fs2ul_rz)
+
+FLOAT_INSTRUCTION2_WRET(FINT2S,     fint2s)
+FLOAT_INSTRUCTION2_WRET(FS2INT,     fs2int)
+FLOAT_INSTRUCTION2_WRET(FS2INT_RZ,  fs2int_rz)
+FLOAT_INSTRUCTION2_WRET(FUINT2S,    fuint2s)
+FLOAT_INSTRUCTION2_WRET(FS2UINT,    fs2uint)
+FLOAT_INSTRUCTION2_WRET(FS2UINT_RZ, fs2uint_rz)
+
+FLOAT_INSTRUCTION2_WRET(FS2H_RZ, fs2h_rz)
+FLOAT_INSTRUCTION2_WRET(FS2H, fs2h)
+FLOAT_INSTRUCTION2_WRET(FH2S, fh2s)
+
+FLOAT_INSTRUCTION2_WRET(FDRND, fdrnd)
+FLOAT_INSTRUCTION2_WRET(FDRND_RZ, fdrnd_rz)
+FLOAT_INSTRUCTION2_WRET(FSRND, fsrnd)
+FLOAT_INSTRUCTION2_WRET(FSRND_RZ, fsrnd_rz)
+
+/*
+F<P>SGNJ    fd.{s, e, m} = { s2.s, s1.e, s1.m }
+F<P>SGNJN   fd.{s, e, m} = { not(s2.s), s1.e, s1.m }
+F<P>SGNJX   fd.{s, e, m} = { xor(s1.s, s2.s), s1.e, s1.m}
+*/
+
+#define SGNJ(NAME, SIZE) \
+int arc_gen_##NAME##SGNJ (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  TCGv l_b = tcg_temp_new(); \
+  TCGv l_c = tcg_temp_new(); \
+ \
+  tcg_gen_andi_tl(l_c, c, (1ull << (SIZE-1))); \
+  tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE-1))); \
+ \
+  tcg_gen_or_tl(a, l_b, l_c); \
+ \
+  tcg_temp_free(l_b); \
+  tcg_temp_free(l_c); \
+   \
+  return ret; \
+}
+#define SGNJN(NAME, SIZE) \
+int arc_gen_##NAME##SGNJN (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  TCGv l_b = tcg_temp_new(); \
+  TCGv l_c = tcg_temp_new(); \
+ \
+  tcg_gen_andi_tl(l_c, c,   (1ull << (SIZE-1))); \
+  tcg_gen_xori_tl(l_c, l_c, (1ull << (SIZE-1))); \
+ \
+  tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE-1))); \
+ \
+  tcg_gen_or_tl(a, l_b, l_c); \
+ \
+  tcg_temp_free(l_b); \
+  tcg_temp_free(l_c); \
+   \
+  return ret; \
+}
+#define SGNJX(NAME, SIZE) \
+int arc_gen_##NAME##SGNJX (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  TCGv l_b = tcg_temp_new(); \
+  TCGv l_c = tcg_temp_new(); \
+ \
+  tcg_gen_andi_tl(l_b, b, (1ull << (SIZE-1))); \
+  tcg_gen_andi_tl(l_c, c, (1ull << (SIZE-1))); \
+  tcg_gen_xor_tl(l_c, l_b, l_c); \
+ \
+  tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE-1))); \
+ \
+  tcg_gen_or_tl(a, l_b, l_c); \
+ \
+  tcg_temp_free(l_b); \
+  tcg_temp_free(l_c); \
+   \
+  return ret; \
+}
+
+SGNJ(FD, 64)
+SGNJN(FD, 64)
+SGNJX(FD, 64)
+SGNJ(FS, 32)
+SGNJN(FS, 32)
+SGNJX(FS, 32)
+SGNJ(FH, 16)
+SGNJN(FH, 16)
+SGNJX(FH, 16)
+
+//FLOAT_INSTRUCTION3(FDSGNJ,  fdsgnj)
+//FLOAT_INSTRUCTION3(FDSGNJN, fdsgnjn)
+//FLOAT_INSTRUCTION3(FDSGNJX, fdsgnjx)
+//
+//FLOAT_INSTRUCTION3(FSSGNJ,  fssgnj)
+//FLOAT_INSTRUCTION3(FSSGNJN, fssgnjn)
+//FLOAT_INSTRUCTION3(FSSGNJX, fssgnjx)
+//
+//FLOAT_INSTRUCTION3(FHSGNJ,  fhsgnj)
+//FLOAT_INSTRUCTION3(FHSGNJN, fhsgnjn)
+//FLOAT_INSTRUCTION3(FHSGNJX, fhsgnjx)
+
+
+/* Vector floating point instructions */
+
+#define SGNJX(NAME, SIZE) \
+int arc_gen_##NAME##SGNJX (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  TCGv l_b = tcg_temp_new(); \
+  TCGv l_c = tcg_temp_new(); \
+ \
+  tcg_gen_andi_tl(l_b, b, (1ull << (SIZE-1))); \
+  tcg_gen_andi_tl(l_c, c, (1ull << (SIZE-1))); \
+  tcg_gen_xor_tl(l_c, l_b, l_c); \
+ \
+  tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE-1))); \
+ \
+  tcg_gen_or_tl(a, l_b, l_c); \
+ \
+  tcg_temp_free(l_b); \
+  tcg_temp_free(l_c); \
+   \
+  return ret; \
+}
+
+#include "fpu.h"
+
+#define VFINS(TYPE, SIZE) \
+int arc_gen_VF##TYPE##INS(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  int mid_index = (sizeof(target_ulong) * 8) / SIZE; \
+ \
+  TCGLabel *do_next_reg = gen_new_label(); \
+  TCGLabel *did_first_reg = gen_new_label(); \
+ \
+  tcg_gen_brcondi_tl(TCG_COND_GE, b, mid_index, do_next_reg); \
+    /* For the next current register */ \
+    TCGv size = tcg_const_tl(SIZE); \
+    gen_helper_vfins(a, cpu_env, a, b, c, size); \
+    tcg_temp_free(size); \
+ \
+  tcg_gen_br(did_first_reg); \
+  gen_set_label(do_next_reg); \
+    /* For the next register */ \
+ \
+    /* Subtract index */ \
+    TCGv index = tcg_temp_new(); \
+    tcg_gen_subi_tl(index, b, mid_index); \
+ \
+    TCGv reg = arc_gen_next_reg(ctx, a); \
+    TCGv size1 = tcg_const_tl(SIZE); \
+ \
+    gen_helper_vfins(reg, cpu_env, reg, index, c, size1); \
+ \
+    tcg_temp_free(index); \
+    tcg_temp_free(size1); \
+ \
+  gen_set_label(did_first_reg); \
+ \
+  return ret; \
+}
+VFINS(H, 16)
+VFINS(S, 32)
+VFINS(D, 64)
+
+#define VFEXT(TYPE, SIZE) \
+int arc_gen_VF##TYPE##EXT(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  int mid_index = (sizeof(target_ulong) * 8) / SIZE; \
+\
+  TCGLabel *do_next_reg = gen_new_label(); \
+  TCGLabel *did_first_reg = gen_new_label(); \
+ \
+  tcg_gen_brcondi_tl(TCG_COND_GE, c, mid_index, do_next_reg); \
+    /* For the next current register */ \
+    TCGv size = tcg_const_tl(SIZE); \
+    gen_helper_vfext(a, cpu_env, b, c, size); \
+    tcg_temp_free(size); \
+ \
+  tcg_gen_br(did_first_reg); \
+  gen_set_label(do_next_reg); \
+    /* For the next register */ \
+ \
+    /* Subtract index */ \
+    TCGv index = tcg_temp_new(); \
+    tcg_gen_subi_tl(index, c, mid_index); \
+ \
+    TCGv reg = arc_gen_next_reg(ctx, b); \
+    TCGv size1 = tcg_const_tl(SIZE); \
+ \
+    gen_helper_vfext(a, cpu_env, reg, index, size1); \
+ \
+    tcg_temp_free(index); \
+    tcg_temp_free(size1); \
+ \
+  gen_set_label(did_first_reg); \
+ \
+  return ret; \
+}
+VFEXT(H, 16)
+VFEXT(S, 32)
+VFEXT(D, 64)
+
+
+#define VFREP(TYPE, SIZE) \
+int arc_gen_VF##TYPE##REP(DisasCtxt *ctx, TCGv a, TCGv b) \
+{ \
+  int ret = DISAS_NEXT; \
+\
+    /* For the next current register */ \
+    TCGv size = tcg_const_tl(SIZE); \
+    gen_helper_vfrep(a, cpu_env, b, size); \
+ \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+    TCGv na = arc_gen_next_reg(ctx, a); \
+    gen_helper_vfrep(na, cpu_env, b, size); \
+  } \
+ \
+    tcg_temp_free(size); \
+ \
+  return ret; \
+}
+VFREP(H, 16)
+VFREP(S, 32)
+VFREP(D, 64)
+
+int arc_gen_VFMOV(DisasCtxt *ctx, TCGv a, TCGv b)
+{
+  int ret = DISAS_NEXT;
+
+  /* For the next current register */
+  tcg_gen_mov_tl(a, b);
+
+  if(vfp_width > (sizeof(target_ulong) << 3)) {
+      TCGv na = arc_gen_next_reg(ctx, a);
+      TCGv nb = arc_gen_next_reg(ctx, b);
+      tcg_gen_mov_tl(na, nb);
+  }
+  return ret;
+}
+
+#define VEC_FLOAT2(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b) \
+{ \
+  int ret = DISAS_NEXT; \
+ \
+  /* For the next current register */ \
+  gen_helper_##HELPERFN(a, cpu_env, b); \
+ \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      gen_helper_##HELPERFN(na, cpu_env, nb); \
+  } \
+  return ret; \
+}
+
+VEC_FLOAT2(VFHSQRT, vfhsqrt)
+VEC_FLOAT2(VFSSQRT, vfssqrt)
+VEC_FLOAT2(VFDSQRT, vfdsqrt)
+
+
+#define VEC_FLOAT3(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+ \
+  /* For the next current register */ \
+  gen_helper_##HELPERFN(a, cpu_env, b, c); \
+ \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv nc = arc_gen_next_reg(ctx, c); \
+      gen_helper_##HELPERFN(na, cpu_env, nb, nc); \
+  } \
+  return ret; \
+}
+
+#define VEC_FLOAT3_SCALARC(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+ \
+  /* For the next current register */ \
+  gen_helper_##HELPERFN(a, cpu_env, b, c); \
+ \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      gen_helper_##HELPERFN(na, cpu_env, nb, c); \
+  } \
+  return ret; \
+}
+VEC_FLOAT3(VFHMUL, vfhmul)
+VEC_FLOAT3(VFSMUL, vfsmul)
+VEC_FLOAT3(VFDMUL, vfdmul)
+
+VEC_FLOAT3_SCALARC(VFHMULS, vfhmuls)
+VEC_FLOAT3_SCALARC(VFSMULS, vfsmuls)
+VEC_FLOAT3_SCALARC(VFDMULS, vfdmuls)
+
+VEC_FLOAT3(VFHDIV, vfhdiv)
+VEC_FLOAT3(VFSDIV, vfsdiv)
+VEC_FLOAT3(VFDDIV, vfddiv)
+
+VEC_FLOAT3_SCALARC(VFHDIVS, vfhdivs)
+VEC_FLOAT3_SCALARC(VFSDIVS, vfsdivs)
+VEC_FLOAT3_SCALARC(VFDDIVS, vfddivs)
+
+VEC_FLOAT3(VFHADD, vfhadd)
+VEC_FLOAT3(VFSADD, vfsadd)
+VEC_FLOAT3(VFDADD, vfdadd)
+
+VEC_FLOAT3_SCALARC(VFHADDS, vfhadds)
+VEC_FLOAT3_SCALARC(VFSADDS, vfsadds)
+VEC_FLOAT3_SCALARC(VFDADDS, vfdadds)
+
+VEC_FLOAT3(VFHSUB, vfhsub)
+VEC_FLOAT3(VFSSUB, vfssub)
+VEC_FLOAT3(VFDSUB, vfdsub)
+
+VEC_FLOAT3_SCALARC(VFHSUBS, vfhsubs)
+VEC_FLOAT3_SCALARC(VFSSUBS, vfssubs)
+VEC_FLOAT3_SCALARC(VFDSUBS, vfdsubs)
+
+VEC_FLOAT3(VFHADDSUB, vfhaddsub)
+VEC_FLOAT3(VFSADDSUB, vfsaddsub)
+VEC_FLOAT3(VFDADDSUB, vfdaddsub)
+
+VEC_FLOAT3(VFHSUBADD, vfhsubadd)
+VEC_FLOAT3(VFSSUBADD, vfssubadd)
+VEC_FLOAT3(VFDSUBADD, vfdsubadd)
+
+#define VEC_FLOAT4(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
+{ \
+  int ret = DISAS_NEXT; \
+ \
+  /* For the next current register */ \
+  gen_helper_##HELPERFN(a, cpu_env, b, c, d); \
+ \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv nc = arc_gen_next_reg(ctx, c); \
+      TCGv nd = arc_gen_next_reg(ctx, d); \
+      gen_helper_##HELPERFN(na, cpu_env, nb, nc, nd); \
+  } \
+  return ret; \
+}
+
+VEC_FLOAT4(VFHMADD, vfhmadd)
+VEC_FLOAT4(VFSMADD, vfsmadd)
+VEC_FLOAT4(VFDMADD, vfdmadd)
+
+VEC_FLOAT4(VFHMSUB, vfhmsub)
+VEC_FLOAT4(VFSMSUB, vfsmsub)
+VEC_FLOAT4(VFDMSUB, vfdmsub)
+
+VEC_FLOAT4(VFHNMADD, vfhnmadd)
+VEC_FLOAT4(VFSNMADD, vfsnmadd)
+VEC_FLOAT4(VFDNMADD, vfdnmadd)
+
+VEC_FLOAT4(VFHNMSUB, vfhnmsub)
+VEC_FLOAT4(VFSNMSUB, vfsnmsub)
+VEC_FLOAT4(VFDNMSUB, vfdnmsub)
+
+#define VEC_FLOAT4_SCALARD(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
+{ \
+  int ret = DISAS_NEXT; \
+ \
+  /* For the next current register */ \
+  gen_helper_##HELPERFN(a, cpu_env, b, c, d); \
+ \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv nc = arc_gen_next_reg(ctx, c); \
+      gen_helper_##HELPERFN(na, cpu_env, nb, nc, d); \
+  } \
+  return ret; \
+}
+
+VEC_FLOAT4_SCALARD(VFHMADDS, vfhmadds)
+VEC_FLOAT4_SCALARD(VFSMADDS, vfsmadds)
+VEC_FLOAT4_SCALARD(VFDMADDS, vfdmadds)
+
+VEC_FLOAT4_SCALARD(VFHMSUBS, vfhmsubs)
+VEC_FLOAT4_SCALARD(VFSMSUBS, vfsmsubs)
+VEC_FLOAT4_SCALARD(VFDMSUBS, vfdmsubs)
+
+VEC_FLOAT4_SCALARD(VFHNMADDS, vfhnmadds)
+VEC_FLOAT4_SCALARD(VFSNMADDS, vfsnmadds)
+VEC_FLOAT4_SCALARD(VFDNMADDS, vfdnmadds)
+
+VEC_FLOAT4_SCALARD(VFHNMSUBS, vfhnmsubs)
+VEC_FLOAT4_SCALARD(VFSNMSUBS, vfsnmsubs)
+VEC_FLOAT4_SCALARD(VFDNMSUBS, vfdnmsubs)
+
+#define VEC_FLOAT4_SCALARD(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
+{ \
+  int ret = DISAS_NEXT; \
+ \
+  /* For the next current register */ \
+  gen_helper_##HELPERFN(a, cpu_env, b, c, d); \
+ \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv nc = arc_gen_next_reg(ctx, c); \
+      gen_helper_##HELPERFN(na, cpu_env, nb, nc, d); \
+  } \
+  return ret; \
+}
+
+#define VEC_SHUFFLE2_INSN(NAME, TYPE) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b) \
+{ \
+  int ret = DISAS_NEXT; \
+  TCGv zero = tcg_const_tl(0); \
+  TCGv one = tcg_const_tl(1); \
+  TCGv type = tcg_const_tl(TYPE); \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv tmp = tcg_temp_new(); \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      gen_helper_vector_shuffle(tmp,  cpu_env, type, zero, nb, b, zero, zero); \
+      gen_helper_vector_shuffle(na, cpu_env, type, one,  nb, b, zero, zero); \
+      tcg_gen_mov_tl(a, tmp); \
+      tcg_temp_free(tmp); \
+  } else { \
+      gen_helper_vector_shuffle(a,  cpu_env, type, zero, zero, b, zero, zero); \
+  } \
+  tcg_temp_free(zero); \
+  tcg_temp_free(one); \
+  tcg_temp_free(type); \
+  return ret; \
+}
+
+VEC_SHUFFLE2_INSN(VFHEXCH, HEXCH)
+VEC_SHUFFLE2_INSN(VFSEXCH, SEXCH)
+VEC_SHUFFLE2_INSN(VFDEXCH, DEXCH)
+
+#define VEC_SHUFFLE3_INSN(NAME, TYPE) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{ \
+  int ret = DISAS_NEXT; \
+  TCGv zero = tcg_const_tl(0); \
+  TCGv one = tcg_const_tl(1); \
+  TCGv type = tcg_const_tl(TYPE); \
+  if(vfp_width > (sizeof(target_ulong) << 3)) { \
+      TCGv tmp = tcg_temp_new(); \
+      TCGv na = arc_gen_next_reg(ctx, a); \
+      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv nc = arc_gen_next_reg(ctx, c); \
+      gen_helper_vector_shuffle(tmp,  cpu_env, type, zero, nb, b, nc, c); \
+      gen_helper_vector_shuffle(na, cpu_env, type, one,  nb, b, nc, c); \
+      tcg_gen_mov_tl(a, tmp); \
+      tcg_temp_free(tmp); \
+  } else { \
+      gen_helper_vector_shuffle(a,  cpu_env, type, zero, zero, b, zero, c); \
+  } \
+  tcg_temp_free(zero); \
+  tcg_temp_free(one); \
+  tcg_temp_free(type); \
+  return ret; \
+}
+
+VEC_SHUFFLE3_INSN(VFHUNPKL, HUNPKL)
+VEC_SHUFFLE3_INSN(VFHUNPKM, HUNPKM)
+VEC_SHUFFLE3_INSN(VFSUNPKL, SUNPKL)
+VEC_SHUFFLE3_INSN(VFSUNPKM, SUNPKM)
+VEC_SHUFFLE3_INSN(VFDUNPKL, DUNPKL)
+VEC_SHUFFLE3_INSN(VFDUNPKM, DUNPKM)
+VEC_SHUFFLE3_INSN(VFHPACKL, HPACKL)
+VEC_SHUFFLE3_INSN(VFHPACKM, HPACKM)
+VEC_SHUFFLE3_INSN(VFSPACKL, SPACKL)
+VEC_SHUFFLE3_INSN(VFSPACKM, SPACKM)
+VEC_SHUFFLE3_INSN(VFDPACKL, DPACKL)
+VEC_SHUFFLE3_INSN(VFDPACKM, DPACKM)
+VEC_SHUFFLE3_INSN(VFHBFLYL, HBFLYL)
+VEC_SHUFFLE3_INSN(VFHBFLYM, HBFLYM)
+VEC_SHUFFLE3_INSN(VFSBFLYL, SBFLYL)
+VEC_SHUFFLE3_INSN(VFSBFLYM, SBFLYM)
+VEC_SHUFFLE3_INSN(VFDBFLYL, DBFLYL)
+VEC_SHUFFLE3_INSN(VFDBFLYM, DBFLYM)

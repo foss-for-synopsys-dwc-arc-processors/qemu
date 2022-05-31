@@ -221,7 +221,7 @@ struct CPUArchState {
 
     /* floating point auxiliary registers. */
     uint32_t fp_ctrl;
-    uint32_t fp_status;
+    uint32_t fp_arc_status;
 
     ARCStatus stat, stat_l1, stat_er;
 
@@ -307,6 +307,11 @@ struct CPUArchState {
     target_ulong exclusive_addr;
     target_ulong exclusive_val;
     target_ulong exclusive_val_hi;
+
+    float_status fp_status;
+    uint32_t fp_status_persistent;
+    bool enable_invop_excp;
+    bool enable_divzero_excp;
 };
 
 struct ARCCPUConfig {
@@ -427,6 +432,8 @@ struct ArchCPU {
     CPUNegativeOffsetState neg;
     CPUARCState env;
 };
+
+uint32_t arc_pack_fpu_status(CPUARCState *env);
 
 /* are we in user mode? */
 static inline bool is_user_mode(const CPUARCState *env)
