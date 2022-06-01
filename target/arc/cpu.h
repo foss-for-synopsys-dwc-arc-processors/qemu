@@ -292,6 +292,7 @@ struct CPUArchState {
     void *irq[256];
     QEMUTimer *cpu_timer[2]; /* Internal timer. */
     QEMUTimer *cpu_rtc;      /* Internal RTC. */
+    QemuMutex timer_mutex;
 
     const struct arc_boot_info *boot_info;
 
@@ -387,6 +388,8 @@ struct ARCCPUConfig {
 
     char     *mmuv6_version;
     uint8_t  *mmuv3_pgsz0;
+
+    uint8_t   mcip_first_cirq;
 };
 
 /*

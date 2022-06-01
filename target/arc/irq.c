@@ -546,11 +546,11 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
         return false;
     }
 
-    qemu_log_mask(CPU_LOG_INT, "[IRQ] interrupt at pc=0x" TARGET_FMT_lx
-                  "\n", env->pc);
-
     /* Adjust vector number. */
     vectno += 16;
+
+    qemu_log_mask(CPU_LOG_INT, "[IRQ] interrupt %d at pc=0x" TARGET_FMT_lx " at core %d"
+                  "\n", vectno, env->pc, cpu->core_id);
 
     /* Set the AUX_IRQ_ACT. */
     if ((env->aux_irq_act & 0xffff) == 0) {

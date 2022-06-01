@@ -41,7 +41,7 @@ void arc_cpu_reset(void *opaque)
      * via CPU registers we have to do it here.
      */
 
-    if (info->kernel_cmdline && strlen(info->kernel_cmdline)) {
+    if (info && info->kernel_cmdline && strlen(info->kernel_cmdline)) {
         /* Load "cmdline" far enough from the kernel image. */
         hwaddr cmdline_offset, cmdline_addr;
         const hwaddr max_page_size = 64 * KiB;
@@ -68,6 +68,7 @@ void arc_cpu_reset(void *opaque)
 void arc_load_kernel(ARCCPU *cpu, struct arc_boot_info *info)
 {
     hwaddr entry;
+    CPUState *cs;
     int elf_machine, kernel_size;
 
     if (!info->kernel_filename) {
@@ -101,7 +102,9 @@ void arc_load_kernel(ARCCPU *cpu, struct arc_boot_info *info)
     cpu->env.boot_info = info;
 
     /* Set CPU's PC to point to the entry-point */
-    cpu->env.pc = entry;
+    CPU_FOREACH(cs) {
+        ARC_CPU(cs)->env.pc = entry;
+    }
 }
 
 
