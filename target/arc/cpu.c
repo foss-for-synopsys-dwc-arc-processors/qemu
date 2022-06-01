@@ -120,6 +120,8 @@ static Property arc_cpu_properties[] = {
 
     DEFINE_PROP_STRING("mmuv6-version", ARCCPU, cfg.mmuv6_version),
 
+    DEFINE_PROP_UINT8("mcip-cirq-a", ARCCPU, cfg.mcip_first_cirq, 100),
+
     DEFINE_PROP_END_OF_LIST(),
 };
 

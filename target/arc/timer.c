@@ -32,10 +32,12 @@
 #define TIMER_PERIOD(hz) (1000000000LL / (hz))
 #define TIMEOUT_LIMIT 1000000
 
-#define FREQ_HZ (env_archcpu(env)->freq_hz)
 
-#define CYCLES_TO_NS(VAL) (muldiv64(VAL, NANOSECONDS_PER_SECOND, FREQ_HZ))
-#define NS_TO_CYCLE(VAL)  (muldiv64(VAL, FREQ_HZ, NANOSECONDS_PER_SECOND))
+uint64_t get_global_cycles(void) {
+    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
+                    ARC_CPU(first_cpu)->cfg.freq_hz,
+                    NANOSECONDS_PER_SECOND);
+}
 
 static uint64_t get_ns(CPUARCState *env)
 {
@@ -90,15 +92,11 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
     uint32_t overflow = env->timer[timer].T_Cntrl & TMR_IP;
     /* Set the IP bit. */
 
-    bool unlocked = !qemu_mutex_iothread_locked();
-    if (unlocked) {
-        qemu_mutex_lock_iothread();
-    }
+    while(qemu_mutex_trylock(&env->timer_mutex) != 0) { assert(0); }
     env->timer[timer].T_Cntrl |= TMR_IP;
     env->timer[timer].last_clk = get_ns(env);
-    if (unlocked) {
-        qemu_mutex_unlock_iothread();
-    }
+    qemu_mutex_unlock(&env->timer_mutex);
+
 
     /* Raise an interrupt if enabled. */
     if ((env->timer[timer].T_Cntrl & TMR_IE) && !overflow) {
@@ -233,15 +231,10 @@ static uint32_t cpu_arc_count_get(CPUARCState *env, uint32_t timer)
 static void cpu_arc_count_set(CPUARCState *env, uint32_t timer, uint32_t val)
 {
     assert(timer == 0 || timer == 1);
-    bool unlocked = !qemu_mutex_iothread_locked();
-    if (unlocked) {
-        qemu_mutex_lock_iothread();
-    }
+    while(qemu_mutex_trylock(&env->timer_mutex) != 0) { assert(0); }
     env->timer[timer].last_clk = get_ns(env) - CYCLES_TO_NS(val);
     cpu_arc_timer_update(env, timer);
-    if (unlocked) {
-        qemu_mutex_unlock_iothread();
-    }
+    qemu_mutex_unlock(&env->timer_mutex);
 }
 
 /* Store the counter limit. */
@@ -271,17 +264,12 @@ static void cpu_arc_control_set(CPUARCState *env,
                                 uint32_t timer, uint32_t value)
 {
     assert(timer == 1 || timer == 0);
-    bool unlocked = !qemu_mutex_iothread_locked();
-    if (unlocked) {
-        qemu_mutex_lock_iothread();
-    }
+    while(qemu_mutex_trylock(&env->timer_mutex) != 0) { assert(0); }
     if ((env->timer[timer].T_Cntrl & TMR_IP) && !(value & TMR_IP)) {
         qemu_irq_lower(env->irq[TIMER0_IRQ + (timer)]);
     }
     env->timer[timer].T_Cntrl = value & 0x1f;
-    if (unlocked) {
-        qemu_mutex_unlock_iothread();
-    }
+    qemu_mutex_unlock(&env->timer_mutex);
 }
 
 /* Get The RTC count value. */
@@ -342,6 +330,8 @@ cpu_arc_clock_init(ARCCPU *cpu)
 
     env->timer[0].last_clk = get_ns(env);
     env->timer[1].last_clk = get_ns(env);
+
+    qemu_mutex_init(&env->timer_mutex);
 }
 
 void
@@ -430,7 +420,6 @@ void aux_timer_set(const struct arc_aux_reg_detail *aux_reg_detail,
     qemu_log_mask(LOG_UNIMP, "[TMRx] AUX[%s] <= 0x" TARGET_FMT_lx "\n",
                   aux_reg_detail->name, val);
 
-    qemu_mutex_lock_iothread();
     switch (aux_reg_detail->id) {
     case AUX_ID_control0:
         if (env_archcpu(env)->timer_build & TB_T0) {
@@ -471,7 +460,6 @@ void aux_timer_set(const struct arc_aux_reg_detail *aux_reg_detail,
     default:
         break;
     }
-    qemu_mutex_unlock_iothread();
 }
 
 

@@ -426,7 +426,6 @@ AUX_REG (mmuv6_build, arc_mmuv6_aux_get, NULL)
 AUX_REG (mmuv6_tlbcommand,  arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 
 AUX_REG (mmu_ctrl, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
-AUX_REG (mmu_, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 AUX_REG (mmu_rtp0, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 AUX_REG (mmu_rtp0hi, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 AUX_REG (mmu_rtp1, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
