@@ -168,15 +168,17 @@ static void arc_cirq_raise(CPUARCState *env, uint16_t cirq)
     switch(mode) {
     case ROUND_ROBIN:
 	/* Round robin */
-	uint8_t counter = env->arconnect.idu_data[cirq].counter;
-	do {
-	    core_id = (counter + cirq) % max_cpus;
-	    counter++;
-	} while(((env->arconnect.idu_data[cirq].dest >> core_id) & 0x1) == 0);
-	qemu_mutex_lock_iothread();
-	qemu_irq_raise(get_cpu_for_core(core_id)->env.irq[cirq + cpu->cfg.mcip_first_cirq]);
-	qemu_mutex_unlock_iothread();
-	return;
+        {
+	    uint8_t counter = env->arconnect.idu_data[cirq].counter;
+	    do {
+	        core_id = (counter + cirq) % max_cpus;
+	        counter++;
+	    } while(((env->arconnect.idu_data[cirq].dest >> core_id) & 0x1) == 0);
+	    qemu_mutex_lock_iothread();
+	    qemu_irq_raise(get_cpu_for_core(core_id)->env.irq[cirq + cpu->cfg.mcip_first_cirq]);
+	    qemu_mutex_unlock_iothread();
+	    return;
+	}
 	break;
     case FIRST_ACKNOWLEDGE:
 	is_first_acknoledge = true;
@@ -191,17 +193,19 @@ static void arc_cirq_raise(CPUARCState *env, uint16_t cirq)
 	qemu_mutex_unlock(&idu_mutex);
 	// fall through
     case ALL_DESTINATION:
-	int dest = env->arconnect.idu_data[cirq].dest;
-	core_id = 0;
-	qemu_mutex_lock_iothread();
-	for(core_id = 0; dest != 0; core_id++) {
-	    if((dest & 0x1) != 0) {
-	        qemu_irq_raise(get_cpu_for_core(core_id)->env.irq[cirq + cpu->cfg.mcip_first_cirq]);
+	{
+	    int dest = env->arconnect.idu_data[cirq].dest;
+	    core_id = 0;
+	    qemu_mutex_lock_iothread();
+	    for(core_id = 0; dest != 0; core_id++) {
+	        if((dest & 0x1) != 0) {
+	            qemu_irq_raise(get_cpu_for_core(core_id)->env.irq[cirq + cpu->cfg.mcip_first_cirq]);
+	        }
+	        dest >>= 1;
 	    }
-	    dest >>= 1;
-	}
-	qemu_mutex_unlock_iothread();
+	    qemu_mutex_unlock_iothread();
 	break;
+    }
     default:
 	assert(0);
 	break;
