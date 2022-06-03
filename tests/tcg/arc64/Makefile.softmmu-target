@@ -33,8 +33,10 @@ $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
 # special rule for common blobs
 %.o: %.S
 	cd ${TEST_DIR} && \
+	echo "$(CC) -I$(ARC_SRC) $($*ASFLAGS) $(ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
 	$(CC) -I$(ARC_SRC) $($*ASFLAGS) $(ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
 
 %: %.o
 	cd ${TEST_DIR} && \
+	echo "$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT);" && \
 	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT)
