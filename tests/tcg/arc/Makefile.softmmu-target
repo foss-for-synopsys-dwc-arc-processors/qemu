@@ -40,34 +40,42 @@ $(ARC_USABLE_TESTS): $(CRT_HS) $(CRT_HS5X) Makefile.softmmu-target
 
 %_gen_hs.o: generic/%.S 
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
 	$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
 
 %_gen_hs: %gen_hs.o
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS);" && \
 	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
 
 %_gen_hs5x.o: generic/%.S
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
 	$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
 
 %_gen_hs5x: %gen_hs5x.o
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X);" && \
 	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
 
 %_hs.o: hs/%.S
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
 	$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
 
 %_hs: %_hs.o
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS);" && \
 	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
 
 %_hs5x.o: hs5x/%.S
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
 	$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@
 
 %_hs5x: %_hs5x.o
 	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X);" && \
 	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
 
 run-%_hs: QEMU_OPTS+=-M arc-sim -cpu archs -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
