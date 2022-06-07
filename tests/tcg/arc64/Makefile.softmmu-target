@@ -2,7 +2,7 @@
 # ARC softmmu tests
 #
 
-ARC_SRC = $(SRC_PATH)/tests/tcg/arc
+ARC_SRC = $(SRC_PATH)/tests/tcg/arc64
 ARC_ALL = $(filter-out $(ARC_SRC)/ivt.S,$(wildcard $(ARC_SRC)/*.S))
 ARC_TESTS = $(patsubst $(ARC_SRC)/%.S, %, $(ARC_ALL))
 
