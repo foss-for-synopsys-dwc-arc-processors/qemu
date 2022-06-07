@@ -169,7 +169,7 @@ def parse_file(f, of):
                     latest_asm = match.group(1).rstrip()
                     latest_pattern = match.group(2)
                 else:
-                    error(lineno, 'comment does not contain pattern')
+                    error_with_file(f.name, lineno, 'comment does not contain pattern')
         elif re.match(r'^{', line):
             a = parse_entry(line)['result'][0]
             
