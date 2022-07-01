@@ -139,7 +139,7 @@ load_insninfo_if_valid_v3(uint64_t insn,
 
     /* Possible candidate, check the operands. */
     for (opidx = opcode->operands; *opidx; ++opidx) {
-        int value, slimmind;
+        uint64_t value, slimmind;
         const struct arc_operand *operand = &arc_operands[*opidx];
 
         if (operand->flags & ARC_OPERAND_FAKE) {
@@ -176,6 +176,29 @@ load_insninfo_if_valid_v3(uint64_t insn,
               has_limm_signed = true;
             else
               has_limm_unsigned = true;
+        }
+
+        if (operand->flags & ARC_OPERAND_LIMM &&
+            !(operand->flags & ARC_OPERAND_DUPLICATE)) {
+            if (operand->flags & ARC_OPERAND_32_SPLIT) {
+                ret.limm_split_32_p = true;
+            }
+        } else {
+            if (operand->flags & ARC_OPERAND_32_SPLIT) {
+                value &= 0xffffffff;
+                value |= (value << 32);
+            } else if (operand->flags & ARC_OPERAND_16_SPLIT) {
+#if defined (TARGET_ARC32)
+                value &= 0x0000ffff;
+                value |= (value << 16);
+#elif defined (TARGET_ARC64)
+                value &= 0x0000ffff;
+                value |= (value << 16);
+                value |= (value << 32);
+#else
+    #error "Should not happen"
+#endif
+            }
         }
 
         ret.operands[noperands].value = value;
