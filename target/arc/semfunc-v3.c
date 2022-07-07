@@ -14467,3 +14467,72 @@ VEC_ADD_SUB(VADD4H, tcg_gen_vec_add16_i64)
 VEC_ADD_SUB(VSUB2, tcg_gen_vec_sub32_i64)
 VEC_ADD_SUB(VSUB2H, arc_gen_vec_sub16_i64_w0)
 VEC_ADD_SUB(VSUB4H, tcg_gen_vec_sub16_i64)
+
+static void
+arc_gen_vmac2_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
+                 void (*OP)(TCGv, TCGv, unsigned int, unsigned int))
+{
+    TCGv t1 = tcg_temp_new();
+    TCGv t2 = tcg_temp_new();
+    TCGv t3 = tcg_temp_new();
+    TCGv t4 = tcg_temp_new();
+    
+    OP(t1, b, 0, 16);                           /* t1 = b.h0 */
+    OP(t2, c, 0, 16);                           /* t2 = c.h0 */
+    tcg_gen_mul_tl(t3, t1, t2);                 /* t3 = b.h0 * c.h0 */ 
+    tcg_gen_extract_tl(t2, cpu_r[58], 0, 32);   /* t2 = acclo */
+    tcg_gen_add_tl(t3, t3, t2);                 /* t3 = (b.h0 * c.h0) + acclo */
+    
+    OP(t1, b, 16, 16);                          /* t1 = b.h1 */
+    OP(t2, c, 16, 16);                          /* t2 = c.h1 */
+    tcg_gen_mul_tl(t4, t1, t2);                 /* t4 = b.h1 * c.h1 */
+    tcg_gen_extract_tl(t2, cpu_r[58], 32, 32);  /* t2 = acchi */
+    tcg_gen_add_tl(t4, t4, t2);                 /* t4 = (b.h1 * c.h1) + acchi */
+    
+    tcg_gen_deposit_tl(dest, dest, t3, 0, 32);  /* dest.w0 = (b.h0 * c.h0) + acclo */
+    tcg_gen_deposit_tl(dest, dest, t4, 32, 32); /* dest.w1 = (b.h1 * c.h1) + acchi */
+    tcg_gen_mov_tl(cpu_r[58], dest);            /* acc = dest */
+
+    tcg_temp_free(t1);
+    tcg_temp_free(t2);
+    tcg_temp_free(t3);
+    tcg_temp_free(t4);
+}
+
+int
+arc_gen_VMAC2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{
+    TCGv cc_temp = tcg_temp_local_new();
+    TCGLabel *cc_done = gen_new_label();
+
+    /* Conditional execution */
+    getCCFlag(cc_temp);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+
+    arc_gen_vmac2_op(ctx, dest, b, c, tcg_gen_sextract_tl);
+
+    /* Conditional execution end. */
+    gen_set_label(cc_done);
+    tcg_temp_free(cc_temp);
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_VMAC2HU(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{
+    TCGv cc_temp = tcg_temp_local_new();
+    TCGLabel *cc_done = gen_new_label();
+
+    /* Conditional execution */
+    getCCFlag(cc_temp);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+
+    arc_gen_vmac2_op(ctx, dest, b, c, tcg_gen_extract_tl);
+
+    /* Conditional execution end. */
+    gen_set_label(cc_done);
+    tcg_temp_free(cc_temp);
+
+    return DISAS_NEXT;
+}
