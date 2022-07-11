@@ -14480,18 +14480,18 @@ arc_gen_vmac2_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
     OP(t1, b, 0, 16);                           /* t1 = b.h0 */
     OP(t2, c, 0, 16);                           /* t2 = c.h0 */
     tcg_gen_mul_tl(t3, t1, t2);                 /* t3 = b.h0 * c.h0 */ 
-    tcg_gen_extract_tl(t2, cpu_r[58], 0, 32);   /* t2 = acclo */
+    tcg_gen_extract_tl(t2, cpu64_acc, 0, 32);   /* t2 = acclo */
     tcg_gen_add_tl(t3, t3, t2);                 /* t3 = (b.h0 * c.h0) + acclo */
     
     OP(t1, b, 16, 16);                          /* t1 = b.h1 */
     OP(t2, c, 16, 16);                          /* t2 = c.h1 */
     tcg_gen_mul_tl(t4, t1, t2);                 /* t4 = b.h1 * c.h1 */
-    tcg_gen_extract_tl(t2, cpu_r[58], 32, 32);  /* t2 = acchi */
+    tcg_gen_extract_tl(t2, cpu64_acc, 32, 32);  /* t2 = acchi */
     tcg_gen_add_tl(t4, t4, t2);                 /* t4 = (b.h1 * c.h1) + acchi */
     
     tcg_gen_deposit_tl(dest, dest, t3, 0, 32);  /* dest.w0 = (b.h0 * c.h0) + acclo */
     tcg_gen_deposit_tl(dest, dest, t4, 32, 32); /* dest.w1 = (b.h1 * c.h1) + acchi */
-    tcg_gen_mov_tl(cpu_r[58], dest);            /* acc = dest */
+    tcg_gen_mov_tl(cpu64_acc, dest);            /* acc = dest */
 
     tcg_temp_free(t1);
     tcg_temp_free(t2);
