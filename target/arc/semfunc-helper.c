@@ -300,25 +300,32 @@ void arc_has_interrupts(const DisasCtxt *ctx, TCGv ret)
  * Statically inferred return function *
  ***************************************
  */
+#if defined (TARGET_ARC32)
+  #define arc_tcgv_tl_temp tcgv_i32_temp
+#elif defined (TARGET_ARC64)
+  #define arc_tcgv_tl_temp tcgv_i64_temp
+#else
+    #error "Should not happen"
+#endif
 
-TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg)
+TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg, bool fail)
 {
-    int i;
-    for (i = 0; i < 64; i += 2) {
-        if (reg == cpu_r[i]) {
-            return cpu_r[i + 1];
-        }
-    }
-    /* Check if REG is an odd register. */
-    for (i = 1; i < 64; i += 2) {
-        /* If so, that is unsanctioned. */
-        if (reg == cpu_r[i]) {
-            arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
-            return NULL;
-        }
-    }
+    ptrdiff_t n = arc_tcgv_tl_temp(reg) - arc_tcgv_tl_temp(cpu_r[0]);
+    if (n >= 0 && n < 64) {
+        /* Check if REG is an even register. */
+        if (n % 2 == 0)
+            return cpu_r[n + 1];
+        
+        /* REG is an odd register. */
+        arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+        return NULL;
+    }    
+
     /* REG was not a register after all. */
-    g_assert_not_reached();
+    if (fail)
+        g_assert_not_reached();
+
+    return reg;
 }
 
 bool arc_target_has_option(enum target_options option)
