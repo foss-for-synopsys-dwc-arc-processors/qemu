@@ -143,8 +143,16 @@ instruction_error:
   start
 
 ; Test case 1
-; reg2 <- reg2, reg2
-; (0x00000000,0x00000000)=(0x80000000,0xffffffff)-(0x80000000,0xffffffff)
+; r2 <- r2, r2
+;   (r3,r2) = (r3,r2) - (r3,r2)
+;     r2 = r2 - r2
+;     r3 = r3 - r3
+;
+;    (0x80000000, 0xffffffff) [r3,r2]
+;  - (0x80000000, 0xffffffff) [r3,r2]
+; -----------------------------------
+;  = (0x00000000, 0x00000000) [r3,r2]
+; 
 ; The Z flag must remain 0.
   prep_test_case
   mov   r2, 0xffffffff
@@ -153,8 +161,16 @@ instruction_error:
   check_64bit_double 0, 0, r3, r2
 
 ; Test case 2
-; reg0 <- reg2, reg0
-; (0x7fffffff,0x80000000)=(-1,0x7fffffff)-(0x80000000,-1)
+; r0 <- r2, r0
+;   (r1,r0) = (r3,r2) - (r1,r0)
+;     r0 = r2 - r0
+;     r1 = r3 - r1
+;
+;    (0xffffffff, 0x7fffffff) [r3,r2]
+;  - (0x80000000, 0x80000000) [r1,r0]
+; -----------------------------------
+;  = (0x7fffffff, 0xffffffff) [r1,r0]
+;
 ; The V and N flags must remain zero.
   prep_test_case
   mov   r3, 0xffffffff
@@ -165,43 +181,83 @@ instruction_error:
   check_64bit_double 0x7fffffff, 0x80000000, r1, r0
 
 ; Test case 3
-; reg0 <- limm, reg4
-; (0x90abcdef,0x00000001)=(0x12345678,0x12345678)-(0x81888889,0x12345677)
+; r0 <- limm, r4
+;   (r1,r0) = (0,limm) - (r5,r4)
+;     r0 = limm - r4
+;     r1 = 0 - r5
+;
+;    (         0, 0x12345678) [0,limm]
+;  - (0x81888889, 0x12345677) [r5,r4]
+; -----------------------------------
+;  = (0x7e777777, 0x00000001) [r1,r0]
+;
   prep_test_case
   mov   r0, 0x11111111            ; bogus data
   mov   r1, 0x22222222            ; bogus data
   mov   r4, 0x12345677
   mov   r5, 0x81888889
   vsub2 r0, 0x12345678, r4
-  check_64bit_double 0x90abcdef, 0x01, r1, r0
+  check_64bit_double 0x7e777777, 0x01, r1, r0
 
 ; Test case 4
-; reg4 <- reg2, limm
-; (-999999999,-999999998)=(1,2)-(1000000000,1000000000)
+; r4 <- r2, limm
+;   (r5,r4) = (r3,r2) - (0,limm)
+;     r4 = r2 - limm
+;     r5 = r3 - 0
+;
+;    (         1,          2) [r3,r2]
+;  - (         0, 0x3b9aca00) [0,limm]
+; -----------------------------------
+;  = (         1, 0xc4653602) [r5,r4]
+;
 ; The N flag must not be set, irrespective of having negative results.
   prep_test_case
   mov   r2, 2
   mov   r3, 1
   vsub2 r4, r2, 0x3b9aca00    ; 0x3b9aca00=1000000000
-  check_64bit_double -999999999, -999999998, r5, r4
+  check_64bit_double 1, 0xc4653602, r5, r4
 
 ; Test case 5
-; reg2 <- limm, limm  (both limm should be the same)
-; (0x00,0x00)=(0x12345678,0x12345678)-(0x12345678,0x12345678)
+; r2 <- limm, limm  (both limm should be the same)
+;   (r3,r2) = (0,limm) - (0,limm)
+;     r2 = limm - limm
+;     r3 = 0 - 0
+;
+;    (         0, 0x12345678) [0,limm]
+;  - (         0, 0x12345678) [0,limm]
+; -----------------------------------
+;  = (         0,          0) [r5,r4]
+;
   prep_test_case
   vsub2 r2, 0x12345678, 0x12345678
   check_64bit_double 0, 0, r3, r2
 
 ; Test case 6
-; reg4 <- limm, u6
-; (0x010202c5,0x010202c5)=(0x01020304,0x01020304)-(0x3f,0x3f)
+; r4 <- limm, u6
+;   (r5,r4) = (0,limm) - (u6,u6)
+;     r4 = limm - u6
+;     r5 = 0 - u6
+;
+;    (         0, 0x01020304) [0,limm]
+;  - (      0x3f,       0x3f) [u6,u6]
+; -----------------------------------
+;  = (0xffffffc1, 0x010202c5) [r5,r4]
+;
   prep_test_case
   vsub2 r4, 0x01020304, 63
-  check_64bit_double 0x010202c5, 0x010202c5, r5, r4
+  check_64bit_double 0xffffffc1, 0x010202c5, r5, r4
 
 ; Test case 7
-; reg2 <- reg4, 0(u6)
-; (0x08070605,0x04030201)=(0x08070605,0x04030201)-(0,0)
+; r2 <- r4, u6
+;   (r3,r2) = (r5,r4) - (u6,u6)
+;     r2 = r4 - u6
+;     r3 = r5 - u6
+;
+;    (0x08070605, 0x04030201) [r5,r4]
+;  - (         0,          0) [u6,u6]
+; -----------------------------------
+;  = (0x08070605, 0x04030201) [r3,r2]
+;
   prep_test_case
   mov   r5, 0x08070605
   mov   r4, 0x04030201
@@ -209,8 +265,16 @@ instruction_error:
   check_64bit_double 0x08070605, 0x04030201, r3, r2
 
 ; Test case 8
-; reg0 <- reg0, s12
-; (2048,-200000000)=(0,-2000002048)-(-2048,-2048)
+; r0 <- r0, s12
+;   (r1,r0) = (r1,r0) - (s12,s12)
+;     r0 = r0 - s12
+;     r1 = r1 - s12
+;
+;    (         0,-2000002048) [r1,r0]
+;  - (     -2048,      -2048) [s12,s12]
+; -----------------------------------
+;  = (      2048,-2000000000) [r1,r0]
+;
   prep_test_case
   mov   r1, 0
   mov   r0, -2000002048
@@ -219,13 +283,30 @@ instruction_error:
 
 ; Test case 9
 ; 0 <- limm, s12
-; (X,X)=(0xffeeddbb,0xffeeddbb)-(-2048,-2048)
+;   (0,0) = (0,limm) - (s12,s12)
+;     0 = limm - s12
+;     0 = 0 - s12
+;
+;    (         0, 0xffeeddbb) [0,limm]
+;  - (     -2048,      -2048) [s12,s12]
+; -----------------------------------
+;  = (----------, ----------) [r1,r0]
+;
   prep_test_case
   vsub2 0, 0xffeeddbb, -2048
 
 ; Test case 10
 ; Testing when cc condition is met
-; (0,0)=(3,2)+(3,2)
+; r2 <- r2, r2
+;   (r3,r2) = (r3,r2) - (r3,r2)
+;     r2 = r2 - r2
+;     r3 = r3 - r3
+;
+;    (         3,          2) [r3,r2]
+;  - (         3,          2) [r3,r2]
+; -----------------------------------
+;  = (         0,          0) [r3,r2]
+;
   prep_test_case
   mov     r2, 2
   mov     r3, 3
@@ -237,40 +318,47 @@ instruction_error:
 
 ; Test case 11
 ; Testing when cc condition is not met
-; (2,0)
+; The instruction is not executed
   prep_test_case
   mov     r2, 0
   mov     r3, 2
   vsub2.z r2, r2, r2  ; Z=0 because of PREP_TEST_CASE
   check_64bit_double 2, 0, r3, r2
 
-; Test case 12
-; Raise an Illegal Instruction exception if an odd register is used.
-; Even if there is no register to save the result to.
-  prep_test_case
-  set_except_params @test_12_exception, @test_12_end
-test_12_exception:
-  vsub2 0, r5, r0
-  b     @fail
-test_12_end:
-  ; Fall through
-
-; Test case 13
-; Raise an Illegal Instruction exception if an odd register is used.
-; The exception should be made even if the CC indicates no execution.
-  prep_test_case        ; (Z,N,C,V)=(0,0,0,0)
-  set_except_params @test_13_exception, @test_13_end
-test_13_exception:
-  vsub2.c r1, r1, r0
-  b       @fail
-test_13_end:
-  ; Fall through
+;; Test case 12
+;; Raise an Illegal Instruction exception if an odd register is used.
+;; Even if there is no register to save the result to.
+;  prep_test_case
+;  set_except_params @test_12_exception, @test_12_end
+;test_12_exception:
+;  vsub2 0, r5, r0
+;  b     @fail
+;test_12_end:
+;  ; Fall through
+;
+;; Test case 13
+;; Raise an Illegal Instruction exception if an odd register is used.
+;; The exception should be made even if the CC indicates no execution.
+;  prep_test_case        ; (Z,N,C,V)=(0,0,0,0)
+;  set_except_params @test_13_exception, @test_13_end
+;test_13_exception:
+;  vsub2.c r1, r1, r0
+;  b       @fail
+;test_13_end:
+;  ; Fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; VSUB2H ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Test case 14
-; reg1 <- reg1, reg1
-; (0x0000,0x0000)=(0x8000,0xffff)-(0x8000,0xffff)
+; r1 <- r1, r1
+;    r1.h0 = r1.h0 - r1.h0;
+;    r1.h1 = r1.h1 - r1.h1;
+;
+;    (0x8000, 0xffff) [r1.h1,r1.h0]
+;  - (0x8000, 0xffff) [r1.h1,r1.h0]
+; ---------------------------------
+;  = (0x0000, 0x0000) [r1.h1,r1.h0]
+;
 ; To boot, the Z flag must remain unsett.
   prep_test_case
   mov    r1, 0x8000ffff
@@ -278,8 +366,15 @@ test_13_end:
   check_32bit_double 0, 0, r1
 
 ; Test case 15
-; reg1 <- reg1, reg3
-; (0x7fff,0x8000)=(-1,0x7fff)-(0x8000,-1)
+; r1 <- r1, r3
+;    r1.h0 = r1.h0 - r3.h0;
+;    r1.h1 = r1.h1 - r3.h1;
+;
+;    (0xffff, 0x7fff) [r1.h1,r1.h0]
+;  - (0x8000, 0xffff) [r3.h1,r3.h0]
+; ---------------------------------
+;  = (0x7fff, 0x8000) [r1.h1,r1.h0]
+;
 ; The V and N flags must remain zero.
   prep_test_case
   mov    r1, 0xffff7fff
@@ -288,8 +383,15 @@ test_13_end:
   check_32bit_double 0x7fff, 0x8000, r1
 
 ; Test case 16
-; reg0 <- limm, reg4
-; (0x4321,0x0001)=(0x1234,0x5678)-(0xcf13,0x5677)
+; r0 <- limm, r4
+;    r0.h0 = limm.h0 - r4.h0;
+;    r0.h1 = limm.h1 - r4.h1;
+;
+;    (0x1234, 0x5678) [limm.h1,limm.h0]
+;  - (0xcf13, 0x5677) [r4.h1,r4.h0]
+; ---------------------------------
+;  = (0x4321, 0x0001) [r0.h1,r0.h0]
+;
   prep_test_case
   mov    r0, 0x11111111           ; bogus data
   mov    r4, 0xcf135677
@@ -297,39 +399,74 @@ test_13_end:
   check_32bit_double 0x4321, 0x0001, r0
 
 ; Test case 17
-; reg5 <- reg3, limm
-; (-9999,-9998)=(1,2)-(10000,10000)
+; r5 <- r3, limm
+;    r5.h0 = r3.h0 - limm.h0;
+;    r5.h1 = r3.h1 - limm.h1;
+;
+;    (0x0001, 0x0002) [r3.h1,r3.h0]
+;  - (0x2710, 0x2710) [limm.h1,limm.h0]
+; ---------------------------------
+;  = (0xd8f1, 0xd8f2) [r5.h1,r5.h0]
+;
 ; The N flag must not be set, irrespective of having negative results.
   prep_test_case
   mov    r3, 0x00010002           ; (1,2)
   vsub2h r5, r3, 0x27102710       ; (1,2)-(10000,10000)
-  check_32bit_double -9999, -9998, r5
+  check_32bit_double 0xd8f1, 0xd8f2, r5
 
 ; Test case 18
-; reg1 <- limm, limm  (both limm should be the same)
-; (0x00,0x00)=(0x1234,0x5678)-(0x1234,0x5678)
+; r1 <- limm, limm  (both limm should be the same)
+;    r1.h0 = limm.h0 - limm.h0;
+;    r1.h1 = limm.h1 - limm.h1;
+;
+;    (0x1234, 0x5678) [limm.h1,limm.h0]
+;  - (0x1234, 0x5678) [limm.h1,limm.h0]
+; ---------------------------------
+;  = (0x0000, 0x0000) [r1.h1,r1.h0]
+;
   prep_test_case
   vsub2h r1, 0x12345678, 0x12345678
   check_32bit_double 0, 0, r1
 
 ; Test case 19
-; reg0 <- limm, u6
-; (0x00c3,0x02c5)=(0x0102,0x0304)-(0x3f,0x3f)
+; r0 <- limm, u6
+;    r0.h0 = limm.h0 - u6;
+;    r0.h1 = limm.h1 - u6;
+;
+;    (0x0102, 0x0304) [limm.h1,limm.h0]
+;  - (  0x3f,   0x3f) [u6,u6]
+; ---------------------------------
+;  = (0x00c3, 0x02c5) [r0.h1,r0.h0]
+;
   prep_test_case
   vsub2h r0, 0x01020304, 63
   check_32bit_double 0x00c3, 0x02c5, r0
 
 ; Test case 20
-; reg1 <- reg0, 0(u6)
-; (0x0403,0x0201)=(0x0403,0x0201)-(0,0)
+; r1 <- r0, u6
+;    r1.h0 = r0.h0 - u6;
+;    r1.h1 = r0.h1 - u6;
+;
+;    (0x0403, 0x0201) [r0.h1,r0.h0]
+;  - (     0,      0) [u6,u6]
+; ---------------------------------
+;  = (0x0403, 0x0201) [r1.h1,r1.h0]
+;
   prep_test_case
   mov    r0, 0x04030201
   vsub2h r1, r0, 0
   check_32bit_double 0x0403, 0x0201, r1
 
 ; Test case 21
-; reg5 <- reg5, s12
-; (66,-20415)=(1,-20480)-(-65,-65)
+; r5 <- r5, s12
+;    r5.h0 = r5.h0 - s12;
+;    r5.h1 = r5.h1 - s12;
+;
+;    (0x0001, 0xb000) [r5.h1,r5.h0]
+;  - (   -65,    -65) [s12,s12]
+; ---------------------------------
+;  = (    66, -20415) [r5.h1,r5.h0]
+;
   prep_test_case
   mov    r5, 0x0001b000   ; (1,-20480)
   vsub2h r5, r5, -65
@@ -337,12 +474,28 @@ test_13_end:
 
 ; Test case 22
 ; 0 <- limm, s12
-; (X,X)=(0xffee,0xddbb)-(-2048,-2048)
+;    0 = limm.h0 - s12;
+;    0 = limm.h1 - s12;
+;
+;    (0xffee, 0xddbb) [limm.h1,limm.h0]
+;  - ( -2048,  -2048) [s12,s12]
+; ---------------------------------
+;  = (------, ------) [0,0]
+;
   prep_test_case
   vsub2h 0, 0xffeeddbb, -2048
 
 ; Test case 23
 ; Testing when cc condition is met
+; r1 <- r1, r1
+;    r1.h0 = r1.h0 - r1.h0;
+;    r1.h1 = r1.h1 - r1.h1;
+;
+;    (0x0003, 0x0002) [r1.h1,r1.h0]
+;  - (0x0003, 0x0002) [r1.h1,r1.h0]
+; ---------------------------------
+;  = (0x0000, 0x0000) [r1.h1,r1.h0]
+;
 ; (0,0)=(3,2)+(3,2)
   prep_test_case
   mov      r1, 0x00030002
@@ -354,7 +507,7 @@ test_13_end:
 
 ; Test case 24
 ; Testing when cc condition is not met
-; (2,0)
+; Instruction is not executed 
   prep_test_case
   mov      r4, 0x00020000
   vsub2h.n r4, r4, r4  ; N=0 because of PREP_TEST_CASE
@@ -363,9 +516,17 @@ test_13_end:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; VSUB4H ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Test case 25
-; reg2 <- reg2, reg2
-; (0x0000,0x0000,0x0000,0x0000)=(0x8000,0x7000,0xfffe,0xffff)-
-;                               (0x8000,0x7000,0xfffe,0xffff)
+; r2 <- r2, r2
+;   r2.h0 = r2.h0 - r2.h0
+;   r2.h1 = r2.h1 - r2.h1
+;   r3.h0 = r3.h0 - r3.h0
+;   r3.h1 = r3.h1 - r3.h1
+; 
+;    (0x8000, 0x7000, 0xfffe, 0xffff) [r3,r2]
+;  - (0x8000, 0x7000, 0xfffe, 0xffff) [r3,r2]
+; -----------------------------------
+;  = (0x0000, 0x0000, 0x0000, 0x0000) [r3,r2]
+; 
 ; The Z flag must remain 0.
   prep_test_case
   mov    r2, 0xfffeffff
@@ -374,8 +535,17 @@ test_13_end:
   check_64bit_quadruple 0, 0, 0, 0, r3, r2
 
 ; Test case 26
-; reg0 <- reg2, reg0
-; (0x7fff,-2,977,0x8000)=(-1,10,1000,0x7fff)-(0x8000,12,23,-1)
+; r0 <- r2, r0
+;   r0.h0 = r2.h0 - r0.h0
+;   r0.h1 = r2.h1 - r0.h1
+;   r1.h0 = r3.h0 - r1.h0
+;   r1.h1 = r3.h1 - r1.h1
+; 
+;    (0xffff, 0x000a, 0x03e8, 0x7fff) [r3,r2]
+;  - (0x8000, 0x000c, 0x0017, 0xffff) [r1,r0]
+; -----------------------------------
+;  = (0x7fff,     −2,    977, 0x8000) [r3,r2]
+;
 ; The V and N flags must remain zero.
   prep_test_case
   mov    r3, 0xffff000a     ; (-1    ,     10)
@@ -386,47 +556,88 @@ test_13_end:
   check_64bit_quadruple 0x7fff, -2, 977, 0x8000, r1, r0
 
 ; Test case 27
-; reg0 <- limm, reg4
-; (0x4321,0x8765,0x90ab,0xcdef)=(0x1234,0x5678,0x1234,0x5678)-
-;                               (0xcf13,0xcf13,0x8189,0x8889)
+; r0 <- limm, r4
+;   r0.h0 = limm.h0 - r4.h0
+;   r0.h1 = limm.h1 - r4.h1
+;   r1.h0 = 0 - r5.h0
+;   r1.h1 = 0 - r5.h1
+; 
+;    (     0,      0, 0x1234, 0x5678) [0,limm]
+;  - (0xcf13, 0xcf13, 0x8189, 0x8889) [r5,r4]
+; -----------------------------------
+;  = (0x30ed, 0x30ed, 0x90ab, 0xcdef) [r1,r0]
+;
   prep_test_case
   mov    r0, 0x11111111           ; bogus data
   mov    r1, 0x22222222           ; bogus data
   mov    r5, 0xcf13cf13
   mov    r4, 0x81898889
   vsub4h r0, 0x12345678, r4
-  check_64bit_quadruple 0x4321, 0x8765, 0x90ab, 0xcdef, r1, r0
+  check_64bit_quadruple 0x30ed, 0x30ed, 0x90ab, 0xcdef, r1, r0
 
 ; Test case 28
-; reg4 <- reg2, limm
-; (-9999,-10,-9653,417)=(1,2,347,429)-(10000,12,10000,12)
+; r4 <- r2, limm
+;   r4.h0 = r2.h0 - limm.h0
+;   r4.h1 = r2.h1 - limm.h1
+;   r5.h0 = r3.h0 - 0
+;   r5.h1 = r3.h1 - 0
+; 
+;    (0x0001, 0x0002, 0x015b, 0x01ad) [r3,r2]
+;  - (     0,      0, 0x2710, 0x000c) [0,limm]
+; -----------------------------------
+;  = (0x0001, 0x0002, 0xda4b, 0x01a1) [r5,r4]
+;
 ; The N flag must not be set, irrespective of having negative results.
   prep_test_case
   mov    r3, 0x00010002         ; (1  ,   2)
   mov    r2, 0x015b01ad         ; (347, 429)
   vsub4h r4, r2, 0x2710000c     ; (0x2710,000c)=(10000,12)
-  check_64bit_quadruple -9999, -10, -9653, 417, r5, r4
+  check_64bit_quadruple 1, 2, -9653, 417, r5, r4
 
 ; Test case 29
-; reg2 <- limm, limm  (both limm should be the same)
-; (0x0000,0x0000,0x0000,0x0000)=(0x1234,0x5678,0x1234,0x5678)-
-;                               (0x1234,0x5678,0x1234,0x5678)
+; r2 <- limm, limm  (both limm should be the same)
+;   r2.h0 = limm.h0 - limm.h0
+;   r2.h1 = limm.h1 - limm.h1
+;   r3.h0 = 0 - 0
+;   r3.h1 = 0 - 0
+; 
+;    (     0,      0, 0x1234, 0x5678) [0,limm]
+;  - (     0,      0, 0x1234, 0x5678) [0,limm]
+; -----------------------------------
+;  = (     0,      0,      0,      0) [r3,r2]
+;
   prep_test_case
   vsub4h r2, 0x12345678, 0x12345678
   check_64bit_quadruple 0, 0, 0, 0, r3, r2
 
 ; Test case 30
-; reg4 <- limm, u6
-; (0x00c3,0x02c5,0x00c3,0x02c5)=(0x0102,0x0304,0x0102,0x0304)-
-;                               (  0x3f,  0x3f,  0x3f,  0x3f)
+; r4 <- limm, u6
+;   r4.h0 = limm.h0 - u6
+;   r4.h1 = limm.h1 - u6
+;   r5.h0 = 0 - u6
+;   r5.h1 = 0 - u6
+; 
+;    (     0,      0, 0x0102, 0x0304) [0,limm]
+;  - (  0x3f,   0x3f,   0x3f,   0x3f) [u6,u6]
+; -----------------------------------
+;  = (0xffc1, 0xffc1, 0x00c3, 0x02c5) [r5,r4]
+;
   prep_test_case
   vsub4h r4, 0x01020304, 63
-  check_64bit_quadruple 0x00c3,0x02c5, 0x00c3, 0x02c5, r5, r4
+  check_64bit_quadruple 0xffc1, 0xffc1, 0x00c3, 0x02c5, r5, r4
 
 ; Test case 31
-; reg0 <- reg4, 0(u6)
-; (0x1122,0x3344,0x5566,0x7788)=(0x1122,0x3344,0x5566,0x7788)-
-;                               (0x0000,0x0000,0x0000,0x0000)
+; r0 <- r4, u6
+;   r0.h0 = r4.h0 - u6
+;   r0.h1 = r4.h1 - u6
+;   r1.h0 = r5.h0 - u6
+;   r1.h1 = r5.h1 - u6
+; 
+;    (0x1122, 0x3344, 0x5566, 0x7788) [r5,r4]
+;  - (     0,      0,      0,      0) [u6,u6]
+; -----------------------------------
+;  = (0x1122, 0x3344, 0x5566, 0x7788) [r1,r0]
+;
   prep_test_case
   mov    r5, 0x11223344
   mov    r4, 0x55667788
@@ -434,8 +645,17 @@ test_13_end:
   check_64bit_quadruple 0x1122, 0x3344, 0x5566, 0x7788, r1, r0
 
 ; Test case 32
-; reg2 <- reg2, s12
-; (-4094,1,-2035,-2049)=(-2047,2048,12,-2)-(2047,2047,2047,2047)
+; r2 <- r2, s12
+;   r2.h0 = r3.h0 - s12
+;   r2.h1 = r3.h1 - s12
+;   r3.h0 = r4.h0 - s12
+;   r3.h1 = r4.h1 - s12
+; 
+;    (0xf801, 0x0800, 0x000c, 0xfffe) [r3,r2]
+;  - (  2047,   2047,   2047,   2047) [s12,s12]
+; -----------------------------------
+;  = ( -4094,      1,  -2035,  -2049) [r3,r2]
+;
   prep_test_case
   mov    r3, 0xf8010800
   mov    r2, 0x000cfffe     ; (12, -2)
@@ -444,13 +664,32 @@ test_13_end:
 
 ; Test case 33
 ; 0 <- limm, s12
-; (X,X,X,X)=(0xffee,0xddbb,0xffee,0xddbb)-(-2048,-2048,-2048,-2048)
+;   0 = limm.h0 - s12
+;   0 = limm.h1 - s12
+;   0 = 0 - s12
+;   0 = 0 - s12
+; 
+;    (     0,      0, 0xffee, 0xddbb) [0,limm]
+;  - ( -2048,  -2048,  -2048,  -2048) [s12,s12]
+; -----------------------------------
+;  = (------, ------, ------, ------) [0,0]
+;
   prep_test_case
   vsub4h 0, 0xffeeddbb, -2048
 
 ; Test case 34
 ; Testing when cc condition is met
-; (0,0,0,0)=(3,2,1,0)-(3,2,1,0)
+; r2 <- r2, r2 (cc)
+;   r2.h0 = r2.h0 - r2.h0 
+;   r2.h1 = r2.h1 - r2.h1 
+;   r3.h0 = r3.h0 - r3.h0
+;   r3.h1 = r3.h1 - r3.h1
+; 
+;    (0x0003, 0x0002, 0x0001, 0x0000) [r3,r2]
+;  - (0x0003, 0x0002, 0x0001, 0x0000) [r3,r2]
+; -----------------------------------
+;  = (0x0000, 0x0000, 0x0000, 0x0000) [r3,r2]
+;
   prep_test_case
   mov      r3, 0x00030002
   mov      r2, 0x00010000
@@ -462,34 +701,34 @@ test_13_end:
 
 ; Test case 35
 ; Testing when cc condition is not met
-; (2,0,2,0)
+; Instruction is not executed
   prep_test_case
   mov      r3, 0x00020000
   mov      r2, 0x00020000
   vsub4h.z r2, r2, r2       ; Z=0 because of PREP_TEST_CASE
   check_64bit_quadruple 2, 0, 2, 0, r3, r2
 
-; Test case 36
-; Raise an Illegal Instruction exception if an odd register is used.
-; Even if there is no register to save the result to.
-  prep_test_case
-  set_except_params @test_36_exception, @test_36_end
-test_36_exception:
-  .word 0x003e2b39      ; vsub4h 0, r3, r0
-  b      @fail
-test_36_end:
-  ; Fall through
-
-; Test case 37
-; Raise an Illegal Instruction exception if an odd register is used.
-; The exception should be made even if the CC indicates no execution.
-  prep_test_case        ; (Z,N,C,V)=(0,0,0,0)
-  set_except_params @test_37_exception, @test_37_end
-test_37_exception:
-  .word 0x00072df9      ; vsub4h.v r5, r5, r0
-  b        @fail
-test_37_end:
-  ; Fall through
+;; Test case 36
+;; Raise an Illegal Instruction exception if an odd register is used.
+;; Even if there is no register to save the result to.
+;  prep_test_case
+;  set_except_params @test_36_exception, @test_36_end
+;test_36_exception:
+;  .word 0x003e2b39      ; vsub4h 0, r3, r0
+;  b      @fail
+;test_36_end:
+;  ; Fall through
+;
+;; Test case 37
+;; Raise an Illegal Instruction exception if an odd register is used.
+;; The exception should be made even if the CC indicates no execution.
+;  prep_test_case        ; (Z,N,C,V)=(0,0,0,0)
+;  set_except_params @test_37_exception, @test_37_end
+;test_37_exception:
+;  .word 0x00072df9      ; vsub4h.v r5, r5, r0
+;  b        @fail
+;test_37_end:
+;  ; Fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

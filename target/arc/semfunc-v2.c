@@ -23,6 +23,7 @@
 #include "translate.h"
 #include "target/arc/semfunc.h"
 #include "exec/gen-icount.h"
+#include "tcg/tcg-op-gvec.h"
 
 /*
  * FLAG
@@ -8678,3 +8679,97 @@ arc_gen_DMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return ret;
 }
+
+static void
+arc_gen_next_register_i32_i64(DisasCtxt *ctx,
+                              TCGv_i64 dest, TCGv_i32 reg)
+{
+    ptrdiff_t n = tcgv_i32_temp(reg) - tcgv_i32_temp(cpu_r[0]);
+    if (n >= 0 && n < 64) {
+        /* Check if REG is an even register. */
+        if (n % 2 == 0) {
+            if (n == 62) { /* limm */
+                tcg_gen_concat_i32_i64(dest, reg, reg);
+                tcg_gen_andi_i64(dest, dest, 0xffffffff);
+            } else { /* normal register */
+                tcg_gen_concat_i32_i64(dest, reg, cpu_r[n + 1]);
+            }
+        } else { /* if REG is an odd register, thows an exception */
+            arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+        }
+    } else { /* u6 or s12 */
+       tcg_gen_concat_i32_i64(dest, reg, reg);
+    }
+}
+
+static int
+gen_vec_add_sub_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
+                   void (*OP)(DisasCtxt*, TCGv, TCGv, TCGv))
+{
+    TCGv cc_temp = tcg_temp_local_new();
+    TCGLabel *cc_done = gen_new_label();
+
+    /* Conditional execution */
+    getCCFlag(cc_temp);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+
+    /* Instruction code */
+    OP(ctx, dest, b, c);
+
+    /* Conditional execution end. */
+    gen_set_label(cc_done);
+    tcg_temp_free(cc_temp);
+
+    return DISAS_NEXT;
+}
+
+#define VEC_ADD_SUB_OP_I64(OP)                                      \
+static void                                                         \
+arc_gen_vec_##OP##_i64(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
+{                                                                   \
+    TCGv_i64 t1 = tcg_temp_new_i64();                               \
+    TCGv_i64 t2 = tcg_temp_new_i64();                               \
+    TCGv_i64 t3 = tcg_temp_new_i64();                               \
+                                                                    \
+    arc_gen_next_register_i32_i64(ctx, t2, b);                      \
+    arc_gen_next_register_i32_i64(ctx, t3, c);                      \
+    tcg_gen_vec_##OP##_i64(t1, t2, t3);                             \
+                                                                    \
+    tcg_gen_extrl_i64_i32(dest, t1);                                \
+    tcg_gen_extrh_i64_i32(nextRegWithNull(dest), t1);               \
+                                                                    \
+    tcg_temp_free_i64(t3);                                          \
+    tcg_temp_free_i64(t2);                                          \
+    tcg_temp_free_i64(t1);                                          \
+}
+
+VEC_ADD_SUB_OP_I64(add32)
+VEC_ADD_SUB_OP_I64(add16)
+VEC_ADD_SUB_OP_I64(sub32)
+VEC_ADD_SUB_OP_I64(sub16)
+
+static void
+arc_gen_vec_add16_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{
+    tcg_gen_vec_add16_i32(dest, b, c);
+}
+
+static void
+arc_gen_vec_sub16_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{
+    tcg_gen_vec_sub16_i32(dest, b, c);
+}
+
+#define VEC_ADD_SUB(INSN, OP)                             \
+int                                                       \
+arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c) \
+{                                                         \
+    return gen_vec_add_sub_op(ctx, dest, b, c, OP);       \
+}
+
+VEC_ADD_SUB(VADD2, arc_gen_vec_add32_i64)
+VEC_ADD_SUB(VADD2H, arc_gen_vec_add16_i32)
+VEC_ADD_SUB(VADD4H, arc_gen_vec_add16_i64)
+VEC_ADD_SUB(VSUB2, arc_gen_vec_sub32_i64)
+VEC_ADD_SUB(VSUB2H, arc_gen_vec_sub16_i32)
+VEC_ADD_SUB(VSUB4H, arc_gen_vec_sub16_i64)

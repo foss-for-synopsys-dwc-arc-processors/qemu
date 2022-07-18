@@ -1246,7 +1246,7 @@ arc_gen_MPYD(DisasCtxt *ctx, TCGv_i32 dest,
         gen_cc_prologue(ctx);
         tcg_gen_muls2_i32(cpu_acclo, cpu_acchi, b32, c32);
         if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
-            tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), cpu_acchi);
+            tcg_gen_mov_tl(nextReg(dest), cpu_acchi);
             tcg_gen_mov_tl(dest, cpu_acclo);
         }
         if (ctx->insn.f) {
@@ -1267,7 +1267,7 @@ arc_gen_MPYDU(DisasCtxt *ctx, TCGv_i32 dest,
         gen_cc_prologue(ctx);
         tcg_gen_mulu2_i32(cpu_acclo, cpu_acchi, b32, c32);
         if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
-            tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), cpu_acchi);
+            tcg_gen_mov_tl(nextReg(dest), cpu_acchi);
             tcg_gen_mov_tl(dest, cpu_acclo);
         }
         if (ctx->insn.f) {
@@ -1276,19 +1276,6 @@ arc_gen_MPYDU(DisasCtxt *ctx, TCGv_i32 dest,
         gen_cc_epilogue(ctx);
     }
     return DISAS_NEXT;
-}
-
-/*
- * Populates a 64-bit vector with register pair:
- *   vec64=(REGn+1,REGn)=(REGn+1_hi,REGn+1_lo,REGn_hi,REGn_lo)
- * REG must be refering to an even numbered register.
- * Do not forget to free the returned TCGv_i64 when done!
- */
-static TCGv_i64 pair_reg_to_i64(const DisasCtxt *ctx, TCGv_i32 reg)
-{
-    TCGv_i64 vec64 = tcg_temp_new_i64();
-    tcg_gen_concat_i32_i64(vec64, reg, arc_gen_next_reg(ctx, reg));
-    return vec64;
 }
 
 /*
@@ -1307,191 +1294,6 @@ static TCGv_i32 dup_shimm_to_i32(int16_t shimm)
     val = ((val << 16) & 0xffff0000) | (val & 0xffff);
     tcg_gen_movi_i32(vec32, val);
     return vec32;
-}
-
-/*
- * Populates a 64-bit vector with repeating LIMM:
- *   vec64=(limm,limm)=(limm_hi,limm_lo,limm_hi,limm_lo)
- * Do not forget to free the returned TCGv_i64 when done!
- */
-static TCGv_i64 dup_limm_to_i64(int32_t limm)
-{
-    TCGv_i64 vec64 = tcg_temp_new_i64();
-    int64_t val = limm;
-    val = (val << 32) | (val & 0xffffffff);
-    tcg_gen_movi_i64(vec64, val);
-    return vec64;
-}
-
-/*
- * Populates a 64-bit vector with four SHIMM (u6 or s12):
- *   vec64=(0000000000u6,0000000000u6,0000000000u6,0000000000u6)
- *   vec64=(sssss12,sssss12,sssss12,sssss12)
- * It's crucial that the s12 part of an encoding is in signed
- * integer form while passed along in SHIMM, e.g:
- *   s12 = -125 (0xf803) --> 0xfffff803
- * Do not forget to free the returned TCGv_i64 when done!
- */
-static TCGv_i64 quad_shimm_to_i64(int16_t shimm)
-{
-    TCGv_i64 vec64 = tcg_temp_new_i64();
-    int64_t val = shimm;
-    val = (val << 48) | ((val << 32) & 0x0000ffff00000000) |
-          ((val << 16) & 0x00000000ffff0000) | (val & 0xffff);
-    tcg_gen_movi_i64(vec64, val);
-    return vec64;
-}
-
-/*
- * gen_vec_op2 emits instructions to perform the desired operation,
- * defined by OP, on the inputs (B32 and C32) and returns the
- * result in DEST.
- *
- * vector size:     64-bit
- * vector elements: 2
- * element size:    32-bit
- *
- * (A1, A0) = (B1, B0) op (C1, C0)
- */
-static void gen_vec_op2(const DisasCtxt *ctx,
-                        void (*OP)(TCGv_i64, TCGv_i64, TCGv_i64),
-                        TCGv_i32 dest,
-                        TCGv_i32 b32,
-                        TCGv_i32 c32)
-{
-    TCGv_i64 d64, b64, c64;
-
-    /* If no real register for result, then this a nop. Bail out! */
-    if (!(ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
-        return;
-    }
-
-    /* Extend B32 to B64 based on its type: {reg, limm}. */
-    if (ctx->insn.operands[1].type & ARC_OPERAND_IR) {
-        b64 = pair_reg_to_i64(ctx, b32);
-    } else if (ctx->insn.operands[1].type & ARC_OPERAND_LIMM) {
-        b64 = dup_limm_to_i64(ctx->insn.limm);
-    } else {
-        g_assert_not_reached();
-    }
-    /* Extend C32 to C64 based on its type: {reg, limm, shimm}. */
-    if (ctx->insn.operands[2].type & ARC_OPERAND_IR) {
-        c64 = pair_reg_to_i64(ctx, c32);
-    } else if (ctx->insn.operands[2].type & ARC_OPERAND_LIMM) {
-        c64 = dup_limm_to_i64(ctx->insn.limm);
-    } else if (ctx->insn.operands[2].type & ARC_OPERAND_SHIMM) {
-        /* At this point SHIMM is extended like LIMM. */
-        c64 = dup_limm_to_i64(ctx->insn.operands[2].value);
-    } else {
-        g_assert_not_reached();
-    }
-    d64 = tcg_temp_new_i64();
-
-    (*OP)(d64, b64, c64);
-    tcg_gen_extrl_i64_i32(dest, d64);
-    tcg_gen_extrh_i64_i32(arc_gen_next_reg(ctx, dest), d64);
-
-    tcg_temp_free_i64(d64);
-    tcg_temp_free_i64(c64);
-    tcg_temp_free_i64(b64);
-    return;
-}
-
-/*
- * gen_vec_op2h emits instructions to perform the desired operation,
- * defined by OP, on the inputs (B32 and C32) and returns the
- * result in DEST.
- *
- * vector size:     32-bit
- * vector elements: 2
- * element size:    16-bit
- *
- * (a1, a0) = (b1, b0) op (c1, c0)
- */
-static void gen_vec_op2h(const DisasCtxt *ctx,
-                         void (*OP)(TCGv, TCGv, TCGv),
-                         TCGv_i32 dest,
-                         TCGv_i32 b32,
-                         TCGv_i32 c32)
-{
-    TCGv_i32 t0, t1;
-
-    /* If no real register for result, then this a nop. Bail out! */
-    if (!(ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
-        return;
-    }
-
-    t0 = tcg_temp_new();
-    tcg_gen_mov_i32(t0, b32);
-    /*
-     * If the last operand is a u6/s12, say 63, there is no "HI" in it.
-     * Instead, it must be duplicated to form a pair; e.g.: (63, 63).
-     */
-    if (ctx->insn.operands[2].type & ARC_OPERAND_SHIMM) {
-        t1 = dup_shimm_to_i32(ctx->insn.operands[2].value);
-    } else {
-        t1 = tcg_temp_new();
-        tcg_gen_mov_i32(t1, c32);
-    }
-
-    (*OP)(dest, t0, t1);
-
-    tcg_temp_free(t1);
-    tcg_temp_free(t0);
-}
-
-/*
- * gen_vec_op4h emits instructions to perform the desired operation,
- * defined by OP, on the inputs (B32 and C32) and returns the
- * result in DEST.
- *
- * vector size:     64-bit
- * vector elements: 4
- * element size:    16-bit
- *
- * (a3, a2, a1, a0) = (b3, b2, b1, b0) op (c3, c2, c1, c0)
- */
-static void gen_vec_op4h(const DisasCtxt *ctx,
-                         void (*op)(TCGv_i64, TCGv_i64, TCGv_i64),
-                         TCGv_i32 dest,
-                         TCGv_i32 b32,
-                         TCGv_i32 c32)
-{
-    TCGv_i64 d64, b64, c64;
-
-    /* If no real register for result, then this a nop. Bail out! */
-    if (!(ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
-        return;
-    }
-
-    /* Extend B32 to B64 based on its type: {reg, limm}. */
-    if (ctx->insn.operands[1].type & ARC_OPERAND_IR) {
-        b64 = pair_reg_to_i64(ctx, b32);
-    } else if (ctx->insn.operands[1].type & ARC_OPERAND_LIMM) {
-        b64 = dup_limm_to_i64(ctx->insn.limm);
-    } else {
-        g_assert_not_reached();
-    }
-    /* Extend C32 to C64 based on its type: {reg, limm, shimm}. */
-    if (ctx->insn.operands[2].type & ARC_OPERAND_IR) {
-        c64 = pair_reg_to_i64(ctx, c32);
-    } else if (ctx->insn.operands[2].type & ARC_OPERAND_LIMM) {
-        c64 = dup_limm_to_i64(ctx->insn.limm);
-    } else if (ctx->insn.operands[2].type & ARC_OPERAND_SHIMM) {
-        c64 = quad_shimm_to_i64(ctx->insn.operands[2].value);
-    } else {
-        g_assert_not_reached();
-    }
-    d64 = tcg_temp_new_i64();
-
-    (*op)(d64, b64, c64);
-    tcg_gen_extrl_i64_i32(dest, d64);
-    tcg_gen_extrh_i64_i32(arc_gen_next_reg(ctx, dest), d64);
-
-    tcg_temp_free_i64(d64);
-    tcg_temp_free_i64(c64);
-    tcg_temp_free_i64(b64);
-    return;
 }
 
 /*
@@ -1547,67 +1349,8 @@ static void gen_vec_op2h_64(const DisasCtxt *ctx,
     /* Update the destination register if any. */
     if ((ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
         tcg_gen_mov_tl(dest, cpu_acclo);
-        tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), cpu_acchi);
+        tcg_gen_mov_tl(nextReg(dest), cpu_acchi);
     }
-}
-
-/*
- * To use a 32-bit adder to sum two 16-bit numbers:
- * 1) Mask out the 16th bit in both operands to cause no carry.
- * 2) Add the numbers.
- * 3) Put back the 16th bit sum: T0[15] ^ T1[15] ^ CARRY[14]
- *    (ignoring the possible carry generated)
- * T0 and T1 values will change. Use temporary ones.
- */
-static void gen_add16(TCGv_i32 dest, TCGv_i32 t0, TCGv_i32 t1)
-{
-    TCGv_i32 tmp = tcg_temp_new_i32();
-    tcg_gen_xor_i32(tmp, t0, t1);
-    tcg_gen_andi_i32(tmp, tmp, 0x8000);
-    tcg_gen_andi_i32(t0, t0, ~0x8000);
-    tcg_gen_andi_i32(t1, t1, ~0x8000);
-    tcg_gen_add_i32(t0, t0, t1);
-    tcg_gen_xor_i32(dest, t0, tmp);
-    tcg_temp_free_i32(tmp);
-}
-
-/*
- * To use a 32-bit subtracter to subtract two 16-bit numbers:
- * 0) Record how T0[15]-T1[15] would result without other bits.
- * 1) Make the 16th bit for the first operand 1 and the second
- *    operand 0. This combination of (1 - 0) will absorb any
- *    possible borrow that may come from the 15th bit.
- * 2) Subtract the numbers.
- * 3) Correct the 16th bit result (1 - 0 - B):
- *    If the 16th bit is 1 --> no borrow was asked.
- *    If the 16th bit is 0 --> a  borrow was asked.
- *    and if a borrow was asked, the result of step 0 must be
- *    inverted (0 -> 1 and 1 -> 0). If not, the result of step
- *    0 can be used readily:
- *     STEP2[15] | T0[15]-T1[15] | DEST[15]
- *     ----------+---------------+---------
- *         0     |       0       |    1
- *         0     |       1       |    0
- *         1     |       0       |    0
- *         1     |       1       |    1
- *    This is a truth table for XNOR(a,b):
- *      NOT(XOR(a,b))=XOR(XOR(a,b),1)
- * This approach might seem pedantic, but it generates one less
- * instruction than the obvious mask-and-sub approach and requires
- * two less TCG variables.
- * T0 and T1 values will change. Use temporary ones.
- */
-static void gen_sub16(TCGv_i32 dest, TCGv_i32 t0, TCGv_i32 t1)
-{
-    TCGv_i32 tmp = tcg_temp_new_i32();
-    tcg_gen_xor_i32(tmp, t0, t1);          /* step 0 */
-    tcg_gen_andi_i32(tmp, tmp, 0x8000);    /* step 0 */
-    tcg_gen_ori_i32(t0, t0, 0x8000);       /* step 1 */
-    tcg_gen_andi_i32(t1, t1, ~0x8000);     /* step 1 */
-    tcg_gen_sub_i32(t0, t0, t1);           /* step 2 */
-    tcg_gen_xor_i32(dest, t0, tmp);        /* step 3 */
-    tcg_gen_xori_i32(dest, dest, 0x8000);  /* step 3 */
-    tcg_temp_free_i32(tmp);
 }
 
 /*
@@ -1661,85 +1404,6 @@ static void gen_mac2hu(TCGv_i32 b32, TCGv_i32 c32)
     tcg_temp_free(c_lo);
     tcg_temp_free(b_hi);
     tcg_temp_free(b_lo);
-}
-
-/*
- * Going through every operand, if any of those is a register
- * it is verified to be an even numbered register. Else, an
- * exception is put in the generated code and FALSE is returned.
- */
-static bool verify_all_regs_are_even(const DisasCtxt *ctx)
-{
-    for (int nop = 0; nop < ctx->insn.n_ops; ++nop) {
-        if (is_odd_numbered_register(ctx->insn.operands[nop])) {
-            arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
-            return false;
-        }
-    }
-    return true;
-}
-
-
-int
-arc_gen_VADD2(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
-{
-    if (verify_all_regs_are_even(ctx)) {
-        gen_cc_prologue(ctx);
-        gen_vec_op2(ctx, tcg_gen_vec_add32_i64, dest, b, c);
-        gen_cc_epilogue(ctx);
-    }
-    return DISAS_NEXT;
-}
-
-int
-arc_gen_VADD2H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
-{
-    gen_cc_prologue(ctx);
-    gen_vec_op2h(ctx, gen_add16, dest, b, c);
-    gen_cc_epilogue(ctx);
-    return DISAS_NEXT;
-}
-
-int
-arc_gen_VADD4H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
-{
-    if (verify_all_regs_are_even(ctx)) {
-        gen_cc_prologue(ctx);
-        gen_vec_op4h(ctx, tcg_gen_vec_add16_i64, dest, b, c);
-        gen_cc_epilogue(ctx);
-    }
-    return DISAS_NEXT;
-}
-
-int
-arc_gen_VSUB2(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
-{
-    if (verify_all_regs_are_even(ctx)) {
-        gen_cc_prologue(ctx);
-        gen_vec_op2(ctx, tcg_gen_vec_sub32_i64, dest, b, c);
-        gen_cc_epilogue(ctx);
-    }
-    return DISAS_NEXT;
-}
-
-int
-arc_gen_VSUB2H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
-{
-    gen_cc_prologue(ctx);
-    gen_vec_op2h(ctx, gen_sub16, dest, b, c);
-    gen_cc_epilogue(ctx);
-    return DISAS_NEXT;
-}
-
-int
-arc_gen_VSUB4H(DisasCtxt *ctx, TCGv dest, TCGv_i32 b, TCGv_i32 c)
-{
-    if (verify_all_regs_are_even(ctx)) {
-        gen_cc_prologue(ctx);
-        gen_vec_op4h(ctx, tcg_gen_vec_sub16_i64, dest, b, c);
-        gen_cc_epilogue(ctx);
-    }
-    return DISAS_NEXT;
 }
 
 int
