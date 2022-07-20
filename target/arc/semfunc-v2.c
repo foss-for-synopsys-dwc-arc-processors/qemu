@@ -8681,6 +8681,17 @@ arc_gen_DMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 }
 
 static void
+arc_check_dest_reg_is_even_or_null(DisasCtxt *ctx, TCGv reg)
+{
+    ptrdiff_t n = tcgv_i32_temp(reg) - tcgv_i32_temp(cpu_r[0]);
+    if (n >= 0 && n < 64) {
+        /* REG is an odd register. */
+        if (n % 2 != 0)
+            arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+    }
+}
+
+static void
 arc_gen_next_register_i32_i64(DisasCtxt *ctx,
                               TCGv_i64 dest, TCGv_i32 reg)
 {
@@ -8703,8 +8714,8 @@ arc_gen_next_register_i32_i64(DisasCtxt *ctx,
 }
 
 static int
-gen_vec_add_sub_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
-                   void (*OP)(DisasCtxt*, TCGv, TCGv, TCGv))
+arc_gen_vec_cond_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
+                    void (*OP)(DisasCtxt*, TCGv, TCGv, TCGv))
 {
     TCGv cc_temp = tcg_temp_local_new();
     TCGLabel *cc_done = gen_new_label();
@@ -8723,13 +8734,22 @@ gen_vec_add_sub_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
     return DISAS_NEXT;
 }
 
-#define VEC_ADD_SUB_OP_I64(OP)                                      \
+#define ARC_GEN_VEC_INSN(INSN, OP)                          \
+int                                                         \
+arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
+{                                                           \
+    return arc_gen_vec_cond_op(ctx, dest, b, c, OP);        \
+}
+
+#define ARC_GEN_VEC_ADD_SUB_I64(OP)                                 \
 static void                                                         \
 arc_gen_vec_##OP##_i64(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
 {                                                                   \
     TCGv_i64 t1 = tcg_temp_new_i64();                               \
     TCGv_i64 t2 = tcg_temp_new_i64();                               \
     TCGv_i64 t3 = tcg_temp_new_i64();                               \
+                                                                    \
+    arc_check_dest_reg_is_even_or_null(ctx, dest);                  \
                                                                     \
     arc_gen_next_register_i32_i64(ctx, t2, b);                      \
     arc_gen_next_register_i32_i64(ctx, t3, c);                      \
@@ -8743,33 +8763,61 @@ arc_gen_vec_##OP##_i64(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
     tcg_temp_free_i64(t1);                                          \
 }
 
-VEC_ADD_SUB_OP_I64(add32)
-VEC_ADD_SUB_OP_I64(add16)
-VEC_ADD_SUB_OP_I64(sub32)
-VEC_ADD_SUB_OP_I64(sub16)
+#define ARC_GEN_VEC_ADD_SUB_I32(OP)                                 \
+static void                                                         \
+arc_gen_vec_##OP##_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
+{                                                                   \
+    tcg_gen_vec_##OP##_i32(dest, b, c);                             \
+}                                                                   \
 
-static void
-arc_gen_vec_add16_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
-{
-    tcg_gen_vec_add16_i32(dest, b, c);
+ARC_GEN_VEC_ADD_SUB_I64(add32)
+ARC_GEN_VEC_ADD_SUB_I32(add16)
+ARC_GEN_VEC_ADD_SUB_I64(add16)
+ARC_GEN_VEC_ADD_SUB_I64(sub32)
+ARC_GEN_VEC_ADD_SUB_I32(sub16)
+ARC_GEN_VEC_ADD_SUB_I64(sub16)
+
+ARC_GEN_VEC_INSN(VADD2, arc_gen_vec_add32_i64)
+ARC_GEN_VEC_INSN(VADD2H, arc_gen_vec_add16_i32)
+ARC_GEN_VEC_INSN(VADD4H, arc_gen_vec_add16_i64)
+ARC_GEN_VEC_INSN(VSUB2, arc_gen_vec_sub32_i64)
+ARC_GEN_VEC_INSN(VSUB2H, arc_gen_vec_sub16_i32)
+ARC_GEN_VEC_INSN(VSUB4H, arc_gen_vec_sub16_i64)
+
+#define ARC_GEN_VEC_MAC2H_I32(NAME, OP)                             \
+static void                                                         \
+arc_gen_vec_##NAME##_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c) \
+{                                                                   \
+    TCGv b_h0, b_h1, c_h0, c_h1;                                    \
+                                                                    \
+    arc_check_dest_reg_is_even_or_null(ctx, dest);                  \
+                                                                    \
+    b_h0 = tcg_temp_new();                                          \
+    b_h1 = tcg_temp_new();                                          \
+    c_h0 = tcg_temp_new();                                          \
+    c_h1 = tcg_temp_new();                                          \
+                                                                    \
+    tcg_gen_##OP##_tl(b_h0, b, 0, 16);                              \
+    tcg_gen_##OP##_tl(c_h0, c, 0, 16);                              \
+    tcg_gen_##OP##_tl(b_h1, b, 16, 16);                             \
+    tcg_gen_##OP##_tl(c_h1, c, 16, 16);                             \
+                                                                    \
+    tcg_gen_mul_tl(b_h0, b_h0, c_h0);                               \
+    tcg_gen_mul_tl(b_h1, b_h1, c_h1);                               \
+                                                                    \
+    tcg_gen_add_tl(cpu_acclo, cpu_acclo, b_h0);                     \
+    tcg_gen_add_tl(cpu_acchi, cpu_acchi, b_h1);                     \
+    tcg_gen_mov_tl(dest, cpu_acclo);                                \
+    tcg_gen_mov_tl(nextRegWithNull(dest), cpu_acchi);               \
+                                                                    \
+    tcg_temp_free(c_h1);                                            \
+    tcg_temp_free(c_h0);                                            \
+    tcg_temp_free(b_h1);                                            \
+    tcg_temp_free(b_h0);                                            \
 }
 
-static void
-arc_gen_vec_sub16_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
-{
-    tcg_gen_vec_sub16_i32(dest, b, c);
-}
+ARC_GEN_VEC_MAC2H_I32(mac2h, sextract)
+ARC_GEN_VEC_MAC2H_I32(mac2hu, extract)
 
-#define VEC_ADD_SUB(INSN, OP)                             \
-int                                                       \
-arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c) \
-{                                                         \
-    return gen_vec_add_sub_op(ctx, dest, b, c, OP);       \
-}
-
-VEC_ADD_SUB(VADD2, arc_gen_vec_add32_i64)
-VEC_ADD_SUB(VADD2H, arc_gen_vec_add16_i32)
-VEC_ADD_SUB(VADD4H, arc_gen_vec_add16_i64)
-VEC_ADD_SUB(VSUB2, arc_gen_vec_sub32_i64)
-VEC_ADD_SUB(VSUB2H, arc_gen_vec_sub16_i32)
-VEC_ADD_SUB(VSUB4H, arc_gen_vec_sub16_i64)
+ARC_GEN_VEC_INSN(VMAC2H, arc_gen_vec_mac2h_i32)
+ARC_GEN_VEC_INSN(VMAC2HU, arc_gen_vec_mac2hu_i32)
