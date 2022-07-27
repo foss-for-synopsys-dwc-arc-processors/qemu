@@ -23,4 +23,34 @@
 #include "translate.h"
 #include "target/arc/semfunc.h"
 #include "exec/gen-icount.h"
+#include "tcg/tcg-op-gvec.h"
+
+void
+arc_gen_vec_add16_w0_i64(TCGv_i64 d, TCGv_i64 a, TCGv_i64 b)
+{
+    TCGv_i64 t1 = tcg_temp_new_i64();
+
+    tcg_gen_vec_add16_i64(t1, a, b);
+    tcg_gen_deposit_i64(d, d, t1, 0, 32);
+
+    tcg_temp_free_i64(t1);
+}
+
+void
+arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
+                  unsigned int ofs, unsigned int len)
+{
+    TCGv_i64 t1 = tcg_temp_new_i64();
+    TCGv_i64 t2 = tcg_temp_new_i64();
+
+    tcg_gen_mov_i64(t1, arg1);
+    tcg_gen_extract_i64(t2, t1, ofs, len);
+    tcg_gen_not_i64(t2, t2);
+    tcg_gen_addi_i64(t2, t2, 1);
+    tcg_gen_deposit_i64(t1, t1, t2, ofs, len);
+    tcg_gen_mov_i64(ret, t1);
+
+    tcg_temp_free_i64(t2);
+	tcg_temp_free_i64(t1);
+}
 
