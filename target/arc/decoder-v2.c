@@ -198,7 +198,8 @@ load_insninfo_if_valid_v2(uint64_t insn,
                     ret.cc = value;
                 }
 
-                if (cl_flags->flag_class & F_CLASS_WB) {
+                if (cl_flags->flag_class & F_CLASS_WB
+                    || cl_flags->flag_class & F_CLASS_AS) {
                     ret.aa = value;
                 }
 

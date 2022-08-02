@@ -253,14 +253,15 @@ load_insninfo_if_valid_v3(uint64_t insn,
                     }
                 }
 	            if (flg_operand->name[0] == 'd'
-		        && flg_operand->name[1] == 0)
-		        ret.d = true;
+                    && flg_operand->name[1] == 0)
+                    ret.d = true;
 
                 if (cl_flags->flag_class & F_CLASS_COND) {
                     ret.cc = value;
                 }
 
-                if (cl_flags->flag_class & F_CLASS_WB) {
+                if (cl_flags->flag_class & F_CLASS_WB
+                    || cl_flags->flag_class & F_CLASS_AS) {
                     ret.aa = value;
                 }
 

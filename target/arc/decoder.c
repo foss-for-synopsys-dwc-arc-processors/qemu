@@ -1043,7 +1043,7 @@ const struct arc_flag_operand arc_flag_operands[] = {
  * CLASS {FLAG_CODE}.
  */
 
-#define FLAG_CLASS(NAME, CLASS, EXTRACT_FN, ...) { \
+#define FLAG_CLASS(NAME, CLASS, INSERT_FN, EXTRACT_FN, ...) { \
   .flag_class = CLASS, \
   .extract = EXTRACT_FN, \
   .flags = { __VA_ARGS__, F_NULL } \

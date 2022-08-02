@@ -349,6 +349,8 @@ typedef enum {
   F_CLASS_X = (1 << 9),
   F_CLASS_D = (1 << 10),
 
+  F_CLASS_AS = (1 << 11),
+
 } flag_class_t;
 
 /* The operands table is an array of struct arc_operand.  */
