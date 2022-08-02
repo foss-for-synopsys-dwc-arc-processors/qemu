@@ -843,7 +843,7 @@ arc_gen_ADC (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 /* SBC
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, se32to64, getCFlag, getFFlag, setZFlag, setNFlag32, setCFlag, CarryADD32, setVFlag, OverflowADD32
+ *    Functions: getCCFlag, se32to64, getCFlag, getFFlag, setZFlag, setNFlag32, setCFlag, CarrySUB32, setVFlag, OverflowSUB32
 --- code ---
 {
   cc_flag = getCCFlag ();
@@ -858,8 +858,8 @@ arc_gen_ADC (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
         {
           setZFlag (@a);
           setNFlag32 (@a);
-          setCFlag (CarryADD32 (@a, lb, lc));
-          setVFlag (OverflowADD32 (@a, lb, lc));
+          setCFlag (CarrySUB32 (@a, lb, lc));
+          setVFlag (OverflowSUB32 (@a, lb, lc));
         };
     };
 }
@@ -904,10 +904,10 @@ arc_gen_SBC (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     {
     setZFlag(a);
   setNFlag32(a);
-  CarryADD32(temp_10, a, lb, lc);
+  CarrySUB32(temp_10, a, lb, lc);
   tcg_gen_mov_tl(temp_9, temp_10);
   setCFlag(temp_9);
-  OverflowADD32(temp_12, a, lb, lc);
+  OverflowSUB32(temp_12, a, lb, lc);
   tcg_gen_mov_tl(temp_11, temp_12);
   setVFlag(temp_11);
 ;
@@ -9572,7 +9572,7 @@ arc_gen_ADCL (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 
 /* SBCL
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getCFlag, getFFlag, setZFlag, setNFlag, setCFlag, CarryADD, setVFlag, OverflowADD
+ *    Functions: getCCFlag, getCFlag, getFFlag, setZFlag, setNFlag, setCFlag, CarrySUB, setVFlag, OverflowSUB
 --- code ---
 {
   cc_flag = getCCFlag ();
@@ -9587,8 +9587,8 @@ arc_gen_ADCL (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
         {
           setZFlag (@a);
           setNFlag (@a);
-          setCFlag (CarryADD (@a, lb, lc));
-          setVFlag (OverflowADD (@a, lb, lc));
+          setCFlag (CarrySUB (@a, lb, lc));
+          setVFlag (OverflowSUB (@a, lb, lc));
         };
     };
 }
@@ -9629,10 +9629,10 @@ arc_gen_SBCL (DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     {
     setZFlag(a);
   setNFlag(a);
-  CarryADD(temp_8, a, lb, lc);
+  CarrySUB(temp_8, a, lb, lc);
   tcg_gen_mov_tl(temp_7, temp_8);
   setCFlag(temp_7);
-  OverflowADD(temp_10, a, lb, lc);
+  OverflowSUB(temp_10, a, lb, lc);
   tcg_gen_mov_tl(temp_9, temp_10);
   setVFlag(temp_9);
 ;
