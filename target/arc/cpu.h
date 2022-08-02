@@ -453,6 +453,9 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
     *cs_base = 0;
 #ifndef CONFIG_USER_ONLY
     *pflags = cpu_mmu_index(env, 0);
+#else
+    /* This is just to avoid a warning. MMU is not used in linux-user. */
+    *pflags = 0;
 #endif
 }
 
