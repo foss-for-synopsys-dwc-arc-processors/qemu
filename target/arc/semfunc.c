@@ -781,7 +781,7 @@ arc_gen_ADC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  * SBC
  *    Variables: @b, @c, @a
  *    Functions: getCCFlag, getCFlag, getFFlag, setZFlag, setNFlag, setCFlag,
- *               CarryADD, setVFlag, OverflowADD
+ *               CarrySUB, setVFlag, OverflowSUB
  * --- code ---
  * {
  *   cc_flag = getCCFlag ();
@@ -796,8 +796,8 @@ arc_gen_ADC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
  *         {
  *           setZFlag (@a);
  *           setNFlag (@a);
- *           setCFlag (CarryADD (@a, lb, lc));
- *           setVFlag (OverflowADD (@a, lb, lc));
+ *           setCFlag (CarrySUB (@a, lb, lc));
+ *           setVFlag (OverflowSUB (@a, lb, lc));
  *         };
  *     };
  * }
@@ -838,10 +838,10 @@ arc_gen_SBC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     if ((getFFlag () == true)) {
         setZFlag(a);
         setNFlag(a);
-        CarryADD(temp_8, a, lb, lc);
+        CarrySUB(temp_8, a, lb, lc);
         tcg_gen_mov_tl(temp_7, temp_8);
         setCFlag(temp_7);
-        OverflowADD(temp_10, a, lb, lc);
+        OverflowSUB(temp_10, a, lb, lc);
         tcg_gen_mov_tl(temp_9, temp_10);
         setVFlag(temp_9);
     }
