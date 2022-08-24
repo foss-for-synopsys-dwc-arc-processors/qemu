@@ -1265,7 +1265,7 @@ const struct arc_opcode *arc_find_format(insn_t *insnd, uint64_t insn,
   switch(((uint32_t) opcode) & PATTERN) {
 #define END_MATCH_PATTERN(PATTERN) \
     default: \
-      return OPCODE_INVALID; \
+      return 0; \
   }
 
 #define MATCH_VALUE(VALUE) \

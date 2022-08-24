@@ -312,6 +312,9 @@ const struct arc_opcode *arc_find_format_v3(insn_t *insnd,
     const struct arc_opcode *ret = NULL;
 
     unsigned char mcount = find_insn_for_opcode(insn, isa_mask, insn_len, multi_match);
+    /* TODO: This should eventually trigger invalid instruction exception */
+    assert(mcount != 0);
+
     for(unsigned char i = 0; i < mcount; i++) {
         bool invalid = FALSE;
         insn_t tmp = load_insninfo_if_valid_v3(insn, insn_len, isa_mask, &invalid, &arc_opcodes[multi_match[i]]);
