@@ -321,7 +321,7 @@ const struct arc_opcode *arc_find_format_v3(insn_t *insnd,
 
         if(invalid == FALSE) {
             *insnd = tmp;
-            ret = &arc_opcodes[multi_match[i]];
+            return &arc_opcodes[multi_match[i]];
         }
     }
 
