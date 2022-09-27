@@ -7474,7 +7474,7 @@ arc_gen_EX (DisasCtxt *ctx, TCGv b, TCGv c)
 }
 
 
-#define ARM_LIKE_LLOCK_SCOND
+//#define ARM_LIKE_LLOCK_SCOND
 
 extern TCGv cpu_exclusive_addr;
 extern TCGv cpu_exclusive_val;
@@ -7514,7 +7514,7 @@ arc_gen_LLOCKD(DisasCtxt *ctx, TCGv dest, TCGv src)
     TCGv_i64 temp_2 = tcg_temp_local_new_i64();
 
 #ifndef ARM_LIKE_LLOCK_SCOND
-    gen_helper_llock(temp_1, cpu_env, src);
+    gen_helper_llockd(temp_1, cpu_env, src);
 #else
     tcg_gen_qemu_ld_i64(temp_1, src, ctx->mem_idx, MO_UQ);
     tcg_gen_mov_tl(cpu_exclusive_addr, src);
