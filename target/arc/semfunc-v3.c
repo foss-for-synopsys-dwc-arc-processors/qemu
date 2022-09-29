@@ -9042,7 +9042,7 @@ arc_gen_FLS(DisasCtxt *ctx, TCGv src, TCGv dest)
  *    Functions: CTZ, getFFlag, setZFlag, setNFlag32
  * --- code ---
  * {
- *   psrc = @src;
+ *   psrc = @src & 0xffffffff;
  *   if((psrc == 0))
  *     {
  *       @dest = 31;
@@ -9068,7 +9068,7 @@ arc_gen_FFS(DisasCtxt *ctx, TCGv src, TCGv dest)
     TCGv temp_2 = tcg_temp_local_new();
     TCGv temp_4 = tcg_temp_local_new();
     TCGv temp_3 = tcg_temp_local_new();
-    tcg_gen_mov_tl(psrc, src);
+    tcg_gen_andi_tl(psrc, src, 0xffffffff);
     TCGLabel *else_1 = gen_new_label();
     TCGLabel *done_1 = gen_new_label();
     tcg_gen_setcondi_tl(TCG_COND_EQ, temp_1, psrc, 0);
@@ -14031,10 +14031,10 @@ arc_gen_FFSL(DisasCtxt *ctx, TCGv src, TCGv dest)
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, else_1);
-    tcg_gen_movi_tl(dest, 31);
+    tcg_gen_movi_tl(dest, 63);
     tcg_gen_br(done_1);
     gen_set_label(else_1);
-    tcg_gen_movi_tl(temp_4, 32);
+    tcg_gen_movi_tl(temp_4, 64);
     tcg_gen_ctz_tl(temp_3, psrc, temp_4);
     tcg_gen_mov_tl(dest, temp_3);
     gen_set_label(done_1);
