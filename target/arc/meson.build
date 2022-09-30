@@ -1,7 +1,7 @@
 dir = meson.current_source_dir()
 
 gen32 = [
-  dir + '/semfunc.c',
+  dir + '/semfunc-v2.c',
 ]
 gen64 = [
   dir + '/semfunc-v3.c',
@@ -34,6 +34,7 @@ arc_softmmu_ss.add(files(
   'gdbstub.c',
   'regs.c',
   'regs-impl.c',
+  'semfunc.c',
   'semfunc-helper.c',
   'mpu.c',
   'timer.c',
