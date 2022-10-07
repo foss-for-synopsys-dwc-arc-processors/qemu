@@ -14493,8 +14493,8 @@ arc_gen_VPACK2WM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 }
 
 static int 
-gen_vadd_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
-            void (*OP)(TCGv, TCGv, TCGv))
+gen_vec_add_sub_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
+                   void (*OP)(TCGv, TCGv, TCGv))
 {
   TCGv cc_temp = tcg_temp_local_new();
   TCGLabel *cc_done = gen_new_label();
@@ -14513,49 +14513,31 @@ gen_vadd_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
   return DISAS_NEXT;
 }
 
-int
-arc_gen_VADD2(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
-{    
-  return gen_vadd_op(ctx, dest, b, c,
-                     tcg_gen_vec_add32_i64);
+#define VEC_ADD16_SUB16_I64_W0(NAME, OP)                 \
+static void                                              \
+arc_gen_vec_##NAME##16_i64_w0(TCGv dest, TCGv b, TCGv c) \
+{                                                        \
+  TCGv t1 = tcg_temp_new();                              \
+                                                         \
+  OP(t1, b, c);                                          \
+  tcg_gen_deposit_i64(dest, dest, t1, 0, 32);            \
+                                                         \
+  tcg_temp_free(t1);                                     \
 }
 
-static void arc_gen_vec_add16_i64_w0(TCGv dest, TCGv b, TCGv c)
-{
-  TCGv_i32 b_w0 = tcg_temp_new_i32();
-  TCGv_i32 c_w0 = tcg_temp_new_i32();
-  TCGv_i32 d32 = tcg_temp_new_i32();
-  TCGv d64 = tcg_temp_new();
+VEC_ADD16_SUB16_I64_W0(add, tcg_gen_vec_add16_i64)
+VEC_ADD16_SUB16_I64_W0(sub, tcg_gen_vec_sub16_i64)
 
-  tcg_gen_extrl_i64_i32(b_w0, b);
-  tcg_gen_extrl_i64_i32(c_w0, c);
-  tcg_gen_vec_add16_i32(d32, b_w0, c_w0);
-  tcg_gen_extu_i32_i64(d64, d32);
-  tcg_gen_deposit_i64(dest, dest, d64, 0, 32);
-
-  tcg_temp_free_i32(b_w0);
-  tcg_temp_free_i32(c_w0);
-  tcg_temp_free_i32(d32);
-  tcg_temp_free(d64);
+#define VEC_ADD_SUB(INSN, OP)                             \
+int                                                       \
+arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c) \
+{                                                         \
+  return gen_vec_add_sub_op(ctx, dest, b, c, OP);         \
 }
 
-int
-arc_gen_VADD2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
-{   
-  return gen_vadd_op(ctx, dest, b, c,
-                     arc_gen_vec_add16_i64_w0);
-}
-
-int
-arc_gen_VADD4H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
-{   
-  return gen_vadd_op(ctx, dest, b, c,
-                     tcg_gen_vec_add16_i64);
-}
-
-int
-arc_gen_VSUB2(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
-{    
-  return gen_vadd_op(ctx, dest, b, c,
-                     tcg_gen_vec_sub32_i64);
-}
+VEC_ADD_SUB(VADD2, tcg_gen_vec_add32_i64)
+VEC_ADD_SUB(VADD2H, arc_gen_vec_add16_i64_w0)
+VEC_ADD_SUB(VADD4H, tcg_gen_vec_add16_i64)
+VEC_ADD_SUB(VSUB2, tcg_gen_vec_sub32_i64)
+VEC_ADD_SUB(VSUB2H, arc_gen_vec_sub16_i64_w0)
+VEC_ADD_SUB(VSUB4H, tcg_gen_vec_sub16_i64)
