@@ -3,19 +3,24 @@
 #
 
 ARC_SRC = $(SRC_PATH)/tests/tcg/arc64
-ARC_ALL = $(filter-out $(ARC_SRC)/ivt.S,$(wildcard $(ARC_SRC)/*.S))
-ARC_TESTS = $(patsubst $(ARC_SRC)/%.S, %, $(ARC_ALL))
-
 TEST_DIR = ${BUILD_DIR}/tests/tcg/${TARGET}
 
 # Filter out common blobs and broken tests
 ARC_BROKEN_TESTS = check_big_tb check_enter_leave check_excp_jumpdl_mmu check_ldstx \
-				   check_lp check_lp02 check_lp03 check_lp04 check_lp05 check_lp06 \
-				   check_manip_mmu check_swirq1 \
-				   check_dmachu	check_excp check_lddl check_mac	check_manip_10_mmu check_manip_4_mmu \
-				   check_manip_5_mmu check_mpu check_mpyd check_rtie_user check_stdl check_swirq3 check_swi \
-				   check_timer0_loop check_timer0_retrig check_timer0 check_timer0_sleep check_timerX_freq \
-				   check_vadd check_vmac2h check_vsub                      # QEMU ERRORS
+                   check_lp check_lp02 check_lp03 check_lp04 check_lp05 check_lp06 \
+				   check_manip_mmu check_swirq1
+
+ARC_BROKEN_TESTS += check_manip_10_mmu check_manip_4_mmu check_manip_5_mmu check_mpyd \
+                    check_vadd check_vsub check_excp_1_c
+
+# ARC ASM TESTS
+ARC_ASM_FILES = $(filter-out $(ARC_SRC)/ivt.S,$(wildcard $(ARC_SRC)/*.S))
+ARC_ASM_TESTS = $(patsubst $(ARC_SRC)/%.S, %, $(ARC_ASM_FILES))
+# ARC C TESTS
+ARC_C_FILES = $(wildcard $(ARC_SRC)/*.c)
+ARC_C_TESTS = $(patsubst $(ARC_SRC)/%.c, %_c, $(ARC_C_FILES))
+# ARC TESTS: ASM TESTS + C TESTS
+ARC_TESTS = ${ARC_ASM_TESTS} ${ARC_C_TESTS}
 ARC_USABLE_TESTS = $(filter-out $(ARC_BROKEN_TESTS), $(ARC_TESTS))
 
 # add to the list of tests
@@ -25,7 +30,9 @@ VPATH += $(ARC_SRC)
 QEMU_OPTS+=-M arc-sim -cpu hs6x -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
 
 ASFLAGS = -mcpu=hs6x
+CFLAGS  = -mcpu=hs6x --specs=qemu.specs
 LDFLAGS = --specs=nsim.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
+MMU_LDFLAGS = --specs=nsim.specs -T $(ARC_SRC)/tarc_mmu.ld -nostartfiles -nostdlib
 CRT = ivt.o
 
 $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
@@ -40,3 +47,13 @@ $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
 	cd ${TEST_DIR} && \
 	echo "$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT);" && \
 	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT)
+
+%_c: %.c
+	cd ${TEST_DIR} && \
+	echo "$(CC) $(CFLAGS) -L $(ARC_SRC) $< -o $@;" && \
+	$(CC) $(CFLAGS) -L $(ARC_SRC) $< -o $@
+
+%_mmu: %_mmu.o
+	cd ${TEST_DIR} && \
+	echo "$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT);" && \
+	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT)
