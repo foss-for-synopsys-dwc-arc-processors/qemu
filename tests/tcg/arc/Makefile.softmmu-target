@@ -5,39 +5,74 @@
 ARC_SRC = $(SRC_PATH)/tests/tcg/arc
 TEST_DIR = ${BUILD_DIR}/tests/tcg/${TARGET}
 
+# Filter out ARC GENERIC, HS and HS5x broken tests
+ARC_GEN_BROKEN_TESTS  = check_excp_1_c
+ARC_HS_BROKEN_TESTS   = 
+ARC_HS5X_BROKEN_TESTS =
+
 # ARC GENERIC (HS and HS5X)
+ARC_GEN_BROKEN_TESTS_GEN = $(patsubst %, %_gen, $(ARC_GEN_BROKEN_TESTS))
 ARC_GEN_SRC = ${ARC_SRC}/generic
-ARC_GEN_FILES = $(filter-out $(ARC_GEN_SRC)/ivt.S,$(wildcard $(ARC_GEN_SRC)/*.S))
-ARC_GEN_TESTS = $(patsubst $(ARC_GEN_SRC)/%.S, %_gen, $(ARC_GEN_FILES))
+# ARC GENERIC ASM TESTS
+ARC_GEN_ASM_FILES = $(filter-out $(ARC_GEN_SRC)/ivt.S,$(wildcard $(ARC_GEN_SRC)/*.S))
+ARC_GEN_ASM_TESTS = $(patsubst $(ARC_GEN_SRC)/%.S, %_gen, $(ARC_GEN_ASM_FILES))
+# ARC GENERIC C TESTS
+ARC_GEN_C_FILES = $(wildcard $(ARC_GEN_SRC)/*.c)
+ARC_GEN_C_TESTS = $(patsubst $(ARC_GEN_SRC)/%.c, %_c_gen, $(ARC_GEN_C_FILES))
+# ARC GENERIC TESTS: ASM TESTS + C TESTS
+ARC_GEN_TESTS = ${ARC_GEN_ASM_TESTS} ${ARC_GEN_C_TESTS}
+ARC_GEN_USABLE_TESTS = $(filter-out $(ARC_GEN_BROKEN_TESTS_GEN), $(ARC_GEN_TESTS))
 
 # ARC HS
+ARC_HS_BROKEN_TESTS_GEN_HS = $(patsubst %, %_hs, $(ARC_HS_BROKEN_TESTS))
 ARC_HS_SRC = ${ARC_SRC}/hs
-ARC_HS_FILES = $(wildcard $(ARC_HS_SRC)/*.S)
-ARC_HS_TESTS = $(patsubst %, %_hs, $(ARC_GEN_TESTS))
-ARC_HS_TESTS += $(patsubst $(ARC_HS_SRC)/%.S, %_hs, $(ARC_HS_FILES))
+# ARC HS ASM TESTS
+ARC_HS_ASM_FILES = $(wildcard $(ARC_HS_SRC)/*.S)
+ARC_HS_ASM_TESTS = $(patsubst $(ARC_HS_SRC)/%.S, %_hs, $(ARC_HS_ASM_FILES))
+# ARC HS C TESTS
+ARC_HS_C_FILES = $(wildcard $(ARC_HS_SRC)/*.c)
+ARC_HS_C_TESTS = $(patsubst $(ARC_HS_SRC)/%.c, %_c_hs, $(ARC_HS_C_FILES))
+# ARC HS TESTS: GEN TESTS + ASM TESTS + C TESTS
+ARC_HS_TESTS = $(patsubst %, %_hs, $(ARC_GEN_USABLE_TESTS))
+ARC_HS_TESTS += ${ARC_HS_ASM_TESTS} ${ARC_HS_C_TESTS}
+ARC_HS_USABLE_TESTS = $(filter-out $(ARC_HS_BROKEN_TESTS_GEN_HS), $(ARC_HS_TESTS))
+# ARC HS (FLAGS + CC)
 ARC_HS_ASFLAGS = -mcpu=archs
+ARC_HS_CFLAGS  = -mcpu=archs --specs=qemu.specs
 ARC_HS_CC = arc-elf32-gcc
 
 # ARC HS5X
+ARC_HS5X_BROKEN_TESTS_GEN_HS5X = $(patsubst %, %_hs5x, $(ARC_HS5X_BROKEN_TESTS))
 ARC_HS5X_SRC = ${ARC_SRC}/hs5x
-ARC_HS5X_FILES = $(wildcard $(ARC_HS5X_SRC)/*.S)
-ARC_HS5X_TESTS = $(patsubst %, %_hs5x, $(ARC_GEN_TESTS))
-ARC_HS5X_TESTS += $(patsubst $(ARC_HS5X_SRC)/%.S, %_hs5x, $(ARC_HS5X_FILES))
+# ARC HS5X ASM TESTS
+ARC_HS5X_ASM_FILES = $(wildcard $(ARC_HS5X_SRC)/*.S)
+ARC_HS5X_ASM_TESTS = $(patsubst $(ARC_HS5X_SRC)/%.S, %_hs5x, $(ARC_HS5X_ASM_FILES))
+# ARC HS5X C TESTS
+ARC_HS5X_C_FILES = $(wildcard $(ARC_HS5X_SRC)/*.c)
+ARC_HS5X_C_TESTS = $(patsubst $(ARC_HS5X_SRC)/%.c, %_c_hs5x, $(ARC_HS5X_C_FILES))
+# ARC HS5X TESTS: GEN TESTS + ASM TESTS + C TESTS
+ARC_HS5X_TESTS = $(patsubst %, %_hs5x, $(ARC_GEN_USABLE_TESTS))
+ARC_HS5X_TESTS += ${ARC_HS5X_ASM_TESTS} ${ARC_HS5X_C_TESTS}
+ARC_HS5X_USABLE_TESTS = $(filter-out $(ARC_HS5X_BROKEN_TESTS_GEN_HS5X), $(ARC_HS5X_TESTS))
+# ARC HS5X (FLAGS + CC)
 ARC_HS5X_ASFLAGS = -mcpu=hs5x
+ARC_HS5X_CFLAGS  = -mcpu=hs5x --specs=qemu.specs
 ARC_HS5X_CC = arc64-elf-gcc
 
-ARC_USABLE_TESTS = ${ARC_HS_TESTS} ${ARC_HS5X_TESTS}
+ARC_USABLE_TESTS = ${ARC_HS_USABLE_TESTS} ${ARC_HS5X_USABLE_TESTS}
 
 # add to the list of tests
 TESTS += $(ARC_USABLE_TESTS)
 VPATH += $(ARC_SRC)
 
 LDFLAGS = --specs=nsim.specs -T $(ARC_SRC)/tarc.ld -nostartfiles -nostdlib
+MMU_LDFLAGS = --specs=nsim.specs -T $(ARC_SRC)/tarc_mmu.ld -nostartfiles -nostdlib
 CRT_HS = ivt_gen_hs.o
 CRT_HS5X = ivt_gen_hs5x.o
 
 $(ARC_USABLE_TESTS): $(CRT_HS) $(CRT_HS5X) Makefile.softmmu-target
 
+# ARC GENERIC HS RULES
 %_gen_hs.o: generic/%.S 
 	cd ${TEST_DIR} && \
 	echo "$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
@@ -48,6 +83,17 @@ $(ARC_USABLE_TESTS): $(CRT_HS) $(CRT_HS5X) Makefile.softmmu-target
 	echo "$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS);" && \
 	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
 
+%_c_gen_hs: generic/%.c
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) $(ARC_HS_CFLAGS) -Wl,-marcv2elfx -L $(ARC_SRC) $< -o $@;" && \
+	$(ARC_HS_CC) $(ARC_HS_CFLAGS) -Wl,-marcv2elfx -L $(ARC_SRC) $< -o $@
+
+%_mmu_gen_hs: %_mmu_gen_hs.o
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS);" && \
+	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
+
+# ARC GENERIC HS5X RULES
 %_gen_hs5x.o: generic/%.S
 	cd ${TEST_DIR} && \
 	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
@@ -58,6 +104,17 @@ $(ARC_USABLE_TESTS): $(CRT_HS) $(CRT_HS5X) Makefile.softmmu-target
 	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X);" && \
 	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
 
+%_c_gen_hs5x: generic/%.c
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) $(ARC_HS5X_CFLAGS) -L $(ARC_SRC) $< -o $@;" && \
+	$(ARC_HS5X_CC) $(ARC_HS5X_CFLAGS) -L $(ARC_SRC) $< -o $@
+
+%_mmu_gen_hs5x: %_mmu_gen_hs5x.o
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X);" && \
+	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
+
+# ARC HS RULES
 %_hs.o: hs/%.S
 	cd ${TEST_DIR} && \
 	echo "$(ARC_HS_CC) -I$(ARC_SRC) $($*ARC_HS_ASFLAGS) $(ARC_HS_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
@@ -68,6 +125,17 @@ $(ARC_USABLE_TESTS): $(CRT_HS) $(CRT_HS5X) Makefile.softmmu-target
 	echo "$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS);" && \
 	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
 
+%_c_hs: hs/%.c
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) $(ARC_HS_CFLAGS) -Wl,-marcv2elfx -L $(ARC_SRC) $< -o $@;" && \
+	$(ARC_HS_CC) $(ARC_HS_CFLAGS) -Wl,-marcv2elfx -L $(ARC_SRC) $< -o $@
+
+%_mmu_hs: %_mmu_hs.o
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS);" && \
+	$(ARC_HS_CC) -I$(ARC_SRC) $(ARC_HS_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS)
+
+# ARC HS5X RULES
 %_hs5x.o: hs5x/%.S
 	cd ${TEST_DIR} && \
 	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $($*ARC_HS5X_ASFLAGS) $(ARC_HS5X_ASFLAGS) $(EXTRACFLAGS) -c $< -o ./$@;" && \
@@ -77,6 +145,16 @@ $(ARC_USABLE_TESTS): $(CRT_HS) $(CRT_HS5X) Makefile.softmmu-target
 	cd ${TEST_DIR} && \
 	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X);" && \
 	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
+
+%_c_hs5x: hs5x/%.c
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) $(ARC_HS5X_CFLAGS) -L $(ARC_SRC) $< -o $@;" && \
+	$(ARC_HS5X_CC) $(ARC_HS5X_CFLAGS) -L $(ARC_SRC) $< -o $@
+
+%_mmu_hs5x: %_mmu_hs5x.o
+	cd ${TEST_DIR} && \
+	echo "$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X);" && \
+	$(ARC_HS5X_CC) -I$(ARC_SRC) $(ARC_HS5X_ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT_HS5X)
 
 run-%_hs: QEMU_OPTS+=-M arc-sim -cpu archs -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
 run-%_hs5x: QEMU_OPTS+=-M arc-sim -cpu hs5x -m 3G -nographic -no-reboot -serial stdio -global cpu.mpu-numreg=8 -kernel
