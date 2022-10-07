@@ -270,17 +270,24 @@ static bool read_and_decode_context(DisasContext *ctx,
      * If the instruction requires long immediate, read the extra 4
      * bytes and initialize the relevant fields.
      */
+
+#if defined(TARGET_ARC32)
     if (ctx->insn.limm_p) {
         ctx->insn.limm = ARRANGE_ENDIAN(true,
                                         cpu_ldl_code(ctx->env,
                                         ctx->cpc + length));
+        length += 4; 
+#elif defined(TARGET_ARC64)
+    if (ctx->insn.unsigned_limm_p) {
+        ctx->insn.limm = ARRANGE_ENDIAN(true,
+                                        cpu_ldl_code(ctx->env,
+                                        ctx->cpc + length));
         length += 4;
-#ifdef TARGET_ARC64
-    } else if(ctx->insn.signed_limm_p) {
+    } else if (ctx->insn.signed_limm_p) {
         ctx->insn.limm = ARRANGE_ENDIAN(true,
                                         cpu_ldl_code (ctx->env,
                                         ctx->cpc + length));
-        if(ctx->insn.limm & 0x80000000)
+        if (ctx->insn.limm & 0x80000000)
           ctx->insn.limm += 0xffffffff00000000;
         length += 4;
 #endif
@@ -288,10 +295,18 @@ static bool read_and_decode_context(DisasContext *ctx,
         ctx->insn.limm = 0;
     }
 
+#if defined(TARGET_ARC32)
     if(ctx->insn.limm_split_16_p) {
         ctx->insn.limm &= 0x0000ffff;
         ctx->insn.limm |= (ctx->insn.limm << 16);
     }
+#elif defined(TARGET_ARC64)
+    if(ctx->insn.limm_split_16_p) {
+        ctx->insn.limm &= 0x0000ffff;
+        ctx->insn.limm |= (ctx->insn.limm << 16);
+        ctx->insn.limm |= (ctx->insn.limm << 32);
+    }
+#endif
 
     /* Update context. */
     ctx->insn.len = length;

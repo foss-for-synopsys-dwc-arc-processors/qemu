@@ -299,6 +299,9 @@ const struct arc_opcode *arc_find_format(insn_t *insnd,
 /* Replicate value in 16bit chunks. */
 #define ARC_OPERAND_16_SPLIT    0x2000
 
+/* Replicate value in 32bit chunks. */
+#define ARC_OPERAND_32_SPLIT    0x4000
+
 /* Mark a floating point register.  */
 #define ARC_OPERAND_FP          0x8000
 
