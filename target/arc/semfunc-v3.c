@@ -22,6 +22,7 @@
 #include "translate.h"
 #include "semfunc.h"
 #include "exec/gen-icount.h"
+#include "tcg/tcg-op-gvec.h"
 
 
 
@@ -14489,4 +14490,72 @@ arc_gen_VPACK2WM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
   tcg_temp_free(c_w1);
     
   return DISAS_NEXT;
+}
+
+static int 
+gen_vadd_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
+            void (*OP)(TCGv, TCGv, TCGv))
+{
+  TCGv cc_temp = tcg_temp_local_new();
+  TCGLabel *cc_done = gen_new_label();
+
+  /* Conditional execution */
+  getCCFlag(cc_temp);
+  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+
+  /* Instruction code */
+  OP(dest, b, c);
+
+  /* Conditional execution end. */
+  gen_set_label(cc_done);
+  tcg_temp_free(cc_temp);
+
+  return DISAS_NEXT;
+}
+
+int
+arc_gen_VADD2(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{    
+  return gen_vadd_op(ctx, dest, b, c,
+                     tcg_gen_vec_add32_i64);
+}
+
+static void arc_gen_vec_add16_i64_w0(TCGv dest, TCGv b, TCGv c)
+{
+  TCGv_i32 b_w0 = tcg_temp_new_i32();
+  TCGv_i32 c_w0 = tcg_temp_new_i32();
+  TCGv_i32 d32 = tcg_temp_new_i32();
+  TCGv d64 = tcg_temp_new();
+
+  tcg_gen_extrl_i64_i32(b_w0, b);
+  tcg_gen_extrl_i64_i32(c_w0, c);
+  tcg_gen_vec_add16_i32(d32, b_w0, c_w0);
+  tcg_gen_extu_i32_i64(d64, d32);
+  tcg_gen_deposit_i64(dest, dest, d64, 0, 32);
+
+  tcg_temp_free_i32(b_w0);
+  tcg_temp_free_i32(c_w0);
+  tcg_temp_free_i32(d32);
+  tcg_temp_free(d64);
+}
+
+int
+arc_gen_VADD2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{   
+  return gen_vadd_op(ctx, dest, b, c,
+                     arc_gen_vec_add16_i64_w0);
+}
+
+int
+arc_gen_VADD4H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{   
+  return gen_vadd_op(ctx, dest, b, c,
+                     tcg_gen_vec_add16_i64);
+}
+
+int
+arc_gen_VSUB2(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
+{    
+  return gen_vadd_op(ctx, dest, b, c,
+                     tcg_gen_vec_sub32_i64);
 }
