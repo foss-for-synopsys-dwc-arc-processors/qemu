@@ -350,8 +350,9 @@ void arc_has_interrupts(const DisasCtxt *ctx, TCGv ret);
 
 /* Statically inferred return function */
 
-TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg);
-#define nextReg(A) arc_gen_next_reg(ctx, A)
+TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg, bool fail);
+#define nextReg(A) arc_gen_next_reg(ctx, A, true)
+#define nextRegWithNull(A) arc_gen_next_reg(ctx, A, false)
 
 /* TODO (issue #62): This must be removed. */
 #define Zero()  (ctx->zero)
