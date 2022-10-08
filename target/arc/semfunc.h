@@ -67,4 +67,22 @@ int __not_implemented_semfunc_4(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d);
 #undef SEMANTIC_FUNCTION_PROTOTYPE_4
 #undef SEMANTIC_FUNCTION
 
+void arc_gen_vec_add16_w0_i64(TCGv_i64 d, TCGv_i64 a, TCGv_i64 b);
+
+void arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
+                       unsigned int ofs, unsigned int len);
+
+#define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
+#define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)
+#define ARC_GEN_CMPL2_H2_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 32, 16)
+#define ARC_GEN_CMPL2_H3_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 48, 16)
+#define ARC_GEN_CMPL2_H0_H2_I64(RET, ARG1)  \
+    ARC_GEN_CMPL2_H0_I64(RET, ARG1);        \
+    ARC_GEN_CMPL2_H2_I64(RET, RET)
+#define ARC_GEN_CMPL2_H1_H3_I64(RET, ARG1)  \
+    ARC_GEN_CMPL2_H1_I64(RET, ARG1);        \
+    ARC_GEN_CMPL2_H3_I64(RET, RET)
+#define ARC_GEN_CMPL2_W0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 32)
+#define ARC_GEN_CMPL2_W1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 32, 32)
+
 #endif /* __ARC_SEMFUNC_H__ */

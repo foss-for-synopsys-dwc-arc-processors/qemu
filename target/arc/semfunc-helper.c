@@ -318,7 +318,7 @@ TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg, bool fail)
 
         /* REG is an odd register. */
         arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
-        return NULL;
+        return reg;
     }
 
     /* REG was not a register after all. */
