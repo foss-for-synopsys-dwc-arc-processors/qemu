@@ -14594,48 +14594,6 @@ arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
 ARC_GEN_VEC_MAC2H(VMAC2H, tcg_gen_sextract_tl)
 ARC_GEN_VEC_MAC2H(VMAC2HU, tcg_gen_extract_tl)
 
-static void
-arc_gen_vec_add16_w0_i64(TCGv_i64 d, TCGv_i64 a, TCGv_i64 b)
-{
-  TCGv_i64 t1 = tcg_temp_new_i64();
-
-  tcg_gen_vec_add16_i64(t1, a, b);
-  tcg_gen_deposit_i64(d, d, t1, 0, 32);
-
-  tcg_temp_free_i64(t1);
-}
-
-static void
-arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
-                  unsigned int ofs, unsigned int len)
-{
-  TCGv_i64 t1 = tcg_temp_new_i64();
-  TCGv_i64 t2 = tcg_temp_new_i64();
-
-  tcg_gen_mov_i64(t1, arg1);
-  tcg_gen_extract_i64(t2, t1, ofs, len);
-  tcg_gen_not_i64(t2, t2);
-  tcg_gen_addi_i64(t2, t2, 1);
-  tcg_gen_deposit_i64(t1, t1, t2, ofs, len);
-  tcg_gen_mov_i64(ret, t1);
-
-  tcg_temp_free_i64(t2);
-	tcg_temp_free_i64(t1);
-}
-
-#define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
-#define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)
-#define ARC_GEN_CMPL2_H2_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 32, 16)
-#define ARC_GEN_CMPL2_H3_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 48, 16)
-#define ARC_GEN_CMPL2_H0_H2_I64(RET, ARG1)  \
-  ARC_GEN_CMPL2_H0_I64(RET, ARG1);          \
-  ARC_GEN_CMPL2_H2_I64(RET, RET)
-#define ARC_GEN_CMPL2_H1_H3_I64(RET, ARG1)  \
-  ARC_GEN_CMPL2_H1_I64(RET, ARG1);          \
-  ARC_GEN_CMPL2_H3_I64(RET, RET)
-#define ARC_GEN_CMPL2_W0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 32)
-#define ARC_GEN_CMPL2_W1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 32, 32)
-
 #define ARC_GEN_VEC_ADD_SUB(INSN, FIELD, OP)                \
 int                                                         \
 arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
