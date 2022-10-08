@@ -80,6 +80,7 @@ typedef struct DisasContext {
 #define cpu_blink  (cpu_r[31])
 #define cpu_acclo  (cpu_r[58])
 #define cpu_acchi  (cpu_r[59])
+#define cpu64_acc  (cpu_r[58])
 #define cpu_lpc    (cpu_r[60])
 #define cpu_pcl    (cpu_r[63])
 #define cpu_limm   (cpu_r[62])
