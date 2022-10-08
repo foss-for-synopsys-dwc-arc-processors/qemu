@@ -1,6 +1,6 @@
-; check_mac.S
+; check_macu.S
 ;
-; Tests for mac: Signed 32x32 multiplication and accumulation.
+; Tests for macu: Unsigned 32x32 multiplication and accumulation.
 ; If the test fails, check the end of this file for how to troubleshoot.
 
   .include "macros.inc"
@@ -55,7 +55,7 @@ test_nr:
   flag   r11 
 .endm
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MAC ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MACU ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Let the tests begin
   start
@@ -65,7 +65,7 @@ test_nr:
 ;          = 0 + (4 * 5) = 20 (0x00000000_00000014)
 ;   a = result.w0 = 20 (0x00000014)
 ;   acc = result = 20 (0x00000000_00000014)
-;   flags: n=0, v=0
+;   flags: v=0
 
   prep_test_case
   ; initializing data
@@ -74,19 +74,19 @@ test_nr:
   set_reg64 r1, 0, 5
   clear_flags
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
   verify_flags test_num=1
   check_reg64 r58, 0, 20
   check_reg64 r0, 0, 20
-
+  
 
 ; operation:
 ;   result = acc + (b * c)
 ;          = 20 + (5 * 1) = 25 (0x00000000_00000019)
 ;   a = result.w0 = 25 (0x00000019)
 ;   acc = result = 25 (0x00000000_00000019)
-;   flags: n=0, v=0
+;   flags: v=0
 
   prep_test_case
   ; initializing data
@@ -95,7 +95,7 @@ test_nr:
   set_reg64 r1, 0, 1
   clear_flags
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
   verify_flags test_num=2
   check_reg64 r58, 0, 25
@@ -104,75 +104,58 @@ test_nr:
 
 ; operation:
 ;   result = acc + (b * c)
-;          = 25 + (-1 * 5) = 20 (0x00000000_00000014)
+;          = 25 + (0x00000000_ffffffff * 5)
+;          = 25 + 21,474,836,475
+;          = 21,474,836,500 (0x00000005_00000014)
 ;   a = result.w0 = 20 (0x00000014)
-;   acc = result = 20 (0x00000000_00000014)
-;   flags: n=0, v=0
+;   acc = result = 21,474,836,500 (0x00000005_00000014)
+;   flags: v=0
 
   prep_test_case
   ; initializing data
   set_reg64 r58, 0, 25
-  set_reg64 r0, 0xffffffff, 0xffffffff
+  set_reg64 r0, 0x0, 0xffffffff
   set_reg64 r1, 0, 5
   clear_flags
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
   verify_flags test_num=3
-  check_reg64 r58, 0, 20
+  check_reg64 r58, 5, 20
   check_reg64 r0, 0, 20
 
 
 ; operation:
-;   result = acc + (b * c)
-;          = 20 + (-3 * 9) = -7 (0xffffffff_fffffff9)
-;   a = result.w0 = (0xfffffff9)
-;   acc = result = -7 (0xffffffff_fffffff9)
-;   flags: n=1, v=0
+;   result = acc + (b * c) 
+;          = 21,474,836,500 + (0x00000000_fffffffd * 9)
+;          = 21,474,836,500 + 38,654,705,637
+;          = 60,129,542,137 (0x0000000d_fffffff9)
+;   a = result.w0 = 4,294,967,289 (0xfffffff9)
+;   acc = result = 60,129,542,137 (0x0000000d_fffffff9)
+;   flags: v=0
 
   prep_test_case
   ; initializing data
-  set_reg64 r58, 0, 20
-  set_reg64 r0, 0xffffffff, 0xfffffffd
+  set_reg64 r58, 5, 20
+  set_reg64 r0, 0x0, 0xfffffffd
   set_reg64 r1, 0, 9
   clear_flags
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
-  verify_flags n=1 test_num=4
-  check_reg64 r58, 0xffffffff, 0xfffffff9
-  check_reg64 r0, 0, 0xfffffff9
-
-
-; operation: (without .f) => flags unchanged
-;   result = acc + (b * c)
-;          = 20 + (-3 * 9) = -7 (0xffffffff_fffffff9)
-;   a = result.w0 = (0xfffffff9)
-;   acc = result = -7 (0xffffffff_fffffff9)
-;   flags: unchanged
-
-  prep_test_case
-  ; initializing data
-  set_reg64 r58, 0, 20
-  set_reg64 r0, 0xffffffff, 0xfffffffd
-  set_reg64 r1, 0, 9
-  clear_flags
-  ; operation under test
-  mac r0, r0, r1
-  ; checking the results
-  verify_flags test_num=5
-  check_reg64 r58, 0xffffffff, 0xfffffff9
+  verify_flags test_num=4
+  check_reg64 r58, 0x0d, 0xfffffff9
   check_reg64 r0, 0, 0xfffffff9
 
 
 ; producing a result that sets both acch and accl
 ; operation:
 ;   result = acc + (b * c)
-;          = 0x00000000_00000000 + (0x00000000_7fffffff) * 0x00000000_7fffffff)
+;          = 0 + (0x00000000_7fffffff * 0x00000000_7fffffff)
 ;          = 0x3fffffff_00000001
 ;   a = result.w0 = 0x00000001
 ;   acc = result = 0x3fffffff_00000001
-;   flags: n=0, v=0
+;   flags: v=0
 
   prep_test_case
   ; initializing data
@@ -181,9 +164,9 @@ test_nr:
   set_reg64 r1, 0, 0x7fffffff
   clear_flags
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
-  verify_flags test_num=6
+  verify_flags test_num=5
   check_reg64 r58, 0x3fffffff, 0x1
   check_reg64 r0, 0, 0x1
 
@@ -195,7 +178,7 @@ test_nr:
 ;          = 0x7fffffff_00000001
 ;   a = result.w0 = 0x00000001
 ;   acc = result = 0x7fffffff_00000001
-;   flags: n=0, v=0
+;   flags: v=0
 
   prep_test_case
   ; initializing data
@@ -204,21 +187,22 @@ test_nr:
   set_reg64 r1, 0, 0x80000000
   clear_flags
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
-  verify_flags test_num=7
+  verify_flags test_num=6
   check_reg64 r58, 0x7fffffff, 0x1
   check_reg64 r0, 0, 0x1
 
 
-; acc is 0x7fffffff_00000001; going for the kill: N and V will be set
+; acc is 0x7fffffff_00000001
 ; operation:
 ;   result = acc + (b * c)
 ;          = 0x7fffffff_00000001 + (0x00000000_12344321 * 0x00000000_56788654)
+;          = 0x7fffffff_00000001 + 0x6262099_e1c14cd4
 ;          = 0x86262098_e1c14cd5
 ;   a = result.w0 = 0xe1c14cd5
 ;   acc = result = 0x86262098_e1c14cd5
-;   flags: n=1, v=1
+;   flags: v=0
 
   prep_test_case
   ; initializing data
@@ -227,70 +211,70 @@ test_nr:
   set_reg64 r1, 0, 0x56788654
   clear_flags
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
-  verify_flags n=1 v=1 test_num=8
+  verify_flags v=0 test_num=7
   check_reg64 r58, 0x86262098, 0xe1c14cd5
   check_reg64 r0, 0, 0xe1c14cd5
 
 
+; cause an overflow
 ; operation:
 ;   result = acc + (b * c)
-;          = 0x7fffffff_00000001 + (0x00000000_12344321 * 0x00000000_56788654)
-;          = 0x86262098_e1c14cd5
-;   a = result.w0 = 0xe1c14cd5
-;   acc = result = 0x86262098_e1c14cd5
-;   flags: unchanged
-
-  prep_test_case
-  ; initializing data
-  set_reg64 r58, 0x7fffffff, 0x1
-  set_reg64 r0, 0, 0x12344321
-  set_reg64 r1, 0, 0x56788654
-  clear_flags
-  ; operation under test
-  mac r0, r0, r1
-  ; checking the results
-  verify_flags test_num=9
-  check_reg64 r58, 0x86262098, 0xe1c14cd5
-  check_reg64 r0, 0, 0xe1c14cd5
-  
-
-; "mac" is not supposed to clear the overflow bit
-; Precondition: n=1, v=1 
-; operation:
-;   result = acc + (b * c)
-;          = 0x00000000_00000000 + (0x00000000_00000000 * 0x00000000_00000000)
-;          = 0x00000000_00000000
+;          = 0xffffffff_ffffffff + (1 * 1)
+;          = 0xffffffff_ffffffff + 1
+;          = 0x1_00000000_00000000 => 0x00000000_00000000
 ;   a = result.w0 = 0x00000000
 ;   acc = result = 0x00000000_00000000
-;   flags: n=0, v=1
+;   flags: v=1
 
   prep_test_case
   ; initializing data
-  set_reg64 r58, 0, 0
-  set_reg64 r0, 0, 0
-  set_reg64 r1, 0, 0
+  set_reg64 r58, 0xffffffff, 0xffffffff
+  set_reg64 r0, 0, 0x1
+  set_reg64 r1, 0, 0x1
   clear_flags
-  set_flag REG_STAT_N
-  set_flag REG_STAT_V
-  verify_flags n=1 v=1 test_num=10
   ; operation under test
-  mac.f r0, r0, r1
+  macu.f r0, r0, r1
   ; checking the results
-  verify_flags n=0 v=1 test_num=10
+  verify_flags v=1 test_num=8
   check_reg64 r58, 0, 0
   check_reg64 r0, 0, 0
 
- 
-; precondition: n=1, v=1 
-; operation: (without .f) => flags unchanged
+
+; cause an overflow, (without .f) => v flag unchanged
+; operation:
 ;   result = acc + (b * c)
-;          = 0x00000000_00000000 + (0x00000000_00000000 * 0x00000000_00000000)
-;          = 0x00000000_00000000
+;          = 0xffffffff_ffffffff + (1 * 1)
+;          = 0xffffffff_ffffffff + 1
+;          = 0x1_00000000_00000000 => 0x00000000_00000000
 ;   a = result.w0 = 0x00000000
 ;   acc = result = 0x00000000_00000000
 ;   flags: unchanged
+
+  prep_test_case
+  ; initializing data
+  set_reg64 r58, 0xffffffff, 0xffffffff
+  set_reg64 r0, 0, 0x1
+  set_reg64 r1, 0, 0x1
+  clear_flags
+  ; operation under test
+  macu r0, r0, r1
+  ; checking the results
+  verify_flags test_num=9
+  check_reg64 r58, 0, 0
+  check_reg64 r0, 0, 0
+
+
+; "macu" is not supposed to clear the overflow bit
+; precondition: v=1 
+; operation:
+;   result = acc + (b * c)
+;          = 0 + (0 * 0)
+;          = 0
+;   a = result.w0 = 0x00000000
+;   acc = result = 0x00000000_00000000
+;   flags: v=1
 
   prep_test_case
   ; initializing data
@@ -298,13 +282,12 @@ test_nr:
   set_reg64 r0, 0, 0
   set_reg64 r1, 0, 0
   clear_flags
-  set_flag REG_STAT_N
   set_flag REG_STAT_V
-  verify_flags n=1 v=1 test_num=10
   ; operation under test
-  mac r0, r0, r1
+  verify_flags v=1 test_num=10
+  macu.f r0, r0, r1
   ; checking the results
-  verify_flags n=1 v=1 test_num=10
+  verify_flags v=1 test_num=10
   check_reg64 r58, 0, 0
   check_reg64 r0, 0, 0
 
@@ -323,5 +306,5 @@ fail:
   ;print_number r0
   print "[FAIL]"
 1:
-  print " mac: Signed 32x32 multiplication and accumulation\n"
+  print " macu: Unsigned 32x32 multiplication and accumulation\n"
   end
