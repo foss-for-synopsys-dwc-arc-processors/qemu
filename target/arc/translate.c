@@ -1246,7 +1246,7 @@ arc_gen_MPYD(DisasCtxt *ctx, TCGv_i32 dest,
         gen_cc_prologue(ctx);
         tcg_gen_muls2_i32(cpu_acclo, cpu_acchi, b32, c32);
         if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
-            tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), cpu_acchi);
+            tcg_gen_mov_tl(nextReg(dest), cpu_acchi);
             tcg_gen_mov_tl(dest, cpu_acclo);
         }
         if (ctx->insn.f) {
@@ -1267,7 +1267,7 @@ arc_gen_MPYDU(DisasCtxt *ctx, TCGv_i32 dest,
         gen_cc_prologue(ctx);
         tcg_gen_mulu2_i32(cpu_acclo, cpu_acchi, b32, c32);
         if (ctx->insn.operands[0].type & ARC_OPERAND_IR) {
-            tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), cpu_acchi);
+            tcg_gen_mov_tl(nextReg(dest), cpu_acchi);
             tcg_gen_mov_tl(dest, cpu_acclo);
         }
         if (ctx->insn.f) {
@@ -1287,7 +1287,7 @@ arc_gen_MPYDU(DisasCtxt *ctx, TCGv_i32 dest,
 static TCGv_i64 pair_reg_to_i64(const DisasCtxt *ctx, TCGv_i32 reg)
 {
     TCGv_i64 vec64 = tcg_temp_new_i64();
-    tcg_gen_concat_i32_i64(vec64, reg, arc_gen_next_reg(ctx, reg));
+    tcg_gen_concat_i32_i64(vec64, reg, nextReg(reg));
     return vec64;
 }
 
@@ -1389,7 +1389,7 @@ static void gen_vec_op2(const DisasCtxt *ctx,
 
     (*OP)(d64, b64, c64);
     tcg_gen_extrl_i64_i32(dest, d64);
-    tcg_gen_extrh_i64_i32(arc_gen_next_reg(ctx, dest), d64);
+    tcg_gen_extrh_i64_i32(nextReg(dest), d64);
 
     tcg_temp_free_i64(d64);
     tcg_temp_free_i64(c64);
@@ -1486,7 +1486,7 @@ static void gen_vec_op4h(const DisasCtxt *ctx,
 
     (*op)(d64, b64, c64);
     tcg_gen_extrl_i64_i32(dest, d64);
-    tcg_gen_extrh_i64_i32(arc_gen_next_reg(ctx, dest), d64);
+    tcg_gen_extrh_i64_i32(nextReg(dest), d64);
 
     tcg_temp_free_i64(d64);
     tcg_temp_free_i64(c64);
@@ -1547,7 +1547,7 @@ static void gen_vec_op2h_64(const DisasCtxt *ctx,
     /* Update the destination register if any. */
     if ((ctx->insn.operands[0].type & ARC_OPERAND_IR)) {
         tcg_gen_mov_tl(dest, cpu_acclo);
-        tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), cpu_acchi);
+        tcg_gen_mov_tl(nextReg(dest), cpu_acchi);
     }
 }
 
