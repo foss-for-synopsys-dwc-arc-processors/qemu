@@ -9941,7 +9941,7 @@
 { "subl_s", 0x00007803, 0x0000f81f, ARC_OPCODE_ARC64, ARITH, NONE, { RB_S, RB_Sdup, RC_S }, { 0 } }
 
 /* sub_s RB_S,RB_Sdup,RB_Sdup 01111xxx11000000 */
-{ "sub_s", 0x000078c0, 0x0000f8ff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, SUB, NONE, { RB_S, RB_Sdup, RB_Sdup }, { C_NE } }
+{ "sub_s", 0x000078c0, 0x0000f8ff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, SUB, NONE, { RB_S, RB_Sdup, RB_Sdup }, { C_NE, C_CC_NE } }
 
 /* sub_s RB_S,RB_Sdup,RC_S 01111xxxxxx00010 */
 { "sub_s", 0x00007802, 0x0000f81f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, SUB, NONE, { RB_S, RB_Sdup, RC_S }, { 0 } }
