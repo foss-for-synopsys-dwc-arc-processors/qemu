@@ -20,4 +20,16 @@
 	ld_s.as	r2,[r3,r2]
 	check_r2	-31
 
+	test_name LDH_S
+	movl	r3, 0x10000
+	movl	r2, 1
+	sth	0xffff,[r3]
+	ldh_s	r2,[r3]
+	check_r2	0xffff
+
+	test_name LDH_S_X
+	movl	r3, 0x10000
+	ldh_s.x	r2,[r3]
+	check_r2	-1
+
 	end
