@@ -1118,7 +1118,7 @@ arc_gen_STDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv src)
     bool  free_data_hi = false;
 
     /*
-     * The "src" can be a register or immediate.
+     * The "src" can be a register, w6 or immediate.
      * Look for next register pair if "src" is a register.
      * Will raise an exception if "src" is an odd register.
      */
@@ -1127,7 +1127,8 @@ arc_gen_STDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv src)
         if (data_hi == NULL) {
             return DISAS_NORETURN;
         }
-    } else if (ctx->insn.operands[0].type & ARC_OPERAND_LIMM) {
+    } else if (ctx->insn.operands[0].type & ARC_OPERAND_LIMM
+               || ctx->insn.operands[0].type & ARC_OPERAND_SIGNED) { /* w6 */
         /* Dealing with an immediate to store. */
         data_hi = tcg_temp_local_new();
         free_data_hi = true;
@@ -1135,12 +1136,9 @@ arc_gen_STDL(DisasCtxt *ctx, TCGv base, TCGv offset, TCGv src)
         if (ctx->insn.operands[0].type & ARC_OPERAND_SIGNED) {
             /* Sign extend. */
             tcg_gen_sari_i64(data_hi, src, 63);
-        } else if (ctx->insn.operands[0].type & ARC_OPERAND_UNSIGNED) {
+        } else { /* By default, LIMM is UNSIGNED. */
             /* Just use "0" for the upper part. */
-            tcg_gen_mov_tl(data_hi, tcg_const_local_tl(0));
-        } else {
-            /* Should not happen. */
-            g_assert_not_reached();
+            tcg_gen_movi_tl(data_hi, 0);
         }
     } else {
         /* The type of operand to store is not as expected. */
