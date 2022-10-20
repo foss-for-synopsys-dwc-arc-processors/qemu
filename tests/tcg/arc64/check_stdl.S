@@ -22,18 +22,18 @@ test_nr:
 
 ; reg <- (hi,lo)
 .macro mov64 reg, hi, lo
-  mov     \reg, \lo
-  addhl   \reg, \reg, \hi
+  movhl  \reg, \hi
+  orl    \reg, \reg, \lo
 .endm
 
 ; [mem] == (lohi, lolo, hihi, hilo)
 .macro check_128bit_mem hihi, hilo, lohi, lolo, mem
   mov64  r11, \hihi, \hilo
   lddl   r12, [\mem]
-  xor.f  0, r11, r13
+  xorl.f  0, r11, r13
   bne    @fail
   mov64  r11, \lohi, \lolo
-  xor.f  0, r11, r12
+  xorl.f  0, r11, r12
   bne    @fail
 .endm
 
@@ -111,7 +111,7 @@ fourth: .skip 16
   mov     r2, @first
   stdl    r0, [r2]
   check_128bit_mem  t01_hihi, t01_hilo, t01_lohi, t01_lolo, @first
-  xor.f   0, r2, @first
+  xorl.f   0, r2, @first
   bne     @fail
 
 ; Test case 2
@@ -126,7 +126,7 @@ fourth: .skip 16
   mov     r2, @first
   stdl    r0, [r2, 16]
   check_128bit_mem  t02_hihi, t02_hilo, t02_lohi, t02_lolo, @second
-  xor.f   0, r2, @first
+  xorl.f   0, r2, @first
   bne     @fail
 
 ; Test case 3
@@ -141,7 +141,7 @@ fourth: .skip 16
   mov     r2, @second
   stdl.aw r0, [r2, 16]
   check_128bit_mem  t03_hihi, t03_hilo, t03_lohi, t03_lolo, @third
-  xor.f   0, r2, @third
+  xorl.f   0, r2, @third
   bne     @fail
 
 ; Test case 4
@@ -156,7 +156,7 @@ fourth: .skip 16
   mov     r2, @fourth
   stdl.ab r8, [r2, 16]
   check_128bit_mem  t04_hihi, t04_hilo, t04_lohi, t04_lolo, @fourth
-  xor.f   0, r2, @fourth+16
+  xorl.f   0, r2, @fourth+16
   bne     @fail
 
 ; Test case 5
@@ -171,7 +171,7 @@ fourth: .skip 16
   mov     r4, @first
   stdl.as r8, [r4, 4]
   check_128bit_mem  t05_hihi, t05_hilo, t05_lohi, t05_lolo, @third
-  xor.f   0, r4, @first
+  xorl.f   0, r4, @first
   bne     @fail
 
 ; Test case 6
@@ -185,7 +185,7 @@ fourth: .skip 16
   mov64   r5, t06_hihi, t06_hilo
   stdl    r4, [@first]
   check_128bit_mem  t06_hihi, t06_hilo, t06_lohi, t06_lolo, @first
-
+  
 ; Test case 7
 ; limm --> address scale of 8, [r1, 2]
   .equ    t07_val, 0x77777777
@@ -193,17 +193,17 @@ fourth: .skip 16
   mov     r1, @first
   stdl.as t07_val, [r1, 2]
   check_128bit_mem  0x0, 0x0, 0x0, t07_val, @second
-  xor.f   0, r1, @first
+  xorl.f   0, r1, @first
   bne     @fail
 
 ; Test case 8
-; ximm --> pre-increment [r0, 7]
+; w6 --> pre-increment [r0, 7]
   .equ    t08_val, -8
   prep_test_case
   mov     r0, @second-7
   stdl.a  t08_val, [r0, 7]
   check_128bit_mem  -1, -1, -1, t08_val, @second
-  xor.f   0, r0, @second
+  xorl.f   0, r0, @second
   bne     @fail
 
 ; Test case 9
@@ -215,7 +215,7 @@ fourth: .skip 16
   mov64  r3, t09_hihi, t09_hilo
   stdl   r2, [r2, 16]
   check_128bit_mem  t09_hihi, t09_hilo, 0, @second, @third
-  xor.f  0, r2, @second
+  xorl.f  0, r2, @second
   bne    @fail
 
 ; Test case 10
@@ -228,7 +228,7 @@ fourth: .skip 16
   mov     r4, @third
   stdl.a  r4, [r4, 16]
   check_128bit_mem  t10_hihi, t10_hilo, 0, @third, @fourth
-  xor.f   0, r4, @fourth
+  xorl.f   0, r4, @fourth
   bne     @fail
 
 ; Test case 11
@@ -241,7 +241,7 @@ fourth: .skip 16
   mov     r3, @first
   stdl.ab r2, [r3, 32]
   check_128bit_mem  0, @first, t11_lohi, t11_lolo, @first
-  xor.f   0, r3, @third
+  xorl.f   0, r3, @third
   bne     @fail
 
 ; Test case 12
@@ -253,66 +253,105 @@ fourth: .skip 16
   mov     r1, @first
   stdl.as r0, [r1, 6]
   check_128bit_mem  0, @first, t12_lohi, t12_lolo, @fourth
-  xor.f   0, r1, @first
+  xorl.f   0, r1, @first
   bne     @fail
 
 ; Test case 13
-; stdl r1 (odd) ... --> Raise an illegal instruction exception AND
-;                       the base pointer should not be updated
-; N.B. if ivt != 0, have the interrupt vector base adjusted
+; 1 --> [r1]
+  .equ    t13_val, 0x01
   prep_test_case
-  set_except_params @test_13_exception, @test_13_end
-  .equ    t13_hihi, 0x13133333
-  .equ    t13_hilo, 0x13132222
-  .equ    t13_lohi, 0x13131111
-  .equ    t13_lolo, 0x13130000
-  mov     r2, @fourth
-  mov64   r0, t13_lohi, t13_lolo
-  mov64   r1, t13_hihi, t13_hilo
-  stdl    r0, [r2]
-test_13_exception:
-  ; stdl.aw r5, [r2, 4]
-  .byte   0x04,0x1a,0x67,0x01
-  b       @fail
-test_13_end:
-  xor.f   0, r2, @fourth
-  bne     @fail
-  lddl    r2, [@fourth]
-  xor.f   0, r2, r0
-  bne     @fail
-  xor.f   0, r3, r1
+  mov     r1, @first
+  stdl    t13_val, [r1]
+  check_128bit_mem  0x0, 0x0, 0x0, t13_val, @first
+  xorl.f   0, r1, @first
   bne     @fail
 
 ; Test case 14
-; stdl.aw r1, [imm,s9]) ... --> Raise an illegal instruction exception
-  prep_test_case
-  set_except_params @test_14_exception, @test_14_end
-  .equ    t14_hihi, 0x14143333
-  .equ    t14_hilo, 0x14142222
-  .equ    t14_lohi, 0x14141111
-  .equ    t14_lolo, 0x14140000
-  mov64   r2, t14_lohi, t14_lolo
-  mov64   r3, t14_hihi, t14_hilo
-test_14_exception:
-  ; stdl.aw r2, [0, 0]
-  .byte   0x00,0x1e,0xaf,0x70, 0x00,0x00,0x00,0x00
-  b       @fail
-test_14_end:
-  lddl    r0, [0x00]
-  xor.f   0, r0, r2
-  beq     @fail
-  xor.f   0, r1, r3
-  beq     @fail
-
-; Test case 15
-; 1 --> [r1]
-  .equ    t15_val, 0x01
+; limm --> [r1]
+  .equ    t14_val, 0x80000000
   prep_test_case
   mov     r1, @first
-  stdl    t15_val, [r1]
-  check_128bit_mem  0x0, 0x0, 0x0, t15_val, @first
-  xor.f   0, r1, @first
+  stdl    t14_val, [r1]
+  check_128bit_mem  0x0, 0x0, 0x0, t14_val, @first
+  xorl.f   0, r1, @first
   bne     @fail
+
+; Test case 15
+; stdl<.as> w6,[limm]
+;   w6 --> [r1]
+  prep_test_case
+  stdl    1, [@first]
+  check_128bit_mem  0, 0, 0, 1, @first
+
+; Test case 16
+; stdl<.as> c,[ximm]
+;   r5r4 --> [addr]
+  .equ    t16_hihi, 0x16163333
+  .equ    t16_hilo, 0x16162222
+  .equ    t16_lohi, 0x16161111
+  .equ    t16_lolo, 0x16160000
+  prep_test_case
+  mov64   r4, t16_lohi, t16_lolo
+  mov64   r5, t16_hihi, t16_hilo
+  stdl    r4, [0x77777777]
+  check_128bit_mem  t16_hihi, t16_hilo, t16_lohi, t16_lolo, 0x77777777
+
+; Test case 17
+; stdl<.as> w6,[ximm]
+;   r5r4 --> [addr]
+  prep_test_case
+  stdl    1, [0x77777777]
+  check_128bit_mem  0, 0, 0, 1, 0x77777777
+
+; ; Test case 18
+; ; stdl r1 (odd) ... --> Raise an illegal instruction exception AND
+; ;                       the base pointer should not be updated
+; ; N.B. if ivt != 0, have the interrupt vector base adjusted
+;   prep_test_case
+;   set_except_params @test_18_exception, @test_18_end
+;   .equ    t18_hihi, 0x13133333
+;   .equ    t18_hilo, 0x13132222
+;   .equ    t18_lohi, 0x13131111
+;   .equ    t18_lolo, 0x13130000
+;   mov     r2, @fourth
+;   mov64   r0, t18_lohi, t18_lolo
+;   mov64   r1, t18_hihi, t18_hilo
+;   stdl    r0, [r2]
+; test_18_exception:
+;   ; stdl.aw r5, [r2, 4]
+;   .byte   0x04,0x1a,0x67,0x01
+;   b       @fail
+; test_18_end:
+;   xorl.f   0, r2, @fourth
+;   bne     @fail
+;   lddl    r2, [@fourth]
+;   xorl.f   0, r2, r0
+;   bne     @fail
+;   xorl.f   0, r3, r1
+;   bne     @fail
+
+; ; Test case 19
+; ; stdl.aw r1, [imm,s9]) ... --> Raise an illegal instruction exception
+;   prep_test_case
+;   set_except_params @test_19_exception, @test_19_end
+;   .equ    t19_hihi, 0x14143333
+;   .equ    t19_hilo, 0x14142222
+;   .equ    t19_lohi, 0x14141111
+;   .equ    t19_lolo, 0x14140000
+;   mov64   r2, t19_lohi, t19_lolo
+;   mov64   r3, t19_hihi, t19_hilo
+; test_19_exception:
+;   ; stdl.aw r2, [0, 0]
+;   .byte   0x00,0x1e,0xaf,0x70, 0x00,0x00,0x00,0x00
+;   b       @fail
+; test_1_end:
+;   lddl    r0, [0x00]
+;   xorl.f   0, r0, r2
+;   beq     @fail
+;   xorl.f   0, r1, r3
+;   beq     @fail
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
