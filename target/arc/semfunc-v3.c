@@ -24,6 +24,31 @@
 #include "exec/gen-icount.h"
 #include "tcg/tcg-op-gvec.h"
 
+// There is unsigned overflow if either register has the last bit
+// set but the result doesnt
+// shift_for_last_bit = register_size - 1
+// ((op1 | op2) & ~result) >> shift_for_last_bit
+
+static void
+arc_gen_add_unsigned_overflow(TCGv overflow, TCGv result,
+                              TCGv op1, TCGv op2,
+                              unsigned int shift_for_last_bit)
+{
+  TCGv t1 = tcg_temp_new();
+
+  tcg_gen_or_tl(t1, op1, op2);
+  tcg_gen_andc_tl(t1, t1, result);
+
+  tcg_gen_shri_tl(overflow, t1, shift_for_last_bit);
+  
+  tcg_temp_free(t1);
+}
+
+static inline void
+arc_gen_add_unsigned_overflow_64(TCGv overflow, TCGv result, TCGv op1, TCGv op2)
+{
+  return arc_gen_add_unsigned_overflow(overflow, result, op1, op2, 63);
+}
 
 
 
@@ -14297,6 +14322,82 @@ arc_gen_VPACK2WM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
+  TCGv b_h0 = tcg_temp_new();
+  TCGv b_h1 = tcg_temp_new();
+  TCGv b_h2 = tcg_temp_new();
+  TCGv b_h3 = tcg_temp_new();
+
+  TCGv c_h0 = tcg_temp_new();
+  TCGv c_h1 = tcg_temp_new();
+  TCGv c_h2 = tcg_temp_new();
+  TCGv c_h3 = tcg_temp_new();
+
+  TCGv cc_temp = tcg_temp_local_new();
+  TCGLabel *cc_done = gen_new_label();
+  
+  /* Check if A, B and C are even numbered registers */
+
+
+  /* Conditional execution */
+  getCCFlag(cc_temp);
+  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+
+  /* Instruction code */
+
+  tcg_gen_extract_tl(b_h0, b, 0, 16);
+  tcg_gen_extract_tl(b_h1, b, 16, 16);
+  tcg_gen_extract_tl(b_h2, b, 32, 16);
+  tcg_gen_extract_tl(b_h3, b, 48, 16);
+
+  tcg_gen_extract_tl(c_h0, c, 0, 16);
+  tcg_gen_extract_tl(c_h1, c, 16, 16);
+  tcg_gen_extract_tl(c_h2, c, 32, 16);
+  tcg_gen_extract_tl(c_h3, c, 48, 16);
+
+  // Multiply halfwords
+  tcg_gen_mul_tl(b_h0, b_h0, c_h0);
+  tcg_gen_mul_tl(b_h1, b_h1, c_h1);
+  tcg_gen_mul_tl(b_h2, b_h2, c_h2);
+  tcg_gen_mul_tl(b_h3, b_h3, c_h3);
+
+  // We dont need to truncate the multiplication results because
+  // we know for a fact that it is a 16 bit number multiplication,
+  // and we expect the result to be 32 bit (PRM) so there will never
+  // be an overflow (0xffff * 0xffff = 0xfffe 0001 < 0x1 0000 0000)
+  // 
+  //tcg_gen_andi_tl(b_hX, b_hX, 0xffffffff);
+
+  // Assemble final result via additions
+  // As the operands are 32 bit, it is not possible for the sums to
+  // overflow a 64 bit number either
+  tcg_gen_add_tl(b_h0, b_h0, b_h1);
+  tcg_gen_add_tl(b_h2, b_h2, b_h3);
+  
+  tcg_gen_add_tl(b_h0, b_h0, b_h2);
+
+  tcg_gen_add_tl(a, cpu64_acc, b_h0);
+
+  // This instruction only can set V (overflow) to 1, NOTHING else
+  if (getFFlag()) { // F flag is set, affect the flags
+    // Set overflow flag if required
+    arc_gen_add_unsigned_overflow_64(getVFlag(), a, cpu64_acc, b_h0);
+  }
+
+  tcg_gen_add_tl(cpu64_acc, cpu64_acc, b_h0);
+
+  /* Conditional execution end. */
+  gen_set_label(cc_done);
+  tcg_temp_free(cc_temp);
+
+  tcg_temp_free(b_h0);
+  tcg_temp_free(b_h1);
+  tcg_temp_free(b_h2);
+  tcg_temp_free(b_h3);
+
+  tcg_temp_free(c_h0);
+  tcg_temp_free(c_h1);
+  tcg_temp_free(c_h2);
+  tcg_temp_free(c_h3);
 
   return DISAS_NEXT;
 }
