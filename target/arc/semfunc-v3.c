@@ -14294,6 +14294,13 @@ arc_gen_VPACK2WM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
   return DISAS_NEXT;
 }
 
+int
+arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+
+  return DISAS_NEXT;
+}
+
 static int 
 gen_vec_add_sub_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
                    void (*OP)(TCGv, TCGv, TCGv))
