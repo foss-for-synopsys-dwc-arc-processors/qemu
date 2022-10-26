@@ -133,6 +133,7 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define setCFlag(ELEM)  tcg_gen_andi_tl(cpu_Cf, ELEM, 1)
 #define getCFlag(R)     tcg_gen_mov_tl(R, cpu_Cf)
 
+#define getVFlag(R)     cpu_Vf
 #define setVFlag(ELEM)  tcg_gen_andi_tl(cpu_Vf, ELEM, 1)
 
 #define setZFlag(ELEM)  \
