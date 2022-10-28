@@ -75,10 +75,14 @@ arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
   TCGv_i64 t1 = tcg_temp_new_i64();
   TCGv_i64 t2 = tcg_temp_new_i64();
 
-  /* t1 = Rd & Rr & ~R | ~Rd & ~Rr & R */
-  /*    = (Rd ^ R) & ~(Rd ^ Rr) */
+  // Check if the result has a different sign from one of the opperands
+  // Last bit of t1 must be 1 (Different sign)
   tcg_gen_xor_i64(t1, op1, result);
-  tcg_gen_xor_i64(t2, op2, op2);
+  
+  // Last bit of t2 must be 0 (Same sign)
+  tcg_gen_xor_i64(t2, op1, op2);
+
+  // Validate the two conditions above
   tcg_gen_andc_i64(t1, t1, t2);
 
   tcg_gen_shri_i64(overflow, t1, 63);
@@ -86,7 +90,6 @@ arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
   tcg_temp_free_i64(t1);
   tcg_temp_free_i64(t2);
 }
-
 void
 arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                    TCGv_i64 acc, TCGv_i64 overflow,
