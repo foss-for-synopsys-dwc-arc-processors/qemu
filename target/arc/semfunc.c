@@ -88,7 +88,9 @@ arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
 }
 
 void
-arc_gen_qmachu_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c, TCGv_i64 acc, TCGv_i64 overflow)
+arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                   TCGv_i64 acc, TCGv_i64 overflow,
+                   ARC_GEN_EXTRACT_BITS_FUNC extract_bits, ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
 {
   TCGv_i64 b_h0 = tcg_temp_new_i64();
   TCGv_i64 b_h1 = tcg_temp_new_i64();
@@ -109,15 +111,15 @@ arc_gen_qmachu_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c, TCGv_i64 
 
   /* Instruction code */
 
-  tcg_gen_extract_i64(b_h0, b, 0, 16);
-  tcg_gen_extract_i64(b_h1, b, 16, 16);
-  tcg_gen_extract_i64(b_h2, b, 32, 16);
-  tcg_gen_extract_i64(b_h3, b, 48, 16);
+  extract_bits(b_h0, b, 0, 16);
+  extract_bits(b_h1, b, 16, 16);
+  extract_bits(b_h2, b, 32, 16);
+  extract_bits(b_h3, b, 48, 16);
 
-  tcg_gen_extract_i64(c_h0, c, 0, 16);
-  tcg_gen_extract_i64(c_h1, c, 16, 16);
-  tcg_gen_extract_i64(c_h2, c, 32, 16);
-  tcg_gen_extract_i64(c_h3, c, 48, 16);
+  extract_bits(c_h0, c, 0, 16);
+  extract_bits(c_h1, c, 16, 16);
+  extract_bits(c_h2, c, 32, 16);
+  extract_bits(c_h3, c, 48, 16);
 
   // Multiply halfwords
   tcg_gen_mul_i64(b_h0, b_h0, c_h0);
@@ -142,10 +144,9 @@ arc_gen_qmachu_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c, TCGv_i64 
 
   tcg_gen_add_i64(a, acc, b_h0);
 
-  // This instruction only can set V (overflow) to 1, NOTHING else
   if (getFFlag()) { // F flag is set, affect the flags
     // Set overflow flag if required
-    arc_gen_add_unsigned_overflow_i64(overflow, a, acc, b_h0);
+    detect_overflow_i64(overflow, a, acc, b_h0);
   }
 
   tcg_gen_add_i64(acc, acc, b_h0);

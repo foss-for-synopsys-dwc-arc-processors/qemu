@@ -8801,7 +8801,7 @@ arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
   tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
   tcg_gen_extu_i32_i64(overflow, getVFlag());
 
-  arc_gen_qmachu_i64(ctx, a64, b64, c64, acc, overflow);
+  ARC_GEN_QMACHU_I64(ctx, a64, b64, c64, acc, overflow);
 
   if (getFFlag()) { // We sent a "fake" 64 bit flag into arc_gen_qmachu_i64
     // Set overflow flag if required

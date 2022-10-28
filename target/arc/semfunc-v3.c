@@ -14303,7 +14303,20 @@ arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
   // The entirety of this instruction has been delegated so it could be reused
   // by the 32 bit version, since the inner workings are exactly the same
-  arc_gen_qmachu_i64(ctx, a, b, c, cpu64_acc, getVFlag());
+  ARC_GEN_QMACHU_I64(ctx, a, b, c, cpu64_acc, getVFlag());
+  
+  return DISAS_NEXT;
+}
+
+int
+arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+  ARC_GEN_QMACH_I64(ctx, a, b, c, cpu64_acc, getVFlag());
+  // Set N flag if required
+  if (getFFlag()) {
+    setNFlag(a);
+  }
+
   return DISAS_NEXT;
 }
 
