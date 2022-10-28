@@ -8782,6 +8782,47 @@ arc_gen_vmac2h_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
 }
 
 int
+arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+  TCGv_i64 a64 = tcg_temp_new_i64();
+  TCGv_i64 b64 = tcg_temp_new_i64();
+  TCGv_i64 c64 = tcg_temp_new_i64();
+
+  TCGv_i64 acc = tcg_temp_new_i64();
+  TCGv_i64 overflow = tcg_temp_new_i64();
+
+  // We can reuse qmach code by converting 32 bit registers
+  // into a 64 bit one, and then back.
+  // This way we dont need to manually take care of multiplication
+  // carry into the second 32 bit word
+  
+  arc_gen_next_register_i32_i64(ctx, b64, b);
+  arc_gen_next_register_i32_i64(ctx, c64, c);
+  tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
+  tcg_gen_extu_i32_i64(overflow, getVFlag());
+
+  arc_gen_qmachu_i64(ctx, a64, b64, c64, acc, overflow);
+
+  if (getFFlag()) { // We sent a "fake" 64 bit flag into arc_gen_qmachu_i64
+    // Set overflow flag if required
+    tcg_gen_extrl_i64_i32(getVFlag(), overflow);
+  }
+
+  // save the result on [next(dest):dest]
+  tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);
+  tcg_gen_extr_i64_i32(a, nextRegWithNull(a), a64);
+
+  tcg_temp_free_i64(acc);
+  tcg_temp_free_i64(overflow);
+
+  tcg_temp_free_i64(a64);
+  tcg_temp_free_i64(b64);
+  tcg_temp_free_i64(c64);
+
+  return DISAS_NEXT;
+}
+
+int
 arc_gen_VMAC2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
   TCGv cc_temp = tcg_temp_local_new();
