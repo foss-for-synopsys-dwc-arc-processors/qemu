@@ -54,3 +54,113 @@ arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
 	tcg_temp_free_i64(t1);
 }
 
+void
+arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
+                              TCGv_i64 op1, TCGv_i64 op2)
+{
+  TCGv_i64 t1 = tcg_temp_new_i64();
+
+  tcg_gen_or_i64(t1, op1, op2);
+  tcg_gen_andc_i64(t1, t1, result);
+
+  tcg_gen_shri_i64(overflow, t1, 63);
+  
+  tcg_temp_free_i64(t1);
+}
+
+void
+arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
+                              TCGv_i64 op1, TCGv_i64 op2)
+{
+  TCGv_i64 t1 = tcg_temp_new_i64();
+  TCGv_i64 t2 = tcg_temp_new_i64();
+
+  /* t1 = Rd & Rr & ~R | ~Rd & ~Rr & R */
+  /*    = (Rd ^ R) & ~(Rd ^ Rr) */
+  tcg_gen_xor_i64(t1, op1, result);
+  tcg_gen_xor_i64(t2, op2, op2);
+  tcg_gen_andc_i64(t1, t1, t2);
+
+  tcg_gen_shri_i64(overflow, t1, 63);
+  
+  tcg_temp_free_i64(t1);
+  tcg_temp_free_i64(t2);
+}
+
+void
+arc_gen_qmachu_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c, TCGv_i64 acc, TCGv_i64 overflow)
+{
+  TCGv_i64 b_h0 = tcg_temp_new_i64();
+  TCGv_i64 b_h1 = tcg_temp_new_i64();
+  TCGv_i64 b_h2 = tcg_temp_new_i64();
+  TCGv_i64 b_h3 = tcg_temp_new_i64();
+
+  TCGv_i64 c_h0 = tcg_temp_new_i64();
+  TCGv_i64 c_h1 = tcg_temp_new_i64();
+  TCGv_i64 c_h2 = tcg_temp_new_i64();
+  TCGv_i64 c_h3 = tcg_temp_new_i64();
+
+  TCGv cc_temp = tcg_temp_local_new();
+  TCGLabel *cc_done = gen_new_label();
+  
+  /* Conditional execution */
+  getCCFlag(cc_temp);
+  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+
+  /* Instruction code */
+
+  tcg_gen_extract_i64(b_h0, b, 0, 16);
+  tcg_gen_extract_i64(b_h1, b, 16, 16);
+  tcg_gen_extract_i64(b_h2, b, 32, 16);
+  tcg_gen_extract_i64(b_h3, b, 48, 16);
+
+  tcg_gen_extract_i64(c_h0, c, 0, 16);
+  tcg_gen_extract_i64(c_h1, c, 16, 16);
+  tcg_gen_extract_i64(c_h2, c, 32, 16);
+  tcg_gen_extract_i64(c_h3, c, 48, 16);
+
+  // Multiply halfwords
+  tcg_gen_mul_i64(b_h0, b_h0, c_h0);
+  tcg_gen_mul_i64(b_h1, b_h1, c_h1);
+  tcg_gen_mul_i64(b_h2, b_h2, c_h2);
+  tcg_gen_mul_i64(b_h3, b_h3, c_h3);
+
+  // We dont need to truncate the multiplication results because
+  // we know for a fact that it is a 16 bit number multiplication,
+  // and we expect the result to be 32 bit (PRM) so there will never
+  // be an overflow (0xffff * 0xffff = 0xfffe 0001 < 0x1 0000 0000)
+  // 
+  //tcg_gen_andi_tl(b_hX, b_hX, 0xffffffff);
+
+  // Assemble final result via additions
+  // As the operands are 32 bit, it is not possible for the sums to
+  // overflow a 64 bit number either
+  tcg_gen_add_i64(b_h0, b_h0, b_h1);
+  tcg_gen_add_i64(b_h2, b_h2, b_h3);
+  
+  tcg_gen_add_i64(b_h0, b_h0, b_h2);
+
+  tcg_gen_add_i64(a, acc, b_h0);
+
+  // This instruction only can set V (overflow) to 1, NOTHING else
+  if (getFFlag()) { // F flag is set, affect the flags
+    // Set overflow flag if required
+    arc_gen_add_unsigned_overflow_i64(overflow, a, acc, b_h0);
+  }
+
+  tcg_gen_add_i64(acc, acc, b_h0);
+
+  /* Conditional execution end. */
+  gen_set_label(cc_done);
+  tcg_temp_free(cc_temp);
+
+  tcg_temp_free_i64(b_h0);
+  tcg_temp_free_i64(b_h1);
+  tcg_temp_free_i64(b_h2);
+  tcg_temp_free_i64(b_h3);
+
+  tcg_temp_free_i64(c_h0);
+  tcg_temp_free_i64(c_h1);
+  tcg_temp_free_i64(c_h2);
+  tcg_temp_free_i64(c_h3);
+}
