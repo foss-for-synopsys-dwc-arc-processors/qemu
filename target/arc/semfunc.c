@@ -90,6 +90,44 @@ arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
   tcg_temp_free_i64(t1);
   tcg_temp_free_i64(t2);
 }
+
+void
+arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 op1, TCGv_i64 op2,
+                             TCGv_i64 overflow,
+                             ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
+{
+  // Look for overflow
+  TCGv_i64 new_overflow = tcg_temp_new_i64();
+  detect_overflow_i64(new_overflow, res, op1, op2);
+  // By oring the new overflow into the provided overflow, it is only changed
+  // if new_overflow is 1
+  tcg_gen_or_i64(overflow, new_overflow, overflow);
+
+  tcg_temp_free_i64(new_overflow);
+}
+
+void
+arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand, operand_t* operand)
+{
+  // Register, do nothing
+  if(operand->type & ARC_OPERAND_IR)
+  {
+    return;
+  }
+  else
+  {
+    // Word split limm
+    if(operand->type & ARC_OPERAND_LIMM && operand->type & ARC_OPERAND_32_SPLIT)
+    {
+      uint64_t base_op_value = ctx->insn.limm;
+      printf("%ld\n", base_op_value);
+      base_op_value = base_op_value | base_op_value << 32;
+      printf("%ld\n", base_op_value);
+      tcg_gen_movi_i64(tcg_operand, base_op_value);
+    }
+  }
+}
+
 void
 arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                    TCGv_i64 acc, TCGv_i64 overflow,
@@ -148,14 +186,7 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
   tcg_gen_add_i64(a, acc, b_h0);
 
   if (getFFlag()) { // F flag is set, affect the flags
-    // Look for overflow
-    TCGv_i64 new_overflow = tcg_temp_new_i64();
-    detect_overflow_i64(new_overflow, a, acc, b_h0);
-    // By oring the new overflow into the provided overflow, it is only changed
-    // if new_overflow is 1
-    tcg_gen_or_i64(overflow, new_overflow, overflow);
-
-    tcg_temp_free_i64(new_overflow);
+    arc_gen_set_if_overflow(a, acc, b_h0, overflow, detect_overflow_i64);
   }
 
   tcg_gen_add_i64(acc, acc, b_h0);
