@@ -80,6 +80,7 @@ void arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
 
 typedef void (*ARC_GEN_EXTRACT_BITS_FUNC)(TCGv_i64, TCGv_i64, unsigned int, unsigned int);
 typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, TCGv_i64, TCGv_i64);
+typedef void (*ARC_GEN_SPECIFIC_OPERATION_FUNC)(DisasCtxt*, TCGv_i64, TCGv_i64, TCGv_i64, TCGv_i64, TCGv_i64, ARC_GEN_EXTRACT_BITS_FUNC, ARC_GEN_OVERFLOW_DETECT_FUNC);
 
 void arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 op1, TCGv_i64 op2,
                              TCGv_i64 overflow,
@@ -92,11 +93,15 @@ void arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
 void arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                              TCGv_i64 acc, TCGv_i64 overflow,
-                             ARC_GEN_EXTRACT_BITS_FUNC extract_bits, ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
+                             ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                             ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
+
 
 #define ARC_GEN_QMACHU_I64(ctx, a, b, c, acc, overflow) arc_gen_qmach_base_i64(ctx, a, b, c, acc, overflow, tcg_gen_extract_i64, arc_gen_add_unsigned_overflow_i64)
 
 #define ARC_GEN_QMACH_I64(ctx, a, b, c, acc, overflow) arc_gen_qmach_base_i64(ctx, a, b, c, acc, overflow, tcg_gen_sextract_i64, arc_gen_add_signed_overflow_i64)
+
+#define ARC_GEN_DMACWHU_I64(ctx, a, b, c, acc, overflow) arc_gen_dmacwh_base_i64(ctx, a, b, c, acc, overflow, tcg_gen_extract_i64, arc_gen_add_unsigned_overflow_i64)
 
 void
 arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand, operand_t* operand);

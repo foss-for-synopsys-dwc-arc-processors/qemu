@@ -8782,7 +8782,8 @@ arc_gen_vmac2h_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
 }
 
 static void
-arc_gen_qmach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
+arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
+                            ARC_GEN_SPECIFIC_OPERATION_FUNC main_mac_operation,
                             ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
                             ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
 {
@@ -8805,7 +8806,7 @@ arc_gen_qmach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
 
   arc_gen_set_vector_constant_operand(ctx, c64, &(ctx->insn.operands[2]));
 
-  arc_gen_qmach_base_i64(ctx, a64, b64, c64, acc, overflow, extract_bits, detect_overflow_i64);
+  main_mac_operation(ctx, a64, b64, c64, acc, overflow, extract_bits, detect_overflow_i64);
 
   if (getFFlag()) { // We sent a "fake" 64 bit flag into arc_gen_qmachu_i64
     // Set overflow flag if required (overflow only got updated if 0 -> 1)
@@ -8827,17 +8828,20 @@ arc_gen_qmach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
 int
 arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  arc_gen_qmach_base32_to_64(ctx, a, b, c, tcg_gen_extract_i64, arc_gen_add_unsigned_overflow_i64);
-
+    arc_gen_mach_base32_to_64(ctx, a, b, c,
+                        arc_gen_qmach_base_i64,
+                        tcg_gen_extract_i64,
+                        arc_gen_add_unsigned_overflow_i64);
   return DISAS_NEXT;
 }
 
 int
 arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  
-  arc_gen_qmach_base32_to_64(ctx, a, b, c, tcg_gen_sextract_i64, arc_gen_add_signed_overflow_i64);
-
+  arc_gen_mach_base32_to_64(ctx, a, b, c,
+                            arc_gen_qmach_base_i64,
+                            tcg_gen_sextract_i64,
+                            arc_gen_add_signed_overflow_i64);
   // Set N flag if required
   if (getFFlag()) {
     setNFlag(nextRegWithNull(a));
@@ -8846,6 +8850,16 @@ arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
   return DISAS_NEXT;
 }
 
+int
+arc_gen_DMACWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+  arc_gen_mach_base32_to_64(ctx, a, b, c,
+                            arc_gen_dmacwh_base_i64,
+                            tcg_gen_extract_i64,
+                            arc_gen_add_unsigned_overflow_i64);
+  
+  return DISAS_NEXT;
+}
 
 int
 arc_gen_VMAC2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
