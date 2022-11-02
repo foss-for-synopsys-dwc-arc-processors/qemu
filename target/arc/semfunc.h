@@ -90,6 +90,9 @@ void arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                        ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow);
 
+void arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                             TCGv_i64 acc, TCGv_i64 overflow,
+                             ARC_GEN_EXTRACT_BITS_FUNC extract_bits, ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
 #define ARC_GEN_QMACHU_I64(ctx, a, b, c, acc, overflow) arc_gen_qmach_base_i64(ctx, a, b, c, acc, overflow, tcg_gen_extract_i64, arc_gen_add_unsigned_overflow_i64)
 

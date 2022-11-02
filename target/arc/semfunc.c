@@ -120,9 +120,7 @@ arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand, operan
     if(operand->type & ARC_OPERAND_LIMM && operand->type & ARC_OPERAND_32_SPLIT)
     {
       uint64_t base_op_value = ctx->insn.limm;
-      printf("%ld\n", base_op_value);
       base_op_value = base_op_value | base_op_value << 32;
-      printf("%ld\n", base_op_value);
       tcg_gen_movi_i64(tcg_operand, base_op_value);
     }
   }
@@ -204,4 +202,67 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
   tcg_temp_free_i64(c_h1);
   tcg_temp_free_i64(c_h2);
   tcg_temp_free_i64(c_h3);
+}
+
+
+void
+arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                   TCGv_i64 acc, TCGv_i64 overflow,
+                   ARC_GEN_EXTRACT_BITS_FUNC extract_bits, ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
+{
+  TCGv_i64 b_w0 = tcg_temp_new_i64();
+  TCGv_i64 b_w1 = tcg_temp_new_i64();
+
+  TCGv_i64 c_h0 = tcg_temp_new_i64();
+  TCGv_i64 c_h1 = tcg_temp_new_i64();
+
+  TCGv cc_temp = tcg_temp_local_new();
+  TCGLabel *cc_done = gen_new_label();
+  
+  /* Conditional execution */
+  getCCFlag(cc_temp);
+  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+
+  /* Instruction code */
+
+  extract_bits(b_w0, b, 0, 32);
+  extract_bits(b_w1, b, 32, 32);
+
+  extract_bits(c_h0, c, 0, 16);
+  extract_bits(c_h1, c, 16, 16);
+
+  // Multiply halfwords with words
+  tcg_gen_mul_i64(b_w0, b_w0, c_h0);
+  tcg_gen_mul_i64(b_w1, b_w1, c_h1);
+
+  // We dont need to truncate the multiplication results because
+  // we know for a fact that it is a 16 bit number multiplication,
+  // and we expect the result to be 32 bit (PRM) so there will never
+  // be an overflow (0xffff * 0xffff = 0xfffe 0001 < 0x1 0000 0000)
+  // 
+  //tcg_gen_andi_tl(b_hX, b_hX, 0xffffffff);
+
+  // Assemble final result via additions
+  // As the operands are 32 bit, it is not possible for the sums to
+  // overflow a 64 bit number either
+  tcg_gen_add_i64(b_w0, b_w0, b_w1);
+
+  tcg_gen_add_i64(a, acc, b_w0);
+
+  if (getFFlag()) { // F flag is set, affect the flags
+    // Set overflow flag if required
+    arc_gen_set_if_overflow(a, acc, b_w0, overflow, detect_overflow_i64);
+  }
+
+  tcg_gen_add_i64(acc, acc, b_w0);
+
+  /* Conditional execution end. */
+  gen_set_label(cc_done);
+  tcg_temp_free(cc_temp);
+
+  tcg_temp_free_i64(b_w0);
+  tcg_temp_free_i64(b_w1);
+
+  tcg_temp_free_i64(c_h0);
+  tcg_temp_free_i64(c_h1);
 }

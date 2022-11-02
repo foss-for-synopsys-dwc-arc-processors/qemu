@@ -14322,6 +14322,19 @@ arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
   return DISAS_NEXT;
 }
 
+
+/*
+ acc +((B.w0 * c.h0)+(B.w1 * c.h1));
+*/
+int
+arc_gen_DMACWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+  arc_gen_set_vector_constant_operand(ctx, c, &(ctx->insn.operands[2]));
+  
+
+  return DISAS_NEXT;
+}
+
 static int 
 gen_vec_add_sub_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
                    void (*OP)(TCGv, TCGv, TCGv))
