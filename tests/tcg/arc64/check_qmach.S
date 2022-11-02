@@ -1,6 +1,6 @@
-; check_qmachu.S
+; check_qmach.S
 ;
-; Tests for qmachu: Quad unsigned 16x16 multiply and accumulate.
+; Tests for qmach: Quad unsigned 16x16 multiply and accumulate.
 ; If the test fails, check the end of this file for how to troubleshoot.
 
   .include "macros.inc"
@@ -34,7 +34,7 @@ test_nr:
 .endm
 
 ; branch to exit if the expected condition isnt met
-; TODO also validate that QMACHU does NOT change any other flags but overflow
+; TODO also validate that QMACH does NOT change any other flags but overflow
 ; less important because the code to do so simply isnt there but still
 ; should be checked
 .macro check_flgs   expected_cond
@@ -44,19 +44,19 @@ test_nr:
 .endm
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; QMACHU ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; QMACH ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Let the tests begin
   start
 
-;=== qmachu a,b,c ===
+;=== qmach a,b,c ===
 ;
 ; Test 1
-; Encoding: qmachu<.f> a,b,c 00101bbb00110100FBBBCCCCCCAAAAAA
+; Encoding: qmach<.f> a,b,c 00101bbb00110100FBBBCCCCCCAAAAAA
 ;
-; The following qmachu tests rely on:
+; The following qmach tests rely on:
 ; setting acc to some value
-; using an instruction (qmachu, qmachu.f, qmac.cc, qmac.f.cc) with
+; using an instruction (qmach, qmach.f, qmac.cc, qmac.f.cc) with
 ; the given data, and checking if both accumulator and r0
 ; have the expected data
 ;
@@ -93,7 +93,7 @@ test_nr:
 ;
 .macro run_test11   r2h, r2l, r4h, r4l, exph, expl
   reset_flags
-  run_test1X qmachu, 0x0, 0x0, \r2h, \r2l, \r4h, \r4l, \exph, \expl
+  run_test1X qmach, 0x0, 0x0, \r2h, \r2l, \r4h, \r4l, \exph, \expl
 .endm
 
 ; Basic test, 1 half word non 0 on both registers (1*2 + 0 + 0 + 0)
@@ -123,11 +123,12 @@ run_test11 0x10001, 0x10001, \
 ;
 run_test11 0x80018001, 0x80018001, \
            0x10001,    0x10001,    \
-           0x0,        0x20004
+           0xffffffff, 0xfffe0004
+           
 ; Swap registers
 run_test11 0x10001,    0x10001,    \
            0x80018001, 0x80018001, \
-           0x0,        0x20004
+           0xffffffff, 0xfffe0004
 ;
 ; Test 1.2
 ;
@@ -139,7 +140,7 @@ run_test11 0x10001,    0x10001,    \
 ;
 .macro run_test12   acch, accl, r2h, r2l, r4h, r4l, exph, expl
   reset_flags
-  run_test1X qmachu, \acch, \accl, \r2h, \r2l, \r4h, \r4l, \exph, \expl
+  run_test1X qmach, \acch, \accl, \r2h, \r2l, \r4h, \r4l, \exph, \expl
 .endm
 
 run_test12 0x0, 0x2, \
@@ -173,7 +174,7 @@ run_test12 0x2, 0x1, \
 run_test12 0x80018001, 0x80018001, \
            0x10001,    0x10001,    \
            0x80018001, 0x80018001, \
-           0x80018001, 0x80038005
+           0x80018001, 0x7fff8005
 
 ; Test 1.3
 ; 
@@ -181,52 +182,82 @@ run_test12 0x80018001, 0x80018001, \
 ;
 ; Validate flag set
 ;
-.macro run_test13   acch, accl, r2h, r2l, r4h, r4l, exph, expl, expected_cond
+.macro run_test13   acch, accl, r2h, r2l, r4h, r4l, exph, expl
   reset_flags
-  run_test1X qmachu.f, \acch, \accl, \r2h, \r2l, \r4h, \r4l, \exph, \expl
-  check_flgs \expected_cond
+  run_test1X qmach.f, \acch, \accl, \r2h, \r2l, \r4h, \r4l, \exph, \expl
 .endm
 
-;
 run_test13 0xffffffff, 0xffffffff, \
            0x0, 0x0, \
            0x0, 0x0, \
-           0xffffffff, 0xffffffff, \
-           vc
+           0xffffffff, 0xffffffff
+; Check flags
+check_flgs vc
+check_flgs n
+
 
 run_test13 0xffffffff, 0xfffffffe, \
            0x0, 0x1, \
            0x0, 0x1, \
-           0xffffffff, 0xffffffff, \
-           vc
-
-; Accumulator overflow
-run_test13 0xffffffff, 0xffffffff, \
-           0x0, 0x1, \
-           0x0, 0x1, \
-           0x0, 0x0, \
-           vs
-
-; Biggest overflow possible
-run_test13 0xffffffff, 0xffffffff, \
-           0xffffffff, 0xffffffff, \
-           0xffffffff, 0xffffffff, \
-           0x00000003, 0xFFF80003, \
-           vs
+           0xffffffff, 0xffffffff
+; Check flags
+check_flgs vc
+check_flgs n
 
 ; Closest accumulator value without overflow
-run_test13 0xfffffffc, 0x0007fffb, \
+run_test13 0x7fffffff, 0xfffffffe, \
+           0x0, 0x01, \
+           0x0, 0x01, \
+           0x7fffffff, 0xffffffff
+; Check flags
+check_flgs vc
+check_flgs p
+
+; Accumulator overflow from largest positive to largest negative
+run_test13 0x7fffffff, 0xffffffff, \
+           0x0, 0x01, \
+           0x0, 0x01, \
+           0x80000000, 0x0
+; Check flags
+check_flgs vs
+check_flgs n
+
+; Accumulator "underflow" from smallest negative to smallest positive
+run_test13 0xffffffff, 0xffffffff, \
+           0x0, 0x01, \
+           0x0, 0x01, \
+           0x0, 0x0
+; Check flags
+check_flgs vc
+check_flgs p
+
+
+
+; Biggest overflow possible;
+run_test13 0xffffffff, 0xffffffff, \
            0xffffffff, 0xffffffff, \
            0xffffffff, 0xffffffff, \
+           0x00000000, 0x00000003
+; Check flags
+check_flgs vc
+check_flgs p
+
+run_test13 0x0, 0x0, \
            0xffffffff, 0xffffffff, \
-           vc
+           0xffffffff, 0xffffffff, \
+           0x0,        0x4
+; Check flags
+check_flgs vc
+check_flgs p
 
 ; Overflow with smallest accumulator value
-run_test13 0xfffffffc, 0x0007fffc, \
+run_test13 0x7fffffff, 0xfffffffc, \
            0xffffffff, 0xffffffff, \
            0xffffffff, 0xffffffff, \
-           0x0,        0x0,        \
-           vs
+           0x80000000, 0x0
+; Check flags
+check_flgs vs
+check_flgs n
 
 ; Validate that overfow flag isnt changed if there isnt an overflow
 set_reg64 r58, 0x0, 0x0
@@ -235,12 +266,11 @@ set_reg64 r4,  0x0, 0x0
 qmachu.f r0, r2, r4
 check_flgs vs
 
-
 ; Test 2
 ; Encodings
-; qmachu<.f> a,b,u6 00101bbb01110101FBBBuuuuuuAAAAAA
+; qmach<.f> a,b,u6 00101bbb01110101FBBBuuuuuuAAAAAA
 ; and
-; qmachu<.f> a,b,c 00101bbb00110101FBBBCCCCCCAAAAAA
+; qmach<.f> a,b,c 00101bbb00110101FBBBCCCCCCAAAAAA
 ; with limm instead of c
 ;
 ; With u6 (or s12 for that matter), the value is zero
@@ -270,7 +300,7 @@ check_flgs vs
 ; Test 2.1
 .macro run_test21   r2h, r2l, const, exph, expl
   reset_flags
-  run_test2X qmachu, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
+  run_test2X qmach, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
 .endm
 
 ; u6 replicated on 4 halfwords, but only first halfword of register is non 0
@@ -288,10 +318,13 @@ run_test21 0x10001, 0x10001, \
            0x3f, \
            0x0, 0xfc
 
+
+
 ; Smallest limm
 run_test21 0x10001, 0x10001, \
            0x40, \
            0x0, 0x80
+
 
 ; Limm with highest bit set and lowest bit set
 run_test21 0x10001, 0x10001, \
@@ -301,65 +334,49 @@ run_test21 0x10001, 0x10001, \
 ; Biggest limm with highest bit set and lowest bit set
 run_test21 0x10001, 0x10001, \
            0xffffffff, \
-           0x0, 0x3fffc
+           0xffffffff, 0xfffffffc
 
 ; Test 2.2
 ; Validate flag set and accumulator (can only overflow with accumulator)
-.macro run_test22   acch, accl, r2h, r2l, const, exph, expl, expected_cond
+.macro run_test22   acch, accl, r2h, r2l, const, exph, expl
   reset_flags
-  run_test2X qmachu.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
-  check_flgs \expected_cond
+  run_test2X qmach.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
 .endm
 
 ; Closest to overflow with biggest limm
-run_test22 0xffffffff, 0xfffC0003, \
+run_test22 0x80000000, 0x00000004, \
            0x10001, 0x10001, \
            0xffffffff, \
-           0xffffffff, 0xffffffff, \
-           vc
+           0x80000000, 0x0
+check_flgs vc
 
 ; Smallest overflow possible with biggest limm
-run_test22 0xffffffff, 0xfffC0004, \
+run_test22 0x80000000, 0x00000003, \
            0x10001, 0x10001, \
            0xffffffff, \
-           0x0, 0x0, \
-           vs
-
-; Biggest accumulator overflow with biggest limm
-run_test22 0xffffffff, 0xffffffff, \
-           0x10001, 0x10001, \
-           0xffffffff, \
-           0x0, 0x3fffb, \
-           vs
-
+           0x7fffffff, 0xffffffff
+check_flgs vs
 
 ; Closest to overflow with biggest u6
-run_test22 0xffffffff, 0xffffff03, \
+run_test22 0x7fffffff, 0xffffff03, \
            0x10001, 0x10001, \
            0x3f, \
-           0xffffffff, 0xffffffff, \
-           vc
+           0x7fffffff, 0xffffffff
+check_flgs vc
 
 ; Smallest overflow possible with biggest u6
-run_test22 0xffffffff, 0xffffff04, \
+run_test22 0x7fffffff, 0xffffff04, \
            0x10001, 0x10001, \
            0x3f, \
-           0x0, 0x0, \
-           vs
-
-; Biggest accumulator overflow with biggest u6
-run_test22 0xffffffff, 0xffffffff, \
-           0x10001, 0x10001, \
-           0x3f, \
-           0x0, 0xfb, \
-           vs
+           0x80000000, 0x0
+check_flgs vs
 
 ; Test 3
-; Encoding: qmachu<.f> b,b,s12 00101bbb10110101FBBBssssssSSSSSS
+; Encoding: qmach<.f> b,b,s12 00101bbb10110101FBBBssssssSSSSSS
 ;
-; The following qmachu tests rely on:
+; The following qmach tests rely on:
 ; setting acc to some value
-; using an instruction (qmachu, qmachu.f, qmac.cc, qmac.f.cc) with
+; using an instruction (qmach, qmach.f, qmac.cc, qmac.f.cc) with
 ; the given data, and checking if both accumulator and r0
 ; have the expected data
 
@@ -383,7 +400,7 @@ run_test22 0xffffffff, 0xffffffff, \
 ; Test 3.1
 .macro run_test31   r2h, r2l, const, exph, expl
   reset_flags
-  run_test3X qmachu, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
+  run_test3X qmach, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
 .endm
 
 ; s12 with highest and lowest bits set 0b1 000 000
@@ -394,12 +411,12 @@ run_test31 0x10001, 0x10001, \
 ; s12 with -1
 run_test31 0x10001, 0x10001, \
            -1, \
-           0x0, 0x3fffc
+           0xffffffff, 0xfffffffc
 
 ; s12 with lowest possible negative number
 run_test31 0x10001, 0x10001, \
            -2048, \
-           0x0, 0x3e000
+           0xffffffff, 0xffffe000
 
 ; s12 with highest possible positive number
 run_test31 0x10001, 0x10001, \
@@ -410,54 +427,45 @@ run_test31 0x10001, 0x10001, \
 ; Validate flag set and accumulator (can only overflow with accumulator)
 ; Bare in mind that this is an unsigned operation so we can
 ; never have a negative overflow
-.macro run_test32   acch, accl, r2h, r2l, const, exph, expl, expected_cond
+.macro run_test32   acch, accl, r2h, r2l, const, exph, expl
   reset_flags
-  run_test3X qmachu.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
-  check_flgs \expected_cond
+  run_test3X qmach.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
 .endm
 
 ; Closest to overflow with biggest positive s12
-run_test32 0xffffffff, 0xffffe003, \
+run_test32 0x7fffffff, 0xffffe003, \
            0x10001, 0x10001, \
            2047, \
-           0xffffffff, 0xffffffff, \
-           vc
+           0x7fffffff, 0xffffffff
+check_flgs vc
 
-; Closest to overflow with biggest negative s12
-run_test32 0xffffffff, 0xfffc1fff, \
+; Closest overflow with biggest negative s12
+run_test32 0x80000000, 0x00002000, \
            0x10001, 0x10001, \
            -2048, \
-           0xffffffff, 0xffffffff, \
-           vc
+           0x80000000, 0x0
+check_flgs vc
 
-
-; Smallest overflow possible with biggest positive s12
-run_test32 0xffffffff, 0xffffe004, \
-           0x10001, 0x10001, \
-           2047, \
-           0x0, 0x0, \
-           vs
-
-; Closest to overflow with biggest negative s12
-run_test32 0xffffffff, 0xfffc2000, \
+; Smallest overflow with biggest s12
+run_test32 0x80000000, 0x00001FFF, \
            0x10001, 0x10001, \
            -2048, \
-           0x0, 0x0, \
-           vs
+           0x7fffffff, 0xffffffff
+check_flgs vs
 
-; Biggest accumulator overflow with biggest positive s12
+; Biggest operation with biggest positive s12
 run_test32 0xffffffff, 0xffffffff, \
            0x10001, 0x10001, \
            2047, \
-           0x0, 0x1ffB, \
-           vs
+           0x0, 0x1ffB
+check_flgs vc
 
-; Biggest accumulator overflow with biggest negative s12
+; Biggest operation with biggest negative s12
 run_test32 0xffffffff, 0xffffffff, \
            0x10001, 0x10001, \
            -2048, \
-           0x0, 0x3dfff, \
-           vs
+           0xffffffff, 0xffffdfff
+check_flgs vc
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -477,5 +485,5 @@ fail:
   print_number r1
   print "\n[FAIL] on "
 1:
-  print " qmachu: Quad unsigned 16x16 multiply and accumulate\n"
+  print " qmach: Quad unsigned 16x16 multiply and accumulate\n"
   end
