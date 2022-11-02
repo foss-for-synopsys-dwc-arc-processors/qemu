@@ -14301,8 +14301,8 @@ arc_gen_VPACK2WM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  // The entirety of this instruction has been delegated so it could be reused
-  // by the 32 bit version, since the inner workings are exactly the same
+  arc_gen_set_vector_constant_operand(ctx, c, &(ctx->insn.operands[2]));
+
   ARC_GEN_QMACHU_I64(ctx, a, b, c, cpu64_acc, getVFlag());
   
   return DISAS_NEXT;
@@ -14311,6 +14311,8 @@ arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
+  arc_gen_set_vector_constant_operand(ctx, c, &(ctx->insn.operands[2]));
+  
   ARC_GEN_QMACH_I64(ctx, a, b, c, cpu64_acc, getVFlag());
   // Set N flag if required
   if (getFFlag()) {
