@@ -8808,7 +8808,7 @@ arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
 
   // save the result on [next(dest):dest]
   tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);
-  tcg_gen_extr_i64_i32(a, arc_gen_next_reg(ctx, a, true), a64);
+  tcg_gen_extr_i64_i32(a, nextRegWithNull(a), a64);
 
   tcg_temp_free_i64(acc);
 
