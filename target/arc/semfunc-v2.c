@@ -8862,6 +8862,21 @@ arc_gen_DMACWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 }
 
 int
+arc_gen_DMACWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_gen_mach_base32_to_64(ctx, a, b, c, true,
+                            arc_gen_dmacwh_base_i64,
+                            tcg_gen_sextract_i64,
+                            arc_gen_add_signed_overflow_i64);
+  
+  ARC_GEN_SEMFUNC_DEINIT();
+  
+  return DISAS_NEXT;
+}
+
+int
 arc_gen_VMAC2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
   TCGv cc_temp = tcg_temp_local_new();
