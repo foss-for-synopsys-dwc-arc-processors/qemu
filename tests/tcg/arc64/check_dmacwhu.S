@@ -201,6 +201,14 @@ run_test13 0xffffffff, 0xfffffffe, \
            0xffffffff, 0xffffffff, \
            vc
 
+; Validate register as 0
+prep_test_case
+set_reg64 r58, 0xffffffff, 0xffffffff ; Set accumulator
+set_reg64 r2, 0xffffffff, 0xffffffff
+set_reg64 r4, 0xffffffff, 0xffffffff
+dmacwhu.f 0, r2, r4 
+check_flgs vs
+
 ; Accumulator overflow
 run_test13 0xffffffff, 0xffffffff, \
            0x0, 0x1, \
@@ -222,6 +230,18 @@ run_test13 0xfffe0002, 0x0001fffd, \
            0xffffffff, 0xffffffff, \
            vc
 
+; Validate the cc flag
+prep_test_case
+set_reg64 r58, 0xfffffffc, 0xfffffffc ; Set accumulator
+set_reg64 r2, 0xffffffff, 0xffffffff
+set_reg64 r4, 0xffffffff, 0xffffffff
+
+add.f 0, 1, 1
+; If Z flag is set (it isnt), sets overflow flag. Shouldnt be executed
+dmacwhu.z.f r2, r2, r4 
+; overflow clear p flag was already set and wasnt changed
+check_flgs vc
+
 ; Overflow with smallest accumulator value
 run_test13 0xfffe0002, 0x0001fffe, \
            0xffffffff, 0xffffffff, \
@@ -233,7 +253,7 @@ run_test13 0xfffe0002, 0x0001fffe, \
 set_reg64 r58, 0x0, 0x0
 set_reg64 r2,  0x0, 0x0
 set_reg64 r4,  0x0, 0x0
-qmachu.f r0, r2, r4
+dmacwhu.f r0, r2, r4
 check_flgs vs
 
 ; Test 2

@@ -242,12 +242,32 @@ run_test13 0xffffffff, 0xffffffff, \
 check_flgs vc
 check_flgs p
 
+; Validate register as 0
+prep_test_case
+set_reg64 r58, 0x7fffffff, 0xfffffffe ; Set accumulator
+set_reg64 r2, 0xffffffff, 0xffffffff
+set_reg64 r4, 0xffffffff, 0xffffffff
+qmach.f 0, r2, r4 
+check_flgs vs
+
 run_test13 0x0, 0x0, \
            0xffffffff, 0xffffffff, \
            0xffffffff, 0xffffffff, \
            0x0,        0x4
 ; Check flags
 check_flgs vc
+check_flgs p
+
+; Validate the cc flag
+prep_test_case
+set_reg64 r58, 0x7fffffff, 0xfffffffc ; Set accumulator
+set_reg64 r2, 0xffffffff, 0xffffffff
+set_reg64 r4, 0xffffffff, 0xffffffff
+
+add.f 0, 1, 1
+; If Z flag is set (it isnt), sets n flag. Shouldnt be executed
+qmach.z.f r2, r2, r4 
+; p flag was already set and wasnt changed
 check_flgs p
 
 ; Overflow with smallest accumulator value
@@ -260,11 +280,13 @@ check_flgs vs
 check_flgs n
 
 ; Validate that overfow flag isnt changed if there isnt an overflow
+prep_test_case
 set_reg64 r58, 0x0, 0x0
 set_reg64 r2,  0x0, 0x0
 set_reg64 r4,  0x0, 0x0
 qmachu.f r0, r2, r4
 check_flgs vs
+
 
 ; Test 2
 ; Encodings
@@ -485,5 +507,5 @@ fail:
   print_number r1
   print "\n[FAIL] on "
 1:
-  print " qmach: Quad unsigned 16x16 multiply and accumulate\n"
+  print " qmach: Quad 16x16 multiply and accumulate\n"
   end
