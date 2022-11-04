@@ -1,9 +1,9 @@
-; check_qmachu.S
+; check_dmacwh.S
 ;
-; Tests for qmachu: Quad unsigned 16x16 multiply and accumulate.
+; Tests for dmacwh: Quad unsigned 16x16 multiply and accumulate.
 ; If the test fails, check the end of this file for how to troubleshoot.
 
-  .include "../macroshs5x.inc"
+  .include "macros.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; Test checking routines ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -26,7 +26,7 @@ test_nr:
 .endm
 
 ; branch to exit if the expected condition isnt met
-; TODO also validate that QMACHU does NOT change any other flags but overflow
+; TODO also validate that DMACWH does NOT change any other flags but overflow
 ; less important because the code to do so simply isnt there but still
 ; should be checked
 .macro check_flgs   expected_cond
@@ -36,19 +36,19 @@ test_nr:
 .endm
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; QMACHU ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DMACWH ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Let the tests begin
   start
 
-;=== qmachu a,b,c ===
+;=== dmacwh a,b,c ===
 ;
 ; Test 1
-; Encoding: qmachu<.f> a,b,c 00101bbb00110100FBBBCCCCCCAAAAAA
+; Encoding: dmacwh<.f> a,b,c 00101bbb00110100FBBBCCCCCCAAAAAA
 ;
-; The following qmachu tests rely on:
+; The following dmacwh tests rely on:
 ; setting acc to some value
-; using an instruction (qmachu, qmachu.f, qmac.cc, qmac.f.cc) with
+; using an instruction (dmacwh, dmacwh.f, qmac.cc, qmac.f.cc) with
 ; the given data, and checking if both accumulator and r0
 ; have the expected data
 ;
@@ -56,10 +56,13 @@ test_nr:
   add.f 0, 0, 1       ; (Z, N, C, V) = (0, 0, 0, 0)
 .endm
 
+; 
+; R2 holds words, r4 holds half words
+; 
 .macro run_test1X  insn, \
                   acch, accl, \
                   r2h, r2l,   \
-                  r4h, r4l,   \
+                  r4l   \
                   exph, expl
   prep_test_case
 
@@ -67,11 +70,10 @@ test_nr:
   mov r58, \accl
   mov r59, \acch
 
-  mov r2, \r2h
-  mov r3, \r2l
+  mov r2, \r2l
+  mov r3, \r2h
 
-  mov r4, \r4h
-  mov r5, \r4l
+  mov r4, \r4l
 
   \insn r0, r2, r4
 
@@ -80,17 +82,16 @@ test_nr:
   
   check_reg32 r58, \expl
   check_reg32 r59, \exph
-
+  
   ; Run instruction again to reset flags
   ; Set accumulator
   mov r58, \accl
   mov r59, \acch
 
-  mov r2, \r2h
-  mov r3, \r2l
+  mov r2, \r2l
+  mov r3, \r2h
 
-  mov r4, \r4h
-  mov r5, \r4l
+  mov r4, \r4l
 
   \insn r0, r2, r4
 .endm
@@ -103,44 +104,41 @@ test_nr:
 ; Validate extraction, sum and multiply by setting bits at the beginning and
 ; end of the half words, WITHOUT accumulator (set to 0)
 ;
-.macro run_test11   r2h, r2l, r4h, r4l, exph, expl
+.macro run_test11   r2h, r2l, r4l, exph, expl
   reset_flags
-  run_test1X qmachu, 0x0, 0x0, \r2h, \r2l, \r4h, \r4l, \exph, \expl
+  run_test1X dmacwh, 0x0, 0x0, \r2h, \r2l, \r4l, \exph, \expl
 .endm
 
 
-; Basic test, 1 half word non 0 on both registers (1*2 + 0 + 0 + 0)
+; Basic test, 1 word at 2, 1 half word at 1 (1*2 + 0 + 0 + 0)
 run_test11 0x0, 0x2, \
-           0x0, 0x1, \
+           0x1, \
            0x0, 0x2
 
-; Basic test, 2 half words non 0 on both registers (1*1 + 1*1 + 0 + 0)
+; Basic test, 2 words non 0 on both registers (1*1 + 1*1 + 0 + 0)
 run_test11 0x1, 0x1, \
-           0x1, 0x1, \
+           0x10001, \
            0x0, 0x2
 
 ; Basic test, 4 half words non 0 on both registers (1*1 + 1*1 + 1*1 + 1*1)
 run_test11 0x10001, 0x10001, \
-           0x10001, 0x10001, \
-           0x0,     0x4
+           0x10001, \
+           0x0,     0x20002
 
 ; Test first and last bit of each half word (0x8001 + 0x8001 + 0x8001 + 0x8001)
 ; Also test overflow from one half word into another one
 ;
-;   (0x8001, 0x8001, 0x8001, 0x8001) [r2]
-;       *       *       *       *
-;   (0x0001, 0x0001, 0x0001, 0x0001) [r4]
+;   (0x80018001, 0x80018001) [r2]
+;         *           *
+;   (  0x0001,     0x0001  ) [r4]
 ;   --------------------------------
 ;   (0x0000, 0x0000, 0x0002, 0x0604) [r0]
 ;   (0x0000, 0x0000, 0x0002, 0x0604) [acc (r58)]
 ;
 run_test11 0x80018001, 0x80018001, \
-           0x10001,    0x10001,    \
-           0x0,        0x20004
-; Swap registers
-run_test11 0x10001,    0x10001,    \
-           0x80018001, 0x80018001, \
-           0x0,        0x20004
+           0x10001,    \
+           0xffffffff, 0x00030002
+
 ;
 ; Test 1.2
 ;
@@ -150,43 +148,43 @@ run_test11 0x10001,    0x10001,    \
 ; Validate extraction, sum and multiply by setting bits at the beginning and
 ; end of the half words, WITH accumulator
 ;
-.macro run_test12   acch, accl, r2h, r2l, r4h, r4l, exph, expl
+.macro run_test12   acch, accl, r2h, r2l, r4l, exph, expl
   reset_flags
-  run_test1X qmachu, \acch, \accl, \r2h, \r2l, \r4h, \r4l, \exph, \expl
+  run_test1X dmacwh, \acch, \accl, \r2h, \r2l, \r4l, \exph, \expl
 .endm
 
 run_test12 0x0, 0x2, \
            0x0, 0x0, \
-           0x0, 0x0, \
+           0x0, \
            0x0, 0x2
 
 run_test12 0x80018001, 0x80018001, \
            0x0,        0x0,        \
-           0x0,        0x0,        \
+           0x0,        \
            0x80018001, 0x80018001
 
 run_test12 0x2, 0x1, \
            0x0, 0x1, \
-           0x0, 0x0, \
+           0x0, \
            0x2, 0x1
 ;
 ; Test first and last bit of each half word (0x8001 + 0x8001 + 0x8001 + 0x8001)
 ;
-;   (0x8001, 0x8001, 0x8001, 0x8001) [r2]
-;       *       *       *       *
-;   (0x0001, 0x0001, 0x0001, 0x0001) [r4]
+;   (0x80018001, 0x80018001) [r2]
+;         *           *
+;   (  0x0001,     0x0001  ) [r4]
 ;   --------------------------------
-;   (0x0000, 0x0000, 0x0002, 0x0604) intermediate
+;   (0x80018001, 0x80018001) intermediate
 ;       +       +       +       +
-;   (0x8001, 0x8001, 0x8001, 0x8001) [acc (r58)]
+;   (0x80018001, 0x80018001) [acc (r58)]
 ;   --------------------------------
 ;   (0x8001, 0x8001, 0x8003, 0x8005) [r0]
 ;   (0x8001, 0x8001, 0x8003, 0x8005) [acc (r58)]
 ;
 run_test12 0x80018001, 0x80018001, \
            0x10001,    0x10001,    \
-           0x80018001, 0x80018001, \
-           0x80018001, 0x80038005
+           0x80018001, \
+           0x80018000, 0x80028003
 
 ; Test 1.3
 ; 
@@ -194,67 +192,121 @@ run_test12 0x80018001, 0x80018001, \
 ;
 ; Validate flag set
 ;
-.macro run_test13   acch, accl, r2h, r2l, r4h, r4l, exph, expl, expected_cond
+.macro run_test13   acch, accl, r2h, r2l, r4l, exph, expl, expected_cond
   reset_flags
-  run_test1X qmachu.f, \acch, \accl, \r2h, \r2l, \r4h, \r4l, \exph, \expl
+  run_test1X dmacwh.f, \acch, \accl, \r2h, \r2l, \r4l, \exph, \expl
   check_flgs \expected_cond
 .endm
 
 ;
 run_test13 0xffffffff, 0xffffffff, \
            0x0, 0x0, \
-           0x0, 0x0, \
+           0x0, \
            0xffffffff, 0xffffffff, \
            vc
+check_flgs n
 
 run_test13 0xffffffff, 0xfffffffe, \
            0x0, 0x1, \
-           0x0, 0x1, \
+           0x1, \
            0xffffffff, 0xffffffff, \
            vc
-
-; Accumulator overflow
-run_test13 0xffffffff, 0xffffffff, \
-           0x0, 0x1, \
-           0x0, 0x1, \
-           0x0, 0x0, \
-           vs
-
-; Biggest overflow possible
-run_test13 0xffffffff, 0xffffffff, \
-           0xffffffff, 0xffffffff, \
-           0xffffffff, 0xffffffff, \
-           0x00000003, 0xFFF80003, \
-           vs
+check_flgs n
 
 ; Closest accumulator value without overflow
-run_test13 0xfffffffc, 0x0007fffb, \
-           0xffffffff, 0xffffffff, \
-           0xffffffff, 0xffffffff, \
-           0xffffffff, 0xffffffff, \
+run_test13 0x7fffffff, 0xfffffffe, \
+           0x0, 0x1, \
+           0x1, \
+           0x7fffffff, 0xffffffff, \
            vc
+check_flgs p
+
+; Accumulator overflow from largest positive to largest negative
+run_test13 0x7fffffff, 0xffffffff, \
+           0x0, 0x1, \
+           0x1, \
+           0x80000000, 0x0, \
+           vs
+check_flgs n
+
+; Accumulator "underflow" from smallest negative to smallest positive
+run_test13 0xffffffff, 0xffffffff, \
+           0x0, 0x01, \
+           0x01, \
+           0x0, 0x0
+; Check flags
+check_flgs vc
+check_flgs p
+
+; Biggest overflow possible;
+run_test13 0xffffffff, 0xffffffff, \
+           0xffffffff, 0xffffffff, \
+           0xffffffff, \
+           0x00000000, 0x00000001
+; Check flags
+check_flgs vc
+check_flgs p
+
+; Validate register as 0
+prep_test_case
+mov r58, 0xffffffff ; Set accumulator
+mov r59, 0x7fffffff
+mov r2, 0xffffffff
+mov r3, 0xffffffff
+mov r4, 0xffffffff
+mov r5, 0xffffffff
+dmacwh.f 0, r2, r4 
+check_flgs vs
+
+run_test13 0x0, 0x0, \
+           0xffffffff, 0xffffffff, \
+           0xffffffff, \
+           0x0,        0x2
+; Check flags
+check_flgs vc
+check_flgs p
+
+;; Validate the cc flag
+prep_test_case
+
+mov r58, 0x7fffffff ; Set accumulator
+mov r58, 0xfffffffe
+
+mov r2, 0xffffffff
+mov r3, 0xffffffff
+
+mov r4, 0xffffffff
+
+add.f 0, 1, 1
+; If Z flag is set (it isnt), sets overflow flag. Shouldnt be executed
+dmacwh.z.f r2, r2, r4 
+; overflow clear p flag was already set and wasnt changed
+check_flgs vc
 
 ; Overflow with smallest accumulator value
-run_test13 0xfffffffc, 0x0007fffc, \
+run_test13 0x7fffffff, 0xfffffffe, \
            0xffffffff, 0xffffffff, \
-           0xffffffff, 0xffffffff, \
-           0x0,        0x0,        \
+           0xffffffff, \
+           0x80000000,        0x0,        \
            vs
 
 ; Validate that overfow flag isnt changed if there isnt an overflow
 mov r58, 0x0
-mov r2,  0x0
-mov r3,  0x0
-mov r4,  0x0
-mov r5,  0x0
-qmachu.f r0, r2, r4
+mov r58, 0x0
+
+mov r2, 0x0
+mov r3, 0x0
+
+mov r4, 0x0
+
+dmacwh.f r0, r2, r4
 check_flgs vs
 
 ; Test 2
 ; Encodings
-; qmachu<.f> a,b,u6 00101bbb01110101FBBBuuuuuuAAAAAA
+; dmacwh<.f> a,b,u6 00101bbb01110101FBBBuuuuuuAAAAAA
 ; and
-; qmachu<.f> a,b,c 00101bbb00110101FBBBCCCCCCAAAAAA
+; dmacwh<.f> a,b,c 00101bbb00110101FBBBCCCCCCAAAAAA
 ; with limm instead of c
 ;
 ; With u6 (or s12 for that matter), the value is zero
@@ -270,26 +322,25 @@ check_flgs vs
                   const,         \
                   exph, expl
   prep_test_case
-  
-  mov r58, \accl
-  mov r59, \acch
 
+  mov r58, \accl ; Set accumulator
+  mov r59, \acch
+ 
   mov r2, \r2h
   mov r3, \r2l
-
+  
   \insn r0, r2, \const
 
   check_reg32 r0, \expl
   check_reg32 r1, \exph
-  
+
   check_reg32 r58, \expl
   check_reg32 r59, \exph
-
+  
   ; Run instruction again to reset flags
-  ; Set accumulator
-  mov r58, \accl
+  mov r58, \accl ; Set accumulator
   mov r59, \acch
-
+ 
   mov r2, \r2h
   mov r3, \r2l
   
@@ -299,7 +350,7 @@ check_flgs vs
 ; Test 2.1
 .macro run_test21   r2h, r2l, const, exph, expl
   reset_flags
-  run_test2X qmachu, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
+  run_test2X dmacwh, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
 .endm
 
 ; u6 replicated on 4 halfwords, but only first halfword of register is non 0
@@ -310,86 +361,70 @@ run_test21 0x0, 0x2, \
 ; u6 replicated on 4 halfwords, all halfwords of register are 1
 run_test21 0x10001, 0x10001, \
            0xf, \
-           0x0, 0x3c
+           0x0, 0x1e001e
 
 ; Maximum u6 0b111 111
 run_test21 0x10001, 0x10001, \
            0x3f, \
-           0x0, 0xfc
-
+           0x0, 0x7e007e
 
 ; Smallest limm
 run_test21 0x10001, 0x10001, \
            0x40, \
-           0x0, 0x80
+           0x0, 0x400040
 
 ; Limm with highest bit set and lowest bit set
 run_test21 0x10001, 0x10001, \
            0x10000001, \
-           0x0, 0x2002
+           0x0, 0x10011001
 
 ; Biggest limm with highest bit set and lowest bit set
 run_test21 0x10001, 0x10001, \
            0xffffffff, \
-           0x0, 0x3fffc
+           0xffffffff, 0xfffdfffe
 
 ; Test 2.2
 ; Validate flag set and accumulator (can only overflow with accumulator)
 .macro run_test22   acch, accl, r2h, r2l, const, exph, expl, expected_cond
   reset_flags
-  run_test2X qmachu.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
+  run_test2X dmacwh.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
   check_flgs \expected_cond
 .endm
 
 ; Closest to overflow with biggest limm
-run_test22 0xffffffff, 0xfffC0003, \
-           0x10001, 0x10001, \
+run_test22 0x80000000, 0x00000002, \
+           0x0001, 0x0001, \
            0xffffffff, \
-           0xffffffff, 0xffffffff, \
+           0x80000000, 0x0, \
            vc
 
 ; Smallest overflow possible with biggest limm
-run_test22 0xffffffff, 0xfffC0004, \
-           0x10001, 0x10001, \
+run_test22 0x80000000, 0x00000001, \
+           0x0001, 0x0001, \
            0xffffffff, \
-           0x0, 0x0, \
+           0x7fffffff, 0xffffffff, \
            vs
-
-; Biggest accumulator overflow with biggest limm
-run_test22 0xffffffff, 0xffffffff, \
-           0x10001, 0x10001, \
-           0xffffffff, \
-           0x0, 0x3fffb, \
-           vs
-
 
 ; Closest to overflow with biggest u6
-run_test22 0xffffffff, 0xffffff03, \
+run_test22 0x7fffffff, 0xff81ff81, \
            0x10001, 0x10001, \
            0x3f, \
-           0xffffffff, 0xffffffff, \
+           0x7fffffff, 0xffffffff, \
            vc
 
 ; Smallest overflow possible with biggest u6
-run_test22 0xffffffff, 0xffffff04, \
+run_test22 0x7fffffff, 0xff81ff82, \
            0x10001, 0x10001, \
            0x3f, \
-           0x0, 0x0, \
-           vs
-
-; Biggest accumulator overflow with biggest u6
-run_test22 0xffffffff, 0xffffffff, \
-           0x10001, 0x10001, \
-           0x3f, \
-           0x0, 0xfb, \
+           0x80000000, 0x0, \
            vs
 
 ; Test 3
-; Encoding: qmachu<.f> b,b,s12 00101bbb10110101FBBBssssssSSSSSS
+; Encoding: dmacwh<.f> b,b,s12 00101bbb10110101FBBBssssssSSSSSS
 ;
-; The following qmachu tests rely on:
+; The following dmacwh tests rely on:
 ; setting acc to some value
-; using an instruction (qmachu, qmachu.f, qmac.cc, qmac.f.cc) with
+; using an instruction (dmacwh, dmacwh.f, qmac.cc, qmac.f.cc) with
 ; the given data, and checking if both accumulator and r0
 ; have the expected data
 
@@ -423,34 +458,35 @@ run_test22 0xffffffff, 0xffffffff, \
   mov r0, \r2h
   mov r1, \r2l
 
+
   \insn r0, r0, \const
 .endm
 ; 
 ; Test 3.1
 .macro run_test31   r2h, r2l, const, exph, expl
   reset_flags
-  run_test3X qmachu, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
+  run_test3X dmacwh, 0x0, 0x0, \r2h, \r2l, \const, \exph, \expl
 .endm
 
 ; s12 with highest and lowest bits set 0b1 000 000
 run_test31 0x10001, 0x10001, \
            0b1000001, \
-           0x0, 0x104
+           0x0, 0x00820082
 
 ; s12 with -1
 run_test31 0x10001, 0x10001, \
            -1, \
-           0x0, 0x3fffc
+           0xffffffff, 0xfffdfffe
 
 ; s12 with lowest possible negative number
 run_test31 0x10001, 0x10001, \
            -2048, \
-           0x0, 0x3e000
+           0xffffffff, 0xeffff000
 
 ; s12 with highest possible positive number
 run_test31 0x10001, 0x10001, \
            2047, \
-           0x0, 0x1ffc
+           0x0, 0x0ffe0ffe
 
 ; Test 3.1
 ; Validate flag set and accumulator (can only overflow with accumulator)
@@ -458,52 +494,44 @@ run_test31 0x10001, 0x10001, \
 ; never have a negative overflow
 .macro run_test32   acch, accl, r2h, r2l, const, exph, expl, expected_cond
   reset_flags
-  run_test3X qmachu.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
+  run_test3X dmacwh.f, \acch, \accl, \r2h, \r2l, \const, \exph, \expl
   check_flgs \expected_cond
 .endm
 
 ; Closest to overflow with biggest positive s12
-run_test32 0xffffffff, 0xffffe003, \
-           0x10001, 0x10001, \
+run_test32 0xffffffff, 0xfffff001, \
+           0x0001, 0x0001, \
            2047, \
            0xffffffff, 0xffffffff, \
            vc
 
 ; Closest to overflow with biggest negative s12
-run_test32 0xffffffff, 0xfffc1fff, \
-           0x10001, 0x10001, \
-           -2048, \
+run_test32 0x7fffffff, 0xffffefff, \
            0xffffffff, 0xffffffff, \
+           -2048, \
+           0x7fffffff, 0xffffffff, \
            vc
-
 
 ; Smallest overflow possible with biggest positive s12
-run_test32 0xffffffff, 0xffffe004, \
-           0x10001, 0x10001, \
+run_test32 0x7fffffff, 0xfffff002, \
+           0x0001, 0x0001, \
            2047, \
-           0x0, 0x0, \
+           0x80000000, 0x0, \
            vs
 
-; Closest to overflow with biggest negative s12
-run_test32 0xffffffff, 0xfffc2000, \
-           0x10001, 0x10001, \
-           -2048, \
-           0x0, 0x0, \
-           vs
-
-; Biggest accumulator overflow with biggest positive s12
+; Biggest operation with biggest positive s12
 run_test32 0xffffffff, 0xffffffff, \
            0x10001, 0x10001, \
            2047, \
-           0x0, 0x1ffB, \
-           vs
+           0x0, 0x0ffe0ffd
+check_flgs vc
 
-; Biggest accumulator overflow with biggest negative s12
+; Biggest operation with biggest negative s12
 run_test32 0xffffffff, 0xffffffff, \
            0x10001, 0x10001, \
            -2048, \
-           0x0, 0x3dfff, \
-           vs
+           0xffffffff, 0xefffefff
+check_flgs vc
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 valhalla:
@@ -522,5 +550,5 @@ fail:
   print_number r1
   print "\n[FAIL] on "
 1:
-  print " qmachu: Quad unsigned 16x16 multiply and accumulate\n"
+  print " dmacwh: Quad unsigned 16x16 multiply and accumulate\n"
   end

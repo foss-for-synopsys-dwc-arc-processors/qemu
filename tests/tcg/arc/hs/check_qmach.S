@@ -3,7 +3,7 @@
 ; Tests for qmach: Quad unsigned 16x16 multiply and accumulate.
 ; If the test fails, check the end of this file for how to troubleshoot.
 
-  .include "../macroshs5x.inc"
+  .include "macros.inc"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; Test checking routines ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -254,12 +254,42 @@ run_test13 0xffffffff, 0xffffffff, \
 check_flgs vc
 check_flgs p
 
+; Validate register as 0
+prep_test_case
+mov r58, 0xffffffff
+mov r59, 0x7fffffff ; Set accumulator
+mov r2, 0xffffffff
+mov r3, 0xffffffff
+mov r4, 0xffffffff
+mov r5, 0xffffffff
+qmach.f 0, r2, r4 
+check_flgs vs
+
 run_test13 0x0, 0x0, \
            0xffffffff, 0xffffffff, \
            0xffffffff, 0xffffffff, \
            0x0,        0x4
 ; Check flags
 check_flgs vc
+check_flgs p
+
+; Validate the cc flag
+prep_test_case
+
+mov r58, 0x7fffffff
+mov r59, 0xfffffffc ; Set accumulator
+
+mov r2, 0xffffffff
+mov r3, 0xffffffff
+
+mov r4, 0xffffffff
+mov r5, 0xffffffff
+
+add.f 0, 1, 1
+; If Z flag is set (it isnt), sets n flag. Shouldnt be executed
+qmach.z.f r2, r2, r4 
+
+; p flag was already set and wasnt changed
 check_flgs p
 
 ; Overflow with smallest accumulator value
@@ -273,8 +303,14 @@ check_flgs n
 
 ; Validate that overfow flag isnt changed if there isnt an overflow
 mov r58, 0x0
+mov r59, 0x0
+
 mov r2,  0x0
+mov r3,  0x0
+
 mov r4,  0x0
+mov r5,  0x0
+
 qmachu.f r0, r2, r4
 check_flgs vs
 
