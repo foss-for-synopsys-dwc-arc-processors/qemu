@@ -87,9 +87,9 @@ void arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 op1, TCGv_i64 op2,
                              ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
 void arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
-                       TCGv_i64 acc, bool set_n_flag,
-                       ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
-                       ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow);
+                            TCGv_i64 acc, bool set_n_flag,
+                            ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                            ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow);
 
 void arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                              TCGv_i64 acc, bool set_n_flag,
@@ -97,7 +97,8 @@ void arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                              ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
 void
-arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand, operand_t* operand);
+arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand,
+                                    operand_t* operand);
 
 #define ARC_GEN_SEMFUNC_INIT() \
     TCGv cc_temp = tcg_temp_local_new();                    \
