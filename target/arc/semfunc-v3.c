@@ -24,10 +24,6 @@
 #include "exec/gen-icount.h"
 #include "tcg/tcg-op-gvec.h"
 
-// There is unsigned overflow if either register has the last bit
-// set but the result doesnt
-// shift_for_last_bit = register_size - 1
-// ((op1 | op2) & ~result) >> shift_for_last_bit
 
 
 

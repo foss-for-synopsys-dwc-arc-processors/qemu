@@ -72,40 +72,103 @@ void arc_gen_vec_add16_w0_i64(TCGv_i64 d, TCGv_i64 a, TCGv_i64 b);
 void arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
                        unsigned int ofs, unsigned int len);
 
-void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
-                                     TCGv_i64 op1, TCGv_i64 op2);
-
+/**
+ * @brief Verifies if a 64 bit unsigned add resulted in an overflow
+ * @param overflow Is set to 1 or 0 on no overflow, or overflow, respectively
+ * @param result The result of the addition
+ * @param op1 Operand of the add
+ * @param op2 Operand of the add
+ */
 void arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
                                        TCGv_i64 op1, TCGv_i64 op2);
+
+/**
+ * @brief Verifies if a 64 bit signed add resulted in an overflow
+ * @param overflow Is set to 1 or 0 on no overflow, or overflow, respectively
+ * @param result The result of the addition
+ * @param op1 Operand of the add
+ * @param op2 Operand of the add
+ */
+void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
+                                     TCGv_i64 op1, TCGv_i64 op2);
 
 typedef void (*ARC_GEN_EXTRACT_BITS_FUNC)(TCGv_i64, TCGv_i64, unsigned int, unsigned int);
 typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, TCGv_i64, TCGv_i64);
 typedef void (*ARC_GEN_SPECIFIC_OPERATION_FUNC)(DisasCtxt*, TCGv_i64, TCGv_i64, TCGv_i64, TCGv_i64, bool, ARC_GEN_EXTRACT_BITS_FUNC, ARC_GEN_OVERFLOW_DETECT_FUNC);
 
+/**
+ * @brief Runs the "detect_overflow_i64" function with res, op1 and op2 as
+ * arguments, and ors the resulting overflow with the provided one.
+ * This function effectively only sets the received overflow variable from
+ * 0 to 1 and never the other way around
+ * @param res The result to be passed to the overflow function
+ * @param op1 The first operand to be passed to the overflow function
+ * @param op2 The second operand to be passed to the overflow function
+ * @param overflow The current overflow value that at most will change to 1
+ * @param detect_overflow_i64 The function to call to detect overflow
+ */
 void arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 op1, TCGv_i64 op2,
                              TCGv_i64 overflow,
                              ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
+/**
+ * @brief Base for the 64 bit QMACH operation.
+ * @param ctx Current instruction context
+ * @param a First (dest) operand of the instruction
+ * @param b Second operand of the instruction
+ * @param c Third operand of the instruction
+ * @param acc The current accumulator value
+ * @param set_n_flag Whether to set the N flag or not
+ * @param extract_bits The function to be used to extract the bits
+ * @param detect_overflow The function to use to detect 64 bit overflow
+ */
 void arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                             TCGv_i64 acc, bool set_n_flag,
                             ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
                             ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow);
 
+/**
+ * @brief Base for the 64 bit DMACWH operation.
+ * @param ctx Current instruction context
+ * @param a First (dest) operand of the instruction
+ * @param b Second operand of the instruction
+ * @param c Third operand of the instruction
+ * @param acc The current accumulator value
+ * @param set_n_flag Whether to set the N flag or not
+ * @param extract_bits The function to be used to extract the bits
+ * @param detect_overflow The function to use to detect 64 bit overflow
+ */
 void arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                              TCGv_i64 acc, bool set_n_flag,
                              ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
                              ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
+/**
+ * @brief Sets the tcg_operand appropriately, with regards to the provided
+ * operand metadata.
+ * Ignores normal registers and doubles the LIMM.
+ * @param ctx Current instruction context
+ * @param tcg_operand The tcg operand to setup
+ * @param operand The operand metadata for the tcg operand
+ */
 void
 arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand,
                                     operand_t* operand);
 
+/**
+ * @brief Any required ARC semantic function initialization procedures such as
+ * evaluating the cc flag
+ */
 #define ARC_GEN_SEMFUNC_INIT() \
     TCGv cc_temp = tcg_temp_local_new();                    \
     TCGLabel *cc_done = gen_new_label();                    \
     getCCFlag(cc_temp);                                     \
     tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
 
+/**
+ * @brief Any required ARC semantic function de-initialization procedures such
+ * as freeing initialization variables
+ */
 #define ARC_GEN_SEMFUNC_DEINIT() \
     gen_set_label(cc_done); \
     tcg_temp_free(cc_temp);
