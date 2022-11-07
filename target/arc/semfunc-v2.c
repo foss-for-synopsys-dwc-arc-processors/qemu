@@ -8806,7 +8806,8 @@ arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
     arc_gen_next_register_i32_i64(ctx, c64, c);
     tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
 
-    main_mac_operation(ctx, a64, b64, c64, acc, set_n_flag, extract_bits, detect_overflow_i64);
+    main_mac_operation(ctx, a64, b64, c64, acc, \
+                       set_n_flag, extract_bits, detect_overflow_i64);
 
     /*
     * Save the result on [next(dest):dest]

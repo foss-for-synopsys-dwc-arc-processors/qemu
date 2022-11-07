@@ -97,7 +97,7 @@ typedef void (*ARC_GEN_EXTRACT_BITS_FUNC)(TCGv_i64, TCGv_i64, \
 
 typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, \
                                              TCGv_i64, TCGv_i64);
-                                             
+
 typedef void (*ARC_GEN_SPECIFIC_OPERATION_FUNC)(DisasCtxt*, TCGv_i64, TCGv_i64,\
                                                 TCGv_i64, TCGv_i64, bool,      \
                                                 ARC_GEN_EXTRACT_BITS_FUNC,     \
@@ -177,10 +177,10 @@ arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand,
  * as freeing initialization variables
  */
 #define ARC_GEN_SEMFUNC_DEINIT() \
-    do{                          \
+    do {                          \
         gen_set_label(cc_done);  \
         tcg_temp_free(cc_temp);  \
-    }while(0);
+    } while(0)
 
 #define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
 #define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)
