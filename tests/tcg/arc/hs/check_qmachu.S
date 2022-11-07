@@ -221,7 +221,7 @@ mov r2, 0xffffffff
 mov r3, 0xffffffff
 mov r4, 0xffffffff
 mov r5, 0xffffffff
-qmachu.f 0, r2, r4 
+qmachu.f 0, r2, r4
 check_flgs vs
 
 ; Accumulator overflow
@@ -256,7 +256,7 @@ mov r5, 0xffffffff
 
 add.f 0, 1, 1
 ; If Z flag is set (it isnt), sets overflow flag. Shouldnt be executed
-qmachu.z.f r2, r2, r4 
+qmachu.z.f r2, r2, r4
 ; overflow clear p flag was already set and wasnt changed
 check_flgs vc
 

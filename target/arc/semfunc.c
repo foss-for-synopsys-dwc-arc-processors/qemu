@@ -112,7 +112,7 @@ arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 op1, TCGv_i64 op2,
 
 void
 arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand,
-                                    operand_t* operand)
+                                    operand_t *operand)
 {
     uint64_t base_op_value;
 
@@ -149,7 +149,7 @@ arc_gen_mac_check_fflags(DisasCtxt *ctx, TCGv_i64 result, TCGv_i64 sums,
             TCGv_i64 overflow;
 
             if (set_n_flag) {
-                N_flag = tcg_temp_new_i64();          
+                N_flag = tcg_temp_new_i64();
 
                 tcg_gen_shri_i64(N_flag, result, 63);
                 tcg_gen_extrl_i64_i32(getNFlag(), N_flag);

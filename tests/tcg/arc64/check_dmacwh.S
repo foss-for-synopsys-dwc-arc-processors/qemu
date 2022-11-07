@@ -254,7 +254,7 @@ set_reg64 r4, 0xffffffff, 0xffffffff
 
 add.f 0, 1, 1
 ; If Z flag is set (it isnt), sets overflow flag. Shouldnt be executed
-dmacwh.z.f r2, r2, r4 
+dmacwh.z.f r2, r2, r4
 ; overflow clear p flag was already set and wasnt changed
 check_flgs vc
 
@@ -263,7 +263,7 @@ prep_test_case
 set_reg64 r58, 0x7fffffff, 0xfffffffe ; Set accumulator
 set_reg64 r2, 0xffffffff, 0xffffffff
 set_reg64 r4, 0xffffffff, 0xffffffff
-dmacwh.f 0, r2, r4 
+dmacwh.f 0, r2, r4
 check_flgs vs
 
 ; Overflow with smallest accumulator value

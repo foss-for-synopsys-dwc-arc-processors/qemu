@@ -247,7 +247,7 @@ prep_test_case
 set_reg64 r58, 0x7fffffff, 0xfffffffe ; Set accumulator
 set_reg64 r2, 0xffffffff, 0xffffffff
 set_reg64 r4, 0xffffffff, 0xffffffff
-qmach.f 0, r2, r4 
+qmach.f 0, r2, r4
 check_flgs vs
 
 run_test13 0x0, 0x0, \
@@ -266,7 +266,7 @@ set_reg64 r4, 0xffffffff, 0xffffffff
 
 add.f 0, 1, 1
 ; If Z flag is set (it isnt), sets n flag. Shouldnt be executed
-qmach.z.f r2, r2, r4 
+qmach.z.f r2, r2, r4
 ; p flag was already set and wasnt changed
 check_flgs p
 

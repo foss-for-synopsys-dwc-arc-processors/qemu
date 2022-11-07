@@ -92,9 +92,16 @@ void arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
 void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
                                      TCGv_i64 op1, TCGv_i64 op2);
 
-typedef void (*ARC_GEN_EXTRACT_BITS_FUNC)(TCGv_i64, TCGv_i64, unsigned int, unsigned int);
-typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, TCGv_i64, TCGv_i64);
-typedef void (*ARC_GEN_SPECIFIC_OPERATION_FUNC)(DisasCtxt*, TCGv_i64, TCGv_i64, TCGv_i64, TCGv_i64, bool, ARC_GEN_EXTRACT_BITS_FUNC, ARC_GEN_OVERFLOW_DETECT_FUNC);
+typedef void (*ARC_GEN_EXTRACT_BITS_FUNC)(TCGv_i64, TCGv_i64, \
+                                          unsigned int, unsigned int);
+
+typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, \
+                                             TCGv_i64, TCGv_i64);
+                                             
+typedef void (*ARC_GEN_SPECIFIC_OPERATION_FUNC)(DisasCtxt*, TCGv_i64, TCGv_i64,\
+                                                TCGv_i64, TCGv_i64, bool,      \
+                                                ARC_GEN_EXTRACT_BITS_FUNC,     \
+                                                ARC_GEN_OVERFLOW_DETECT_FUNC);
 
 /**
  * @brief Runs the "detect_overflow_i64" function with res, op1 and op2 as
@@ -153,7 +160,7 @@ void arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
  */
 void
 arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand,
-                                    operand_t* operand);
+                                    operand_t *operand);
 
 /**
  * @brief Any required ARC semantic function initialization procedures such as
@@ -170,8 +177,10 @@ arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand,
  * as freeing initialization variables
  */
 #define ARC_GEN_SEMFUNC_DEINIT() \
-    gen_set_label(cc_done); \
-    tcg_temp_free(cc_temp);
+    do{                          \
+        gen_set_label(cc_done);  \
+        tcg_temp_free(cc_temp);  \
+    }while(0);
 
 #define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
 #define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)

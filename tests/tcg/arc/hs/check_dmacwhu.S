@@ -80,7 +80,7 @@ test_nr:
 
   check_reg32 r0, \expl
   check_reg32 r1, \exph
-  
+
   check_reg32 r58, \expl
   check_reg32 r59, \exph
 
@@ -221,7 +221,7 @@ mov r2, 0xffffffff
 mov r3, 0xffffffff
 mov r4, 0xffffffff
 mov r5, 0xffffffff
-dmacwhu.f 0, r2, r4 
+dmacwhu.f 0, r2, r4
 check_flgs vs
 
 ; Accumulator overflow
@@ -256,7 +256,7 @@ mov r5, 0xffffffff
 
 add.f 0, 1, 1
 ; If Z flag is set (it isnt), sets overflow flag. Shouldnt be executed
-dmacwhu.z.f r2, r2, r4 
+dmacwhu.z.f r2, r2, r4
 ; overflow clear p flag was already set and wasnt changed
 check_flgs vc
 
@@ -311,7 +311,7 @@ check_flgs vs
 
   check_reg32 r0, \expl
   check_reg32 r1, \exph
-  
+
   check_reg32 r58, \expl
   check_reg32 r59, \exph
 
@@ -434,12 +434,12 @@ run_test22 0xffffffff, 0xffffffff, \
 
   mov r0, \r2h
   mov r1, \r2l
-  
+
   \insn r0, r0, \const
 
   check_reg32 r0, \expl
   check_reg32 r1, \exph
-  
+
   check_reg32 r58, \expl
   check_reg32 r59, \exph
 

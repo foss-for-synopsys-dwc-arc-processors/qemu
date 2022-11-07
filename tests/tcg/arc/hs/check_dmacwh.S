@@ -255,7 +255,7 @@ mov r2, 0xffffffff
 mov r3, 0xffffffff
 mov r4, 0xffffffff
 mov r5, 0xffffffff
-dmacwh.f 0, r2, r4 
+dmacwh.f 0, r2, r4
 check_flgs vs
 
 run_test13 0x0, 0x0, \
@@ -279,7 +279,7 @@ mov r4, 0xffffffff
 
 add.f 0, 1, 1
 ; If Z flag is set (it isnt), sets overflow flag. Shouldnt be executed
-dmacwh.z.f r2, r2, r4 
+dmacwh.z.f r2, r2, r4
 ; overflow clear p flag was already set and wasnt changed
 check_flgs vc
 

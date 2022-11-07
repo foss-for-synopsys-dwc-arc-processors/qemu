@@ -262,7 +262,7 @@ mov r2, 0xffffffff
 mov r3, 0xffffffff
 mov r4, 0xffffffff
 mov r5, 0xffffffff
-qmach.f 0, r2, r4 
+qmach.f 0, r2, r4
 check_flgs vs
 
 run_test13 0x0, 0x0, \
@@ -287,7 +287,7 @@ mov r5, 0xffffffff
 
 add.f 0, 1, 1
 ; If Z flag is set (it isnt), sets n flag. Shouldnt be executed
-qmach.z.f r2, r2, r4 
+qmach.z.f r2, r2, r4
 
 ; p flag was already set and wasnt changed
 check_flgs p
@@ -345,7 +345,7 @@ check_flgs vs
 
   check_reg32 r0, \expl
   check_reg32 r1, \exph
-  
+
   check_reg32 r58, \expl
   check_reg32 r59, \exph
 

@@ -205,7 +205,7 @@ prep_test_case
 set_reg64 r58, 0xffffffff, 0xffffffff ; Set accumulator
 set_reg64 r2, 0xffffffff, 0xffffffff
 set_reg64 r4, 0xffffffff, 0xffffffff
-qmachu.f 0, r2, r4 
+qmachu.f 0, r2, r4
 check_flgs vs
 
 ; Accumulator overflow
@@ -237,7 +237,7 @@ set_reg64 r4, 0xffffffff, 0xffffffff
 
 add.f 0, 1, 1
 ; If Z flag is set (it isnt), sets overflow flag. Shouldnt be executed
-qmachu.z.f r2, r2, r4 
+qmachu.z.f r2, r2, r4
 ; overflow clear p flag was already set and wasnt changed
 check_flgs vc
 
