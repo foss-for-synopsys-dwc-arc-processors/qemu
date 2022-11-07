@@ -236,7 +236,8 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     tcg_gen_add_i64(a, acc, b_h0);
 
-    arc_gen_mac_check_fflags(ctx, a, b_h0, acc, set_n_flag, detect_overflow_i64);
+    arc_gen_mac_check_fflags(ctx, a, b_h0, acc, set_n_flag, \
+                             detect_overflow_i64);
 
     tcg_gen_add_i64(acc, acc, b_h0);
 
@@ -300,7 +301,8 @@ arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     tcg_gen_add_i64(b_w0, b_w0, b_w1);
     tcg_gen_add_i64(a, acc, b_w0);
 
-    arc_gen_mac_check_fflags(ctx, a, b_w0, acc, set_n_flag, detect_overflow_i64);
+    arc_gen_mac_check_fflags(ctx, a, b_w0, acc, set_n_flag, \
+                             detect_overflow_i64);
 
     tcg_gen_add_i64(acc, acc, b_w0);
 
