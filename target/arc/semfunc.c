@@ -189,7 +189,7 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     TCGv_i64 c_h2 = tcg_temp_new_i64();
     TCGv_i64 c_h3 = tcg_temp_new_i64();
 
-    /* 
+    /*
      * Instruction code
      */
 
@@ -205,7 +205,7 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     extract_bits(c_h2, c, 32, 16);
     extract_bits(c_h3, c, 48, 16);
 
-    /* 
+    /*
      * Multiply halfwords with words
      */
     tcg_gen_mul_i64(b_h0, b_h0, c_h0);
@@ -218,7 +218,7 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
      * we know for a fact that it is a 16 bit number multiplication,
      * and we expect the result to be 32 bit (PRM) so there will never
      * be an overflow (0xffff * 0xffff = 0xfffe 0001 < 0x1 0000 0000)
-     * 
+     *
      * tcg_gen_andi_tl(b_hX, b_hX, 0xffffffff);
      */
 
@@ -263,7 +263,7 @@ arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     TCGv_i64 c_h0 = tcg_temp_new_i64();
     TCGv_i64 c_h1 = tcg_temp_new_i64();
 
-    /* 
+    /*
      * Instruction code
      */
 
@@ -275,7 +275,7 @@ arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     extract_bits(c_h0, c, 0, 16);
     extract_bits(c_h1, c, 16, 16);
 
-    /* 
+    /*
      * Multiply halfwords with words
      */
     tcg_gen_mul_i64(b_w0, b_w0, c_h0);
@@ -286,7 +286,7 @@ arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
      * we know for a fact that it is a 16 bit number multiplication,
      * and we expect the result to be 32 bit (PRM) so there will never
      * be an overflow (0xffff * 0xffff = 0xfffe 0001 < 0x1 0000 0000)
-     * 
+     *
      * tcg_gen_andi_tl(b_hX, b_hX, 0xffffffff);
      */
 

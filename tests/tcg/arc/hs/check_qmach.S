@@ -77,7 +77,7 @@ test_nr:
 
   check_reg32 r0, \expl
   check_reg32 r1, \exph
-  
+
   check_reg32 r58, \expl
   check_reg32 r59, \exph
 
@@ -94,7 +94,7 @@ test_nr:
 
   \insn r0, r2, r4
 .endm
-; 
+;
 ; Test 1.1
 ;
 ; a = 0 + (b.h0 * c.h0) + (b.h1 * c.h1) + (b.h2 * c.h2) + (b.h3 * c.h3)
@@ -136,7 +136,7 @@ run_test11 0x10001, 0x10001, \
 run_test11 0x80018001, 0x80018001, \
            0x10001,    0x10001,    \
            0xffffffff, 0xfffe0004
-           
+
 ; Swap registers
 run_test11 0x10001,    0x10001,    \
            0x80018001, 0x80018001, \
@@ -189,7 +189,7 @@ run_test12 0x80018001, 0x80018001, \
            0x80018001, 0x7fff8005
 
 ; Test 1.3
-; 
+;
 ; a = acc + (b.h0 * c.h0) + (b.h1 * c.h1) + (b.h2 * c.h2) + (b.h3 * c.h3)
 ;
 ; Validate flag set
@@ -324,7 +324,7 @@ check_flgs vs
 ; With u6 (or s12 for that matter), the value is zero
 ; extended to 16 bits, and replicated for all 4 16 bit
 ; blocks in a 64 bir operand
-; 
+;
 ; For limm, as it is 32 bit, the result is instead doubled
 ; to provide the appropriate 64 bit argument
 
@@ -359,7 +359,7 @@ check_flgs vs
 
   \insn r0, r2, \const
 .endm
-; 
+;
 ; Test 2.1
 .macro run_test21   r2h, r2l, const, exph, expl
   reset_flags
@@ -458,10 +458,10 @@ check_flgs vs
   mov r1, \r2l
 
   \insn r0, r0, \const
-  
+
   check_reg32 r0, \expl
   check_reg32 r1, \exph
-  
+
   check_reg32 r58, \expl
   check_reg32 r59, \exph
 
@@ -475,7 +475,7 @@ check_flgs vs
 
   \insn r0, r0, \const
 .endm
-; 
+;
 ; Test 3.1
 .macro run_test31   r2h, r2l, const, exph, expl
   reset_flags
