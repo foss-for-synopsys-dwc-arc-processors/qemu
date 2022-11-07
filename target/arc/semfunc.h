@@ -180,7 +180,7 @@ arc_gen_set_vector_constant_operand(DisasCtxt *ctx, TCGv_i64 tcg_operand,
     do {                          \
         gen_set_label(cc_done);  \
         tcg_temp_free(cc_temp);  \
-    } while(0)
+    } while (0)
 
 #define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
 #define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)

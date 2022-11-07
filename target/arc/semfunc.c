@@ -160,7 +160,8 @@ arc_gen_mac_check_fflags(DisasCtxt *ctx, TCGv_i64 result, TCGv_i64 sums,
             overflow = tcg_temp_new_i64();
 
             tcg_gen_ext_i32_i64(overflow, getVFlag());
-            arc_gen_set_if_overflow(result, acc, sums, overflow, detect_overflow_i64);
+            arc_gen_set_if_overflow(result, acc, sums, overflow, \
+                                    detect_overflow_i64);
             tcg_gen_extrl_i64_i32(getVFlag(), overflow);
 
             tcg_temp_free_i64(overflow);
@@ -168,7 +169,8 @@ arc_gen_mac_check_fflags(DisasCtxt *ctx, TCGv_i64 result, TCGv_i64 sums,
             if (set_n_flag) {
                 tcg_gen_shri_i64(getNFlag(), result, 63);
             }
-            arc_gen_set_if_overflow(result, acc, sums, getVFlag(), detect_overflow_i64);
+            arc_gen_set_if_overflow(result, acc, sums, getVFlag(), \
+                                    detect_overflow_i64);
         #endif
     }
 }

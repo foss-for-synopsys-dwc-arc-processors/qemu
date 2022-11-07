@@ -8796,11 +8796,11 @@ arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
     TCGv_i64 acc = tcg_temp_new_i64();
 
     /*
-    * As mach instructions perform 64 bit operations on both 32 bit and 64 bit
-    * architectures, its best to convert the 32 bit register pairs into a 64 bit
-    * register, then having to deal with emulating the operation with the 32 bit
-    * registers alone
-    */
+     * As mach instructions perform 64 bit operations on both 32 bit and 64 bit
+     * architectures, its best to convert the 32 bit register pairs into a 64
+     * bit register, then having to deal with emulating the operation with the
+     * 32 bit registers alone
+     */
 
     arc_gen_next_register_i32_i64(ctx, b64, b);
     arc_gen_next_register_i32_i64(ctx, c64, c);
@@ -8810,8 +8810,8 @@ arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
                        set_n_flag, extract_bits, detect_overflow_i64);
 
     /*
-    * Save the result on [next(dest):dest]
-    */
+     * Save the result on [next(dest):dest]
+     */
     tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);
     tcg_gen_extr_i64_i32(a, nextRegWithNull(a), a64);
 
@@ -8826,7 +8826,7 @@ int
 arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
     ARC_GEN_SEMFUNC_INIT();
-    
+
     arc_gen_mach_base32_to_64(ctx, a, b, c, false,
                         arc_gen_qmach_base_i64,
                         tcg_gen_extract_i64,
@@ -8847,7 +8847,7 @@ arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
                             arc_gen_add_signed_overflow_i64);
 
   ARC_GEN_SEMFUNC_DEINIT();
-  
+
   return DISAS_NEXT;
 }
 
@@ -8860,9 +8860,9 @@ arc_gen_DMACWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
                             arc_gen_dmacwh_base_i64,
                             tcg_gen_extract_i64,
                             arc_gen_add_unsigned_overflow_i64);
-  
+
   ARC_GEN_SEMFUNC_DEINIT();
-  
+
   return DISAS_NEXT;
 }
 
@@ -8875,9 +8875,9 @@ arc_gen_DMACWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
                             arc_gen_dmacwh_base_i64,
                             tcg_gen_sextract_i64,
                             arc_gen_add_signed_overflow_i64);
-  
+
   ARC_GEN_SEMFUNC_DEINIT();
-  
+
   return DISAS_NEXT;
 }
 
