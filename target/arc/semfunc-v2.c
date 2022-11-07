@@ -8781,11 +8781,25 @@ arc_gen_vmac2h_i32(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
   tcg_temp_free(b_h0);
 }
 
-
+/**
+ * @brief This function converts the input 32 bit TCG variables to 64 bit,
+ * assuming the registers in question are pair registers and concatenating
+ * them.
+ * It also sets up a 64 bit accumulator value accordingly.
+ * Then, it calls main_operation with the appropriate arguments
+ * @param ctx Current instruction context
+ * @param a First (dest) operand of the instruction
+ * @param b Second operand of the instruction
+ * @param c Third operand of the instruction
+ * @param set_n_flag Whether to set the N flag or not
+ * @param main_mac_operation The function to call with the receied arguments
+ * @param extract_bits The function to be used to extract the bits
+ * @param detect_overflow The function to use to detect 64 bit overflow
+ */
 static void
-arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
+arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv_i32 a, TCGv_i32 b, TCGv_i32 c,
                           bool set_n_flag,
-                          ARC_GEN_SPECIFIC_OPERATION_FUNC main_mac_operation,
+                          ARC_GEN_SPECIFIC_OPERATION_FUNC main_operation,
                           ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
                           ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
 {
@@ -8806,7 +8820,7 @@ arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
     arc_gen_next_register_i32_i64(ctx, c64, c);
     tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
 
-    main_mac_operation(ctx, a64, b64, c64, acc, \
+    main_operation(ctx, a64, b64, c64, acc, \
                        set_n_flag, extract_bits, detect_overflow_i64);
 
     /*
