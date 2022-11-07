@@ -8789,36 +8789,36 @@ arc_gen_mach_base32_to_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c,
                           ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
                           ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
 {
-  TCGv_i64 a64 = tcg_temp_new_i64();
-  TCGv_i64 b64 = tcg_temp_new_i64();
-  TCGv_i64 c64 = tcg_temp_new_i64();
+    TCGv_i64 a64 = tcg_temp_new_i64();
+    TCGv_i64 b64 = tcg_temp_new_i64();
+    TCGv_i64 c64 = tcg_temp_new_i64();
 
-  TCGv_i64 acc = tcg_temp_new_i64();
-  
-  /*
-   * As mach instructions perform 64 bit operations on both 32 bit and 64 bit
-   * architectures, its best to convert the 32 bit register pairs into a 64 bit
-   * register, then having to deal with emulating the operation with the 32 bit
-   * registers alone
-   */
-  
-  arc_gen_next_register_i32_i64(ctx, b64, b);
-  arc_gen_next_register_i32_i64(ctx, c64, c);
-  tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
+    TCGv_i64 acc = tcg_temp_new_i64();
 
-  main_mac_operation(ctx, a64, b64, c64, acc, set_n_flag, extract_bits, detect_overflow_i64);
+    /*
+    * As mach instructions perform 64 bit operations on both 32 bit and 64 bit
+    * architectures, its best to convert the 32 bit register pairs into a 64 bit
+    * register, then having to deal with emulating the operation with the 32 bit
+    * registers alone
+    */
 
-  /*
-   * Save the result on [next(dest):dest]
-   */
-  tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);
-  tcg_gen_extr_i64_i32(a, nextRegWithNull(a), a64);
+    arc_gen_next_register_i32_i64(ctx, b64, b);
+    arc_gen_next_register_i32_i64(ctx, c64, c);
+    tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
 
-  tcg_temp_free_i64(acc);
+    main_mac_operation(ctx, a64, b64, c64, acc, set_n_flag, extract_bits, detect_overflow_i64);
 
-  tcg_temp_free_i64(a64);
-  tcg_temp_free_i64(b64);
-  tcg_temp_free_i64(c64);
+    /*
+    * Save the result on [next(dest):dest]
+    */
+    tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);
+    tcg_gen_extr_i64_i32(a, nextRegWithNull(a), a64);
+
+    tcg_temp_free_i64(acc);
+
+    tcg_temp_free_i64(a64);
+    tcg_temp_free_i64(b64);
+    tcg_temp_free_i64(c64);
 }
 
 int
