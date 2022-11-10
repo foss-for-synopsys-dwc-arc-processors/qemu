@@ -42,6 +42,136 @@ tn_\name:
 \name:
 .endm
 
+; Check expected flag status
+.macro check_flag   expected_cond
+  b\expected_cond    @1f
+  j @fail
+  1:
+.endm
+
+; Clear all flags (Z, N, C, V) = (0, 0, 0, 0)
+.macro reset_flags
+  add.f 0, 0, 1 
+.endm
+;reset_flags
+;check_flgs nz
+;check_flgs p
+;check_flgs nv
+;check_flgs nc
+
+; Set overflow (and negative) flag(s) (Z, N, C, V) = (0, 1, 0, 1)
+.macro set_v_flag
+    add.f 0, 0x7fffffff, 1  ; negative result with an overflow
+.endm
+;reset_flags
+;set_v_flag
+;check_flgs v
+
+.macro set_n_flag       ; (Z, N, C, V) = (0, 1, 0, 0)
+    mov r13, 0
+    add.f 0, r13, 0x80000000  ; negative result with an overflow
+.endm
+;reset_flags
+;set_n_flag
+;check_flgs n
+
+.macro set_z_flag
+    add.f 0, 0, 0
+.endm
+;reset_flags
+;set_z_flag
+;check_flgs z
+
+.macro unset_z_flag
+    add.f 0, 1, 1
+.endm
+
+
+; Set 32 bit value in register
+.macro  set_reg_hh       reg, hi, low
+  mov \reg, ((\hi << 16) | \low)
+  or \reg, \reg, \low
+.endm
+
+; Validate 32 bit value in register
+.macro  check_reg_hh     reg, hi, low
+  mov  r11, ((\hi << 16) | \low)
+  xor.f 0, r11, \reg
+  bne    @fail
+.endm
+
+; Set 64 bit value in register
+.macro  set_reg_val       reg, val
+  movhl \reg, \val & 0xffffffff
+  orl \reg, \reg, ((\val >> 32) & 0xffffffff)
+.endm
+
+; Validate value in register (64 bits)
+.macro  check_reg_val     reg, val
+  movhl  r11, \val & 0xffffffff
+  orl    r11, r11,  ((\val >> 32) & 0xffffffff)
+  xorl.f 0, r11, \reg
+  bne    @fail
+.endm
+
+; Set all bits of all registers to 1
+.macro set_all_registers
+    set_reg_val r0,  0xffffffffffffffff
+    set_reg_val r1,  0xffffffffffffffff
+    set_reg_val r2,  0xffffffffffffffff
+    set_reg_val r3,  0xffffffffffffffff
+    set_reg_val r4,  0xffffffffffffffff
+    set_reg_val r5,  0xffffffffffffffff
+    set_reg_val r6,  0xffffffffffffffff
+    set_reg_val r7,  0xffffffffffffffff
+    set_reg_val r8,  0xffffffffffffffff
+    set_reg_val r9,  0xffffffffffffffff
+    set_reg_val r10, 0xffffffffffffffff
+    set_reg_val r11, 0xffffffffffffffff
+    set_reg_val r12, 0xffffffffffffffff
+    set_reg_val r13, 0xffffffffffffffff
+.endm
+
+; Increment the test counter
+.macro next_test_case
+  ; Set all register
+  set_all_registers
+  ld    r13, [test_nr]
+  add_s r13, r13, 1       ; increase test case counter
+  st    r13, [test_nr]
+.endm
+
+; Set 64 bit value in register
+.macro  set_reg_64val_ww       reg, hi, low
+  movhl \reg, \hi
+  orl \reg, \reg, \low
+.endm
+
+; Validate value in register (64 bits)
+.macro  check_reg_64val_ww     reg, hi, low
+  movhl  r11, \hi
+  orl    r11, r11, \low
+  xorl.f 0, r11, \reg
+  bne    @fail
+.endm
+
+
+; Check expected flag status
+.macro check_flgs   expected_cond
+  b\expected_cond    @1f
+  j @fail
+  1:
+.endm
+
+.macro set_accumulator acch, accl
+  set_reg_64val_ww r58, \acch, \accl
+.endm
+
+.macro check_accumulator acch, accl
+  check_reg_64val_ww r58, \acch, \accl
+.endm 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .equ   OUTPUT_DEVICE, 0x90000000      ; output device address in QEMU
