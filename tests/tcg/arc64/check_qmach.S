@@ -31,9 +31,9 @@ test_nr:
 .macro chk_reg64 reg, hi, lo
   movhl r11, \hi
   orl   r11, r11, \lo
-  xor.f 0, \reg, r11
+  xorl.f 0, \reg, r11
   bne   @fail
-  xor.f 0, \reg, r58
+  xorl.f 0, \reg, r58
   bne   @fail
 .endm
 
