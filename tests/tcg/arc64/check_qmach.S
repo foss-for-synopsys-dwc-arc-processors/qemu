@@ -30,10 +30,10 @@ test_nr:
 ; Clobbers r11
 .macro chk_reg64 reg, hi, lo
   movhl  r11, \hi
-  orl    r11, r11, \lo
-  xorl.f 0,  \reg, r11
+  orl    r11, r11,  \lo
+  xorl.f 0,   \reg, r11
   bne    @fail
-  xorl.f 0,  \reg, r58
+  xorl.f 0,   \reg, r58
   bne    @fail
 .endm
 
