@@ -449,7 +449,7 @@ prep_test_case
 ; Test case 19
 ; check 0 as register and .f flag
 ; (0    , 0   , 0   , 0   ) *       r1
-; (0    , 0   , 0   , 0   ) +      s12
+; (0    , 0   , 0   , 0   ) +       u6
 ; ( 0x0000_0000_0000_0001 )       r58 (acc)
 ; -------------------------
 ; set n flag
