@@ -509,8 +509,8 @@ prep_test_case
   qmach.f     0, 1, 1
   are_nv_flags_set
   ; Validate that the accumulator was set accordingly
-  movhl      r11, 0x80000000
-  xorl.f     0,   r58, r11
+  movhl     r11, 0x80000000
+  xorl.f      0,   r58, r11
   bne @fail
 
 ; Test case 23
@@ -523,14 +523,14 @@ prep_test_case
 ; --------------------------------
 ;  0, n flag cleared but v flag untouched
  prep_test_case
-   set_reg64 r58, hi=0x01234567, lo=0x89abcdef
-   set_nv_flags
-   qmach.f     0, 0, 0
-   is_v_flag_set
+  set_reg64 r58, hi=0x01234567, lo=0x89abcdef
+  set_nv_flags
+  qmach.f     0, 0, 0
+  is_v_flag_set
   ; Validate that the accumulator was set accordingly
-  movhl      r11, 0x01234567
-  orl        r11, r11, 0x89abcdef
-  xorl.f     0,   r58, r11
+  movhl     r11, 0x01234567
+  orl       r11, r11, 0x89abcdef
+  xorl.f      0,   r58, r11
   bne @fail
 ; Fall through
 
