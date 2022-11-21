@@ -499,7 +499,7 @@ prep_test_case
 ; 0 target register with 2 numbers, set flags (only use for this encoding)
 ; (0x0000, 0x0001, 0x0000, 0x0001) *     limm
 ; (0x0000, 0x0001, 0x0000, 0x0001) +     limm
-; (     0x7fff_ffff_ffff_ffff    )        r58 (acc)
+; (     0x7fff_ffff_ffff_fffe    )        r58 (acc)
 ; --------------------------------
 ;    1 * 2 + 0x7ffffffffffffffe
 ; --------------------------------
@@ -517,9 +517,9 @@ prep_test_case
 ; Check if qmach unsets n flag but doesnt unset the v flag
 ; (0x0000, 0x0000, 0x0000, 0x0000) *     limm
 ; (0x0000, 0x0000, 0x0000, 0x0000) +     limm
-; (     0x0000_0000_0000_0000    )        r58 (acc)
+; (     0x0123_4567_89ab_cdef    )        r58 (acc)
 ; --------------------------------
-;  0x0000 * 4 + 0x0000000000000000
+;  0x0000 * 4 + 0x0123456789abcdef
 ; --------------------------------
 ;  0, n flag cleared but v flag untouched
  prep_test_case
