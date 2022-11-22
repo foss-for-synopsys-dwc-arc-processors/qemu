@@ -89,6 +89,7 @@ TESTCASES += check_vpack2wl.tst
 TESTCASES += check_vpack2wm.tst
 TESTCASES += check_vpack4hl.tst
 TESTCASES += check_vpack4hm.tst
+TESTCASES += check_qmach.tst
 # arc64
 #TESTCASES += check_swapl.tst
 #TESTCASES += check_lddl.tst
