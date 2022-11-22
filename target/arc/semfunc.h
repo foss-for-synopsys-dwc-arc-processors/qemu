@@ -72,6 +72,37 @@ void arc_gen_vec_add16_w0_i64(TCGv_i64 d, TCGv_i64 a, TCGv_i64 b);
 void arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
                        unsigned int ofs, unsigned int len);
 
+/**
+ * @brief Verifies if a 64 bit signed add resulted in an overflow
+ * @param overflow Is set to 1 or 0 on no overflow, or overflow, respectively
+ * @param result The result of the addition
+ * @param op1 Operand of the add
+ * @param op2 Operand of the add
+ */
+void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
+                                     TCGv_i64 op1, TCGv_i64 op2);
+
+/**
+ * Some macro definitions for using function pointers as arguments
+ */
+typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, \
+                                             TCGv_i64, TCGv_i64);
+
+/**
+ * @brief Runs the "detect_overflow_i64" function with res, op1 and op2 as
+ * arguments, and ors the resulting overflow with the provided one.
+ * This function effectively only sets the received overflow variable from
+ * 0 to 1 and never the other way around
+ * @param res The result to be passed to the overflow function
+ * @param operand_1 The first operand to be passed to the overflow function
+ * @param operand_2 The second operand to be passed to the overflow function
+ * @param overflow The current overflow value that at most will change to 1
+ * @param detect_overflow_i64 The function to call to detect overflow
+ */
+void arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1,
+                             TCGv_i64 operand_2, TCGv_i64 overflow,
+                             ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
+
 #define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
 #define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)
 #define ARC_GEN_CMPL2_H2_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 32, 16)

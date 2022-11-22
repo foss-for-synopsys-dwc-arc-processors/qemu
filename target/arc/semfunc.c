@@ -54,3 +54,40 @@ arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
 	tcg_temp_free_i64(t1);
 }
 
+void
+arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
+                                TCGv_i64 op1, TCGv_i64 op2)
+{
+    TCGv_i64 t1 = tcg_temp_new_i64();
+    TCGv_i64 t2 = tcg_temp_new_i64();
+
+    /*
+     * Check if the result has a different sign from one of the opperands:
+     *   Last bit of t1 must be 1 (Different sign)
+     *   Last bit of t2 must be 0 (Same sign)
+     */
+    tcg_gen_xor_i64(t1, op1, result);
+    tcg_gen_xor_i64(t2, op1, op2);
+    tcg_gen_andc_i64(t1, t1, t2);
+
+    tcg_gen_shri_i64(overflow, t1, 63);
+
+    tcg_temp_free_i64(t1);
+    tcg_temp_free_i64(t2);
+}
+
+void
+arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
+                        TCGv_i64 overflow,
+                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
+{
+    TCGv_i64 new_overflow = tcg_temp_new_i64();
+    detect_overflow_i64(new_overflow, res, operand_1, operand_2);
+    /*
+     * By oring the new overflow into the provided overflow, it can only change
+     * from 0 to 1
+     */
+    tcg_gen_or_i64(overflow, new_overflow, overflow);
+
+    tcg_temp_free_i64(new_overflow);
+}
