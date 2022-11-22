@@ -91,3 +91,45 @@ arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
 
     tcg_temp_free_i64(new_overflow);
 }
+
+/**
+ * @brief Analyzes operand flags and sets value accordingly
+ * Current operations:
+ *  - 32 bit duplication for limm
+ *  - 16 bit quadriplication for s12 and u6
+ * This function assumes "non limm" can only be u6 or s12, and thus should only
+ * be used by functions aware of that fact and handle registers themselves
+ * @param ctx Current instruction context
+ * @param operand Operand to analyze
+ */
+static void
+arc_gen_set_vector_constant_operand(DisasCtxt *ctx, operand_t *operand) {
+    if (operand->type & ARC_OPERAND_LIMM) {
+        operand->value = ctx->insn.limm & 0x00000000ffffffff;
+        operand->value = operand->value | operand->value << 32;
+    } else {
+        operand->value &= 0x0000ffff;
+        operand->value |= (operand->value << 16);
+        operand->value |= (operand->value << 32);
+    }
+}
+
+void
+arc_gen_set_vector_constant_operands(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
+    TCGv_i64 tcg_operand_2, operand_t *operand_1, operand_t *operand_2)
+{
+    if (!(operand_1->type & ARC_OPERAND_IR)) {
+        arc_gen_set_vector_constant_operand(ctx, operand_1);
+        tcg_gen_movi_i64(tcg_operand_1, operand_1->value);
+    }
+
+    if (!(operand_2->type & ARC_OPERAND_IR)) {
+        if (operand_2->type & ARC_OPERAND_LIMM &&
+            operand_2->type & ARC_OPERAND_DUPLICATE){
+            operand_2->value = operand_1->value;
+        } else {
+            arc_gen_set_vector_constant_operand(ctx, operand_2);
+        }
+        tcg_gen_movi_i64(tcg_operand_2, operand_2->value);
+    }
+}

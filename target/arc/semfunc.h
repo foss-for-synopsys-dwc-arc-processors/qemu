@@ -102,6 +102,17 @@ typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, \
 void arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1,
                              TCGv_i64 operand_2, TCGv_i64 overflow,
                              ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
+/**
+ * @brief Sets the tcg_operand appropriately, with regards to the provided
+ * operand metadata.
+ * Ignores normal registers and doubles the LIMM.
+ * @param ctx Current instruction context
+ * @param tcg_operand The tcg operand to setup
+ * @param operand The operand metadata for the tcg operand
+ */
+void
+arc_gen_set_vector_constant_operands(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
+    TCGv_i64 tcg_operand_2, operand_t *operand_1, operand_t *operand_2);
 
 #define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
 #define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)
