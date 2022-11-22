@@ -122,6 +122,30 @@ void
 arc_gen_set_vector_constant_operands(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
     TCGv_i64 tcg_operand_2, operand_t *operand_1, operand_t *operand_2);
 
+/**
+ * @brief Any required ARC semantic function initialization procedures such as
+ * evaluating the cc flag
+ */
+#define ARC_GEN_SEMFUNC_INIT()                                          \
+    TCGv cc_temp;                                                       \
+    TCGLabel *cc_done;                                                  \
+    if (ctx->insn.cc != ARC_COND_AL && ctx->insn.cc != ARC_COND_RA) {   \
+        cc_temp = tcg_temp_local_new();                                 \
+        cc_done = gen_new_label();                                      \
+        getCCFlag(cc_temp);                                             \
+        tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);           \
+    }
+
+/**
+ * @brief Any required ARC semantic function de-initialization procedures such
+ * as freeing initialization variables
+ */
+#define ARC_GEN_SEMFUNC_DEINIT()                                        \
+    if (ctx->insn.cc != ARC_COND_AL && ctx->insn.cc != ARC_COND_RA) {   \
+        gen_set_label(cc_done);                                         \
+        tcg_temp_free(cc_temp);                                         \
+    }
+
 #define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
 #define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)
 #define ARC_GEN_CMPL2_H2_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 32, 16)
