@@ -25,6 +25,65 @@
 #include "exec/gen-icount.h"
 #include "tcg/tcg-op-gvec.h"
 
+/**
+ * @brief Generates the code for setting up a 64 bit register from a 32 bit one
+ * Either by concatenating a pair or 0 extending it directly
+ */
+#define ARC_GEN_SRC_PAIR(REGISTER) \
+    arc_gen_next_register_i32_i64(ctx, r64_##REGISTER, REGISTER);
+
+#define ARC_GEN_SRC_NOT_PAIR(REGISTER) \
+    tcg_gen_extu_i32_i64(r64_##REGISTER, REGISTER);
+
+#define ARC_GEN_DST_PAIR(REGISTER) \
+    tcg_gen_extr_i64_i32(REGISTER, nextRegWithNull(REGISTER), r64_##REGISTER);
+
+#define ARC_GEN_DST_NOT_PAIR(REGISTER) \
+    tcg_gen_extrl_i64_i32(REGISTER, r64_##REGISTER);
+
+/**
+ * @brief Generate the function call for signed/unsigned instructions
+ */
+#define ARC_GEN_BASE32_64_SIGNED(OPERATION) \
+OPERATION(ctx, r64_a, r64_b, r64_c, acc, true, \
+          tcg_gen_sextract_i64, \
+          arc_gen_add_signed_overflow_i64)
+
+#define ARC_GEN_BASE32_64_UNSIGNED(OPERATION) \
+OPERATION(ctx, r64_a, r64_b, r64_c , acc, false, \
+          tcg_gen_extract_i64, arc_gen_add_unsigned_overflow_i64)
+
+/**
+ * @brief Generate a function to be used by 32 bit versions to interface with
+ * their 64 bit counterparts.
+ * It is assumed the accumulator is always a pair register
+ * @param NAME The name of the function
+ * @param A dest is PAIR or NOT_PAIR
+ * @param B first operand is PAIR or NOT_PAIR
+ * @param C second operand is PAIR or NOT_PAIR
+ * @param SIGNED OPERATION is signed or unsigned
+ * @param OPERATION The operation to perform
+ */
+#define ARC_GEN_32BIT_INTERFACE(NAME, A, B, C, SIGNED, OPERATION)       \
+static inline void                                                      \
+arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)       \
+{                                                                       \
+    TCGv_i64 r64_a = tcg_temp_new_i64();                                \
+    TCGv_i64 r64_b = tcg_temp_new_i64();                                \
+    TCGv_i64 r64_c = tcg_temp_new_i64();                                \
+    TCGv_i64 acc = tcg_temp_new_i64();                                  \
+    ARC_GEN_SRC_##B(b);                                                 \
+    ARC_GEN_SRC_##C(c);                                                 \
+    tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);                  \
+    ARC_GEN_BASE32_64_##SIGNED(OPERATION);                              \
+    tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);                    \
+    ARC_GEN_DST_##A(a);                                                 \
+    tcg_temp_free_i64(acc);                                             \
+    tcg_temp_free_i64(r64_a);                                           \
+    tcg_temp_free_i64(r64_b);                                           \
+    tcg_temp_free_i64(r64_c);                                           \
+}
+
 /*
  * FLAG
  *    Variables: @src
