@@ -88,6 +88,14 @@ void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
 typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, \
                                              TCGv_i64, TCGv_i64);
 
+typedef void (*ARC_GEN_EXTRACT_BITS_FUNC)(TCGv_i64, TCGv_i64, \
+                                          unsigned int, unsigned int);
+
+typedef void (*ARC_GEN_SPECIFIC_OPERATION_FUNC)(DisasCtxt*, TCGv_i64, TCGv_i64,\
+                                                TCGv_i64, TCGv_i64, bool,      \
+                                                ARC_GEN_EXTRACT_BITS_FUNC,     \
+                                                ARC_GEN_OVERFLOW_DETECT_FUNC);
+
 /**
  * @brief Runs the "detect_overflow_i64" function with res, op1 and op2 as
  * arguments, and ors the resulting overflow with the provided one.
