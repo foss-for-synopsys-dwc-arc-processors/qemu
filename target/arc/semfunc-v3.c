@@ -14424,3 +14424,17 @@ ARC_GEN_VEC_ADD_SUB(VADDSUB4H, H1_H3, tcg_gen_vec_add16_i64)
 ARC_GEN_VEC_ADD_SUB(VSUBADD, W0, tcg_gen_vec_add32_i64)
 ARC_GEN_VEC_ADD_SUB(VSUBADD2H, H0, arc_gen_vec_add16_w0_i64)
 ARC_GEN_VEC_ADD_SUB(VSUBADD4H, H0_H2, tcg_gen_vec_add16_i64)
+
+int
+arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_gen_qmach_base_i64(ctx, a, b, c, cpu64_acc, true, \
+                           tcg_gen_sextract_i64, \
+                           arc_gen_add_signed_overflow_i64);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
