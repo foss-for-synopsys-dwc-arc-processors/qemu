@@ -1,6 +1,6 @@
 ; check_dmacwh.S
 ;
-; Tests for dmacwh
+; Tests for dmacwh / dmacwhu
 ; If the test fails, check the end of this file for how to troubleshoot.
 
   .include "macros.inc"
@@ -541,6 +541,315 @@ prep_test_case
   bne @fail
 ; Fall through
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DMACWHU ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Test case 24
+; r1 <- r1, r2
+; (     0x0002,     0x0001 ) *      r2, r3 (h)
+; ( 0x00000003, 0x00000004 ) +      r0, r1 (w)
+; (            0           )       r58, r59 (acc)
+; --------------------------
+;     (1*3 + 2*4) + 0
+; (          0          )
+; -----------------------
+;         11 (0xa)
+  prep_test_case
+  set_reg64 r58, r59, hi=0         , lo=0
+  set_reg64  r2, r3, hi=0xffffffff, lo=0x00020001 ; hi shouldnt matter
+  set_reg64  r0, r1, hi=0x00000003, lo=0x00000004
+  dmacwhu    r0, r0, r2
+  chk_reg64  r0, r1, hi=0, lo=0xa
+
+; Test case 25
+; r3 <- r3, r3
+; (     0x0003,     0x0004 ) *      r4, r5 (h)
+; ( 0x00010002, 0x00030004 ) +      r4, r5 (w)
+;        65538,     196612
+; (           42           )       r58, r59 (acc)
+; --------------------------
+; (65538 * 3 + 196612 * 4) +
+; (          42          )
+; ------------------------
+;    196614 + 786448 + 42
+; --------------------------------
+;  983104 = 0x0000_0000_000f_0040
+;
+  prep_test_case
+  set_reg64 r58, r59, hi=0         , lo=42
+  set_reg64  r4, r5, hi=0x00010002, lo=0x00030004
+  dmacwhu    r4, r4, r4
+  chk_reg64  r4, r5, hi=0, lo=0x000f0040
+
+; Test case 26
+; Big positives multiplied with themselves (acc = 0)
+;       65534       65534
+; (    0xfffe,     0xfffe) *          r4, r5 (h)
+; (0xffffffff, 0xffffffff) +          r2, r3 (w)
+;  4294967295  4294967295
+; (           0          )           r58, r59 (acc)
+; ------------------------
+; (281466386710530 * 2 + 0)
+; ---------------------------------------
+; 562932773421060 = 0x0001_fffb_fffe_0004
+  prep_test_case
+  set_reg64 r58, r59, hi=0         , lo=0
+  set_reg64  r4, r5, hi=0x00000000, lo=0xfffefffe
+  set_reg64  r2, r3, hi=0xffffffff, lo=0xffffffff
+  dmacwhu    r0, r2, r4
+  is_no_flag_set
+  chk_reg64  r0, r1, hi=0x0001fffb, lo=0xfffe0004
+
+; Test case 27
+; Small negatives multiplied with big positives (acc = very_big)
+; Big positives multiplied with themselves (acc = 0)
+;       65534       65534
+; (    0xfffe,     0xfffe ) *          r0, r1 (h)
+; (0xffffffff, 0xffffffff ) +          r4, r5 (w)
+;  4294967295  4294967295
+; ( 0xfffe_0004_0001_fffd )           r58, r59 (acc)
+; ------------------------
+; (281466386710530 * 2 + 18446181140936130557)
+; ---------------------------------------
+; 18446744073709551617 = 0x10000000000000001
+; 0x10000000000000001 -> 0x0000000000000001
+  prep_test_case
+  set_reg64 r58, r59, hi=0xfffe0004, lo=0x0001fffd
+  set_reg64  r0, r1, hi=0x00000000, lo=0xfffefffe
+  set_reg64  r4, r5, hi=0xffffffff, lo=0xffffffff
+  dmacwhu    r0, r4, r0
+  is_no_flag_set
+  chk_reg64  r0, r1, hi=0x00000000, lo=0x00000001
+
+; Test case 28
+; Check if all flags (Z,N,C,V) remain unset.
+; ( 0  , 1  ) *           r4, r5
+; ( 0  , 1  ) +           r4, r5
+; (   -1    )            r58, r59 (acc)
+; -----------
+;      0
+  prep_test_case
+  set_reg64 r58, r59, hi=0xffffffff, lo=0xfffffffe
+  set_reg64  r4, r5, hi=0x0       , lo=0x00000001
+  dmacwhu.f  r4, r4, r4
+  is_no_flag_set
+  chk_reg64  r4, r5, hi=0xffffffff, lo=0xffffffff
+
+; Test case 29
+; Check if V flag is set
+; ( 0        , 1          ) *        r2, r3  (h)
+; ( 0        , 1          ) +        r4, r5  (w)
+; ( 0xffff_ffff_ffff_ffff )         r58, r59 (acc)
+; -------------------------
+; (  1 + 18446744073709551615    )
+; -------------------------------
+;         0
+  prep_test_case
+  set_reg64 r58, r59, hi=0xffffffff, lo=0xffffffff
+  set_reg64  r2, r3, hi=0x00000000, lo=0x00000001
+  set_reg64  r4, r5, hi=0x00000000, lo=0x00000001
+  dmacwhu.f  r2, r4, r2
+  is_v_flag_set
+  chk_reg64  r2, r3, hi=0x0, lo=0x0
+
+; Test case 30
+; Nothing is set although there really is an overflow
+; ( 0         , 1         ) *          r2, r3 (h)
+; ( 0         , 1         ) +          r2, r3 (w)
+; ( 0xffff_ffff_ffff_ffff )           r58, r59 (acc)
+; -------------------------
+; ( 1 + 18446744073709551615 )
+; ----------------------------
+;    0x8000_0000_0000_0000
+;    -9223372036854775808
+  prep_test_case
+  set_reg64 r58, r59, hi=0xffffffff, lo=0xffffffff
+  set_reg64  r2, r3, hi=0x00000000, lo=0x00000001
+  dmacwhu    r2, r2, r2
+  is_no_flag_set
+  chk_reg64  r2, r3, hi=0x00000000, lo=0x00000000
+
+; Test case 31
+; reg <- reg, u6 (u6 is extended to 16 bits and then replicated 4 times)
+;  2147483647  2147483647
+; (0xffffffff, 0xffffffff ) *            r6, r7
+; (  0b111111,   0b111111 ) +            u6
+;       63          63
+; ( 0x0000_0000_0000_0000 )             r58, r59 (acc)
+; -------------------------
+; (   135291469761 * 2 + 0    )
+; -----------------------------
+;   0x0000_007d_ffff_ff82
+;            270582939522
+  prep_test_case
+  set_reg64 r58, r59, hi=0x00000000, lo=0x00000000
+  set_reg64  r6, r7, hi=0xffffffff, lo=0xffffffff
+  dmacwhu    r6, r6, 63
+  is_no_flag_set
+  chk_reg64  r6, r7, hi=0x0000007d, lo=0xffffff82
+
+; Test case 32
+; reg <- reg, s12 (s12 is sign extended to 16 bits and then replicated 4 times)
+;           1  4294967295
+; (0x00000001, 0xffffffff ) *             r6
+; (        -1,         -1 ) +            s12
+; ( 0x0000_0000_0000_0000 )              r58, r59 (acc)
+; -------------------------
+; 0xffffffff * 0xffffffff + 0xffffffff
+; ------------------------------------
+;        0x0000_ffff_0000_0000
+  prep_test_case
+  set_reg64 r58, r59, hi=0x00000000, lo=0x00000000
+  set_reg64  r6, r7, hi=0x00000001, lo=0xffffffff
+  dmacwhu    r6, r6, -1
+  is_no_flag_set
+  chk_reg64  r6, r7, hi=0x0000ffff, lo=0x00000000
+
+; Test case 33
+; reg <- reg, s12 (smallest negative s12)
+;              4294967295
+; (0x00000001, 0xffffffff ) *       r12, r13
+; (     -2048,      -2048 ) +       s12
+; ( 0x0000_0000_0000_0000 )         r58, r59 (acc)
+; -------------------------
+; ( 0xf800 * 0xffffffff + 0xf800 )
+; -------------------------------
+;    0x0000_f800_0000_0000
+;          272678883688448
+  prep_test_case
+  set_reg64 r58, r59, hi=0x00000000, lo=0x00000000
+  set_reg64  r12, r13, hi=0x00000001, lo=0xffffffff
+  dmacwhu    r12, r12, -2048
+  is_no_flag_set
+  chk_reg64  r12, r13, hi=0x0000f800, lo=0x00000000
+
+; Test case 34
+; reg <- reg, s12 (biggest positive s12)
+;              4294967295
+; (0x00000001, 0xffffffff ) *          r6, r7
+; (      2047,       2047 ) +        s12
+; ( 0x0000_0000_0000_0000 )          r58, r59 (acc)
+; -------------------------
+; ( 2047 * 4294967295 + 2047 )
+; ----------------------------
+;    0x0000_07ff_0000_0000
+;            8791798054912
+  prep_test_case
+  set_reg64 r58, r59, hi=0x00000000, lo=0x00000000
+  set_reg64  r6, r7, hi=0x00000001, lo=0xffffffff
+  dmacwhu    r6, r6, 2047
+  is_no_flag_set
+  chk_reg64  r6, r7, hi=0x000007ff, lo=0x00000000
+
+; Test case 35
+; check .cc when it is not met, with .f
+; ( 0         , 1         )           r6, r7
+; ( 0x0000_0000_0000_0001 )         r58, r59 (acc)
+; -------------------------
+;  1 + 0xffff_ffff_ffff_ffff = 0 and v flag set
+; ---------------------------------------------
+; conditions not met, v flag should not be set
+;
+prep_test_case
+  set_reg64  r58, r59, hi=0xffffffff, lo=0xffffffff
+  set_reg64   r6, r7, hi=0x00000000, lo=0x00000001
+  set_n_flag
+  dmacwhu.p.f r6, r6, r6
+  is_n_flag_set
+
+; Test case 36
+; check .cc when it is met, as well as .f
+; ( 0         , 0         ) *          r6
+; ( 0         , 0         ) +         s12
+; ( 0x0000_0000_0000_0001 )           r58, r59 (acc)
+; -------------------------
+; set n flag
+; ----------
+;  1 + 0xffff_ffff_ffff_ffff = 0 and v flag set
+; ---------------------------------------------
+; conditions are met, v flag should be set, n flag should still be set
+;
+prep_test_case
+  set_reg64  r58, r59, hi=0xffffffff, lo=0xffffffff
+  set_reg64   r6, r7, hi=0x00000000, lo=0x00000001
+  set_n_flag
+  dmacwhu.n.f r6, r6, 1
+  is_nv_flags_set
+  chk_reg64   r6, r7, hi=0x00000000, lo=0x00000000
+
+; Test case 37
+; check basic limm (limm is duplicated)
+; (    0x1000,     0x0001 ) *    limm (h)
+; (0x00010001, 0x00010001 ) +      r0   (w)
+;       65537       65537
+; ( 0x0000_0000_0000_0010 )       r58, r59 (acc)
+; -------------------------
+;  0x1000 * 0x00010001 + 0x00010001 + 0x10
+; ----------------------------------------
+; 0x0000000010011011 = 268505089
+prep_test_case
+  set_reg64 r58, r59, hi=0x00000000, lo=0x00000010
+  set_reg64  r0, r1, hi=0x00010001, lo=0x00010001
+  dmacwhu    r0, r0, 0x10000001
+  is_no_flag_set
+  chk_reg64  r0, r1, hi=0x00000000, lo=0x10011011
+
+; Test case 38
+; check double limm (limm is duplicated)
+; (    0x1000,     0x0001 ) *     limm
+; (0x10000001, 0x10000001 ) +     limm
+; ( 0x0000_0000_0000_0010 )        r58, r59 (acc)
+; -------------------------
+;  0x1000 * 0x10000001 + 0x10000001 + 0x10
+; ----------------------------------------
+;  0x0000010010001011
+;
+prep_test_case
+  set_reg64 r58, r59, hi=0x00000000, lo=0x00000010
+  dmacwhu    r0, 0x10000001, 0x10000001
+  is_no_flag_set
+  chk_reg64  r0, r1, hi=0x00000100, lo=0x10001011
+
+; Test case 39
+; 0 target register with 2 numbers, set flags (only use for this encoding)
+; ( 1         , 1         ) *     limm
+; ( 1         , 1         ) +     limm
+; ( 0xffff_ffff_ffff_fffe )        r58, r59 (acc)
+; -------------------------
+;  1 * 1 + 0xfffffffffffffffe
+; ---------------------------
+;  0x0
+prep_test_case
+  set_reg64 r58, r59, hi=0xffffffff, lo=0xfffffffe
+  dmacwhu.f   0, 1, 1
+  is_v_flag_set
+  ; Validate that the accumulator was set accordingly
+  xor.f      0,  r58, 0
+  bne @fail
+  xor.f      0,  r59, 0
+  bne @fail
+
+; Test case 40
+; Check if qmachu doesn't unset n flag nor v flag
+; ( 0x0000    , 0x0000    )   limm
+; ( 0x0000    , 0x0000    )   limm
+; ( 0x0123_4567_89ab_cdef )   r58, r59 (acc)
+; -------------------------
+;  0x0000 * 4 + 0x0123456789abcdef
+; --------------------------------
+;  0, n flag cleared but v flag untouched
+;
+ prep_test_case
+  set_reg64 r58, r59, hi=0x01234567, lo=0x89abcdef
+  set_nv_flags
+  dmacwhu.f   0, 0, 0
+  is_nv_flags_set
+  ; Validate that the accumulator was set accordingly
+  xor.f       0,   r58, 0x89abcdef
+  bne @fail
+  xor.f       0,   r59, 0x01234567
+  bne @fail
+; Fall through
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 valhalla:
@@ -556,6 +865,6 @@ fail:
   ; print_number r0
   print "[FAIL] "
 1:
-  print " dmacwh\n"
+  print " dmacwh / dmacwhu\n"
   flag 1
   end
