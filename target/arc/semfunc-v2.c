@@ -9160,3 +9160,18 @@ arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+ARC_GEN_32BIT_INTERFACE(QMACHU, PAIR, PAIR, PAIR, UNSIGNED, \
+                        arc_gen_qmach_base_i64);
+
+int
+arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_QMACHU(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
