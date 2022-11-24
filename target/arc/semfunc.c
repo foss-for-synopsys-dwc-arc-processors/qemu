@@ -77,6 +77,24 @@ arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
 }
 
 void
+arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
+                                  TCGv_i64 op1, TCGv_i64 op2)
+{
+    TCGv_i64 t1 = tcg_temp_new_i64();
+
+    /*
+     * If at least 1 of the operands had a 1 bit in position 63, and the result
+     * has a 0, there was an overflow
+     */
+    tcg_gen_or_i64(t1, op1, op2);
+    tcg_gen_andc_i64(t1, t1, result);
+
+    tcg_gen_shri_i64(overflow, t1, 63);
+
+    tcg_temp_free_i64(t1);
+}
+
+void
 arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
                         TCGv_i64 overflow,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)

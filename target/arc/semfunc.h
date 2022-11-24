@@ -83,6 +83,16 @@ void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
                                      TCGv_i64 op1, TCGv_i64 op2);
 
 /**
+ * @brief Verifies if a 64 bit unsigned add resulted in an overflow
+ * @param overflow Is set to 1 or 0 on no overflow, or overflow, respectively
+ * @param result The result of the addition
+ * @param op1 Operand of the add
+ * @param op2 Operand of the add
+ */
+void arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
+                                       TCGv_i64 op1, TCGv_i64 op2);
+
+/**
  * Some macro definitions for using function pointers as arguments
  */
 typedef void (*ARC_GEN_OVERFLOW_DETECT_FUNC)(TCGv_i64, TCGv_i64, \
