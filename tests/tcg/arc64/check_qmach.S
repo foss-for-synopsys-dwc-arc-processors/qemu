@@ -533,7 +533,7 @@ prep_test_case
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 valhalla:
-  print "[PASS] "
+  print "[PASS]"
   b @1f
 
 ; If a test fails, it jumps here. Although, for the sake of uniformity,
@@ -543,8 +543,8 @@ valhalla:
 fail:
   ld r0, [test_nr]
   ; print_number r0
-  print "[FAIL] "
+  print "[FAIL]"
 1:
-  print " qmach: qmach"
+  print " qmach: qmach\n"
   flag 1
   end
