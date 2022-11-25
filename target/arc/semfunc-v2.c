@@ -9162,3 +9162,18 @@ arc_gen_DMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
     return DISAS_NEXT;
 }
 
+ARC_GEN_32BIT_INTERFACE(DMPYHU, NOT_PAIR, NOT_PAIR, NOT_PAIR, UNSIGNED, \
+                        arc_gen_dmpyh_base_i64);
+
+int
+arc_gen_DMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_DMPYHU(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
