@@ -14536,3 +14536,17 @@ arc_gen_QMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+int
+arc_gen_QMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_gen_qmpyh_base_i64(ctx, a, b, c, cpu64_acc, false, \
+                            tcg_gen_extract_i64, \
+                            arc_gen_add_unsigned_overflow_i64);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}

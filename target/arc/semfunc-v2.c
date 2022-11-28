@@ -9191,3 +9191,18 @@ arc_gen_QMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+ARC_GEN_32BIT_INTERFACE(QMPYHU, PAIR, PAIR, PAIR, UNSIGNED, \
+                        arc_gen_qmpyh_base_i64);
+
+int
+arc_gen_QMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_QMPYHU(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
