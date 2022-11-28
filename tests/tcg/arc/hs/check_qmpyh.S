@@ -395,6 +395,176 @@ prep_test_case
   ; Validate that the accumulator was set accordingly
   xor.f      0, r58, 0x2
   bne @fail
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; QMPYHU ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Test case 19
+; r1 <- r1, r1
+; (4   , 3   , 2   , 1  ) *      r1
+; (4   , 3   , 2   , 1  ) +      r2
+; -----------------------
+; (4*4 + 3*3 + 2*2 + 1*1)
+; -----------------------
+;           30
+  prep_test_case
+  set_reg64 r58, r59, hi=0xffffffff, lo=0xffffffff; Shouldnt matter
+  set_reg64  r0,  r1, hi=0x00040003, lo=0x00020001
+  set_reg64  r2,  r3, hi=0x00040003, lo=0x00020001
+  qmpyhu     r0,  r0, r2
+  chk_reg64  r0,  r1, hi=0, lo=30
+
+; Test case 20
+; Biggest positive multiplied with itself
+;   65535   65535   65535   65535
+; (0xffff, 0xffff, 0xffff, 0xffff)     r9
+; ---------------------------------
+; (65535 * 65535 * 4 = 17179344900)
+;      0x0000_0003_fff8_0004
+  prep_test_case
+  set_reg64  r12, r13, hi=0xffffffff, lo=0xffffffff
+  qmpyhu     r12, r12, r12
+  is_no_flag_set
+  chk_reg64  r12, r13, hi=0x00000003, lo=0xfff80004
+
+; Test case 21
+; reg <- reg, u6 (u6 is extended to 16 bits and then replicated 4 times)
+;     65535     65535     65535     65535
+; (  0xffff,   0xffff,   0xffff,   0xffff) *     r7
+; (0b111111, 0b111111, 0b111111, 0b111111) +     u6
+;      63  ,     63  ,     63  ,     63
+; ----------------------------------------
+; (            65535 * 63 * 4            )
+; ----------------------------------------
+;          0x0000_0000_00fb_ff04
+;                  16514820
+  prep_test_case
+  set_reg64  r6, r7, hi=0xffffffff, lo=0xffffffff
+  qmpyhu     r4, r6, 63
+  is_no_flag_set
+  chk_reg64  r4, r5, hi=0x00000000, lo=0x00fbff04
+
+; Test case 22
+; reg <- reg, s12 (s12 is sign extended to 16 bits and then replicated 4 times)
+;     65535     65535     65535     65535
+; (  0xffff,   0xffff,   0xffff,   0xffff) *      r6
+; (    -1,     -1  ,     -1  ,     -1  ) +       s12
+; --------------------------------------
+; (         65535 * 65535 * 4          )
+; --------------------------------------
+;        0x0000_0003_fff8_0004
+;            17179344900
+  prep_test_case
+  set_reg64  r6, r7, hi=0xffffffff, lo=0xffffffff
+  qmpyhu     r6, r6, -1
+  is_no_flag_set
+  chk_reg64  r6, r7, hi=0x00000003, lo=0xfff80004
+
+; Test case 23
+; reg <- reg, s12 (smallest negative s12)
+;   65535     65535     65535     65535
+; ( 0xffff, 0xffff, 0xffff, 0xffff ) *        r9
+; (  -2048,  -2048,  -2048,  -2048 ) +       s12
+;    63488   63488   63488   63488
+; ----------------------------------
+; (       65535 * 63488 * 4        )
+; ----------------------------------
+;      0x0000_0003_dffc_2000
+;               4096
+  prep_test_case
+  set_reg64  r8, r9, hi=0xffffffff, lo=0xffffffff
+  qmpyhu     r8, r8, -2048
+  is_no_flag_set
+  chk_reg64  r8, r9, hi=0x00000003, lo=0xdffc2000
+
+; Test case 24
+; reg <- reg, s12 (biggest positive s12)
+;   65535     65535     65535     65535
+; ( 0xffff, 0xffff, 0xffff, 0xffff ) *          r7
+; (   2047,   2047,   2047,   2047 ) +         s12
+; --------------------------------------
+; (       65535 * 2047 * 4        )
+; -------------------------------------
+;        0x0000_0000_1ffb_e004
+;              536600580
+  prep_test_case
+  set_reg64  r6, r7, hi=0xffffffff, lo=0xffffffff
+  qmpyhu     r6, r6, 2047
+  is_no_flag_set
+  chk_reg64  r6, r7, hi=0x00000000, lo=0x1ffbe004
+
+; Test case 25
+; check .cc when it is not met, with .f
+; (0   , 0    , 0   , 1   ) *     r7
+; (1   , 1    , 1   , 1   ) +     u6
+; -------------------------
+; set n flag
+; -------------------------------
+;  1 * 1 + 0 * 3 = 1 and v flag cleared
+; -------------------------------
+; conditions not met, v flag should still be set
+prep_test_case
+  set_reg64  r2, r3, hi=0x00000000, lo=0x00000001
+  set_nv_flags
+  qmpyhu.p.f r2, r2, 1
+  is_nv_flags_set
+
+; Test case 26
+; check .cc when it is met, as well as .f
+; (0   , 0    , 0   , 1   ) *      r7
+; (1   , 1    , 1   , 1   ) +      u6
+; -------------------------
+; set n and v flags
+; -------------------------------
+;  1 * 1 + 0 * 3 = 1 and v flag unset
+; -------------------------------
+; conditions are met, n flag should be set, v cleared
+prep_test_case
+  set_reg64  r2, r3, hi=0x00000000, lo=0x00000001
+  set_nv_flags
+  qmpyhu.n.f r2, r2, 1
+  is_n_flag_set
+  chk_reg64  r2, r3, hi=0x00000000, lo=0x00000001
+
+; Test case 27
+; check basic limm (limm is duplicated)
+; (     1,      1,      1,      1) *       r0
+; (0x1000, 0x0001, 0x1000, 0x0001) +     limm
+; --------------------------------
+;      0x1000 * 2 + 0x0001 * 2
+; --------------------------------
+;               0x2002
+prep_test_case
+  set_reg64  r0, r1, hi=0x00010001, lo=0x00010001
+  qmpyhu     r0, r0, 0x10000001
+  is_no_flag_set
+  chk_reg64  r0, r1, hi=0x00000000, lo=0x00002002
+
+; Test case 28
+; check double limm (limm is duplicated)
+; (0x1000, 0x0001, 0x1000, 0x0001) *     limm
+; (0x1000, 0x0001, 0x1000, 0x0001) +     limm
+; --------------------------------
+;  0x1000 * 0x1000 * 2 + 0x0001 * 0x0001 * 2
+; -------------------------------------------------
+;               0x0000000002000002
+prep_test_case
+  set_reg64 r58, r59, hi=0x00000000, lo=0x00000010
+  qmpyhu     r0, 0x10000001, 0x10000001
+  is_no_flag_set
+  chk_reg64  r0, r1, hi=0x00000000, lo=0x02000002
+
+; Test case 29
+; 0 target register with 2 numbers, qmpyhu should clear v flag and unset n flag
+; (0x0000, 0x0001, 0x0000, 0x0001) *     limm
+; (0x0000, 0x0001, 0x0000, 0x0001) +     limm
+; --------------------------------
+;    1 * 1 * 2 = 2
+prep_test_case
+  qmpyhu.f     0, 1, 1
+  is_no_flag_set
+  ; Validate that the accumulator was set accordingly
+  xor.f      0, r58, 0x2
+  bne @fail
 ; Fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -412,6 +582,6 @@ fail:
   ; print_number r0
   print "[FAIL]"
 1:
-  print " qmpyh\n"
+  print " qmpyh: qmpyh / qmpyhu\n"
   flag 1
   end
