@@ -519,3 +519,51 @@ arc_gen_qmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     tcg_temp_free_i64(c_h2);
     tcg_temp_free_i64(c_h3);
 }
+
+void
+arc_gen_dmpywh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                        TCGv_i64 acc, bool set_n_flag,
+                        ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
+{
+    TCGv_i64 b_w0 = tcg_temp_new_i64();
+    TCGv_i64 b_w1 = tcg_temp_new_i64();
+
+    TCGv_i64 c_h0 = tcg_temp_new_i64();
+    TCGv_i64 c_h1 = tcg_temp_new_i64();
+
+    /* Instruction code */
+
+    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
+                                         &(ctx->insn.operands[2]));
+
+    extract_bits(b_w0, b, 0, 32);
+    extract_bits(b_w1, b, 32, 32);
+
+    extract_bits(c_h0, c, 0, 16);
+    extract_bits(c_h1, c, 16, 16);
+
+    /*
+     * Multiply halfwords with words
+     */
+    tcg_gen_mul_i64(b_w0, b_w0, c_h0);
+    tcg_gen_mul_i64(b_w1, b_w1, c_h1);
+
+    /*
+     * Assemble final result via additions
+     * As the operands are 32 bit, it is not possible for the sums to
+     * overflow a 64 bit number
+     */
+    tcg_gen_add_i64(a, b_w0, b_w1);
+
+    arc_gen_mpy_check_fflags(ctx, a, set_n_flag);
+
+    tcg_gen_mov_i64(acc, a);
+
+    tcg_temp_free_i64(b_w0);
+    tcg_temp_free_i64(b_w1);
+
+    tcg_temp_free_i64(c_h0);
+    tcg_temp_free_i64(c_h1);
+
+}
