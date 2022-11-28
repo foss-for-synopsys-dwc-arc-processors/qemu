@@ -453,3 +453,69 @@ arc_gen_dmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     tcg_temp_free_i64(c_h0);
     tcg_temp_free_i64(c_h1);
 }
+
+void
+arc_gen_qmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                       TCGv_i64 acc, bool set_n_flag,
+                       ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                       ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
+{
+    TCGv_i64 b_h0 = tcg_temp_new_i64();
+    TCGv_i64 b_h1 = tcg_temp_new_i64();
+    TCGv_i64 b_h2 = tcg_temp_new_i64();
+    TCGv_i64 b_h3 = tcg_temp_new_i64();
+
+    TCGv_i64 c_h0 = tcg_temp_new_i64();
+    TCGv_i64 c_h1 = tcg_temp_new_i64();
+    TCGv_i64 c_h2 = tcg_temp_new_i64();
+    TCGv_i64 c_h3 = tcg_temp_new_i64();
+
+    /* Instruction code */
+
+    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
+                                         &(ctx->insn.operands[2]));
+
+    extract_bits(b_h0, b, 0, 16);
+    extract_bits(b_h1, b, 16, 16);
+    extract_bits(b_h2, b, 32, 16);
+    extract_bits(b_h3, b, 48, 16);
+
+    extract_bits(c_h0, c, 0, 16);
+    extract_bits(c_h1, c, 16, 16);
+    extract_bits(c_h2, c, 32, 16);
+    extract_bits(c_h3, c, 48, 16);
+
+    /*
+     * Multiply halfwords
+     * The 16 bit operands cannot overflow the expected 32 bit result
+     */
+    tcg_gen_mul_i64(b_h0, b_h0, c_h0);
+    tcg_gen_mul_i64(b_h1, b_h1, c_h1);
+    tcg_gen_mul_i64(b_h2, b_h2, c_h2);
+    tcg_gen_mul_i64(b_h3, b_h3, c_h3);
+
+    /*
+     * Assemble final result via additions
+     * As the operands are 32 bit, it is not possible for the sums to
+     * overflow a 64 bit number
+     */
+    tcg_gen_add_i64(b_h0, b_h0, b_h1);
+    tcg_gen_add_i64(b_h2, b_h2, b_h3);
+
+    tcg_gen_add_i64(a, b_h0, b_h2);
+
+    arc_gen_mpy_check_fflags(ctx, a, set_n_flag);
+
+    tcg_gen_mov_i64(acc, a);
+
+
+    tcg_temp_free_i64(b_h0);
+    tcg_temp_free_i64(b_h1);
+    tcg_temp_free_i64(b_h2);
+    tcg_temp_free_i64(b_h3);
+
+    tcg_temp_free_i64(c_h0);
+    tcg_temp_free_i64(c_h1);
+    tcg_temp_free_i64(c_h2);
+    tcg_temp_free_i64(c_h3);
+}
