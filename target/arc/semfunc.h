@@ -120,18 +120,19 @@ typedef void (*ARC_GEN_SPECIFIC_OPERATION_FUNC)(DisasCtxt*, TCGv_i64, TCGv_i64,\
 void arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1,
                              TCGv_i64 operand_2, TCGv_i64 overflow,
                              ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
+
 /**
  * @brief Sets the tcg_operand appropriately, with regards to the provided
  * operand metadata.
  * Ignores normal registers and doubles the LIMM.
+ * Works on 64 bit data
  * @param ctx Current instruction context
  * @param tcg_operand The tcg operand to setup
  * @param operand The operand metadata for the tcg operand
  */
 void
-arc_gen_set_vector_constant_operands(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
+arc_gen_set_vec_const_operands_i64(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
     TCGv_i64 tcg_operand_2, operand_t *operand_1, operand_t *operand_2);
-
 
 
 /**
@@ -228,6 +229,23 @@ arc_gen_dmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
  */
 void
 arc_gen_dmpywh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                        TCGv_i64 acc, bool set_n_flag,
+                        ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
+
+/**
+ * @brief Base for the 64 bit VMPY2H operation.
+ * @param ctx Current instruction context
+ * @param a First (dest) operand of the instruction
+ * @param b Second operand of the instruction
+ * @param c Third operand of the instruction
+ * @param acc The current accumulator value
+ * @param set_n_flag Whether to set the N flag or not
+ * @param extract_bits The function to be used to extract the bits
+ * @param detect_overflow The function to use to detect 64 bit overflow
+ */
+void
+arc_gen_vmpy2h_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                         TCGv_i64 acc, bool set_n_flag,
                         ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
