@@ -303,6 +303,161 @@ prep_test_case
   mov       r11, 0x1
   xorl.f      0,   r58, r11
   bne @fail
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; VMPY2HU ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Test case 14
+; r1 <- r1, r2
+; ( 0x0003, 0x0004 ) *      r1
+; ( 0x0003, 0x0004 ) +      r1
+; ------------------
+;   3 * 3 ,  4 * 4
+; ----------------
+;     9       16
+  prep_test_case
+  set_reg64 r58, hi=0xffffffff, lo=0xffffffff ; acc shouldnt matter
+  set_reg64  r1, hi=0xffffffff, lo=0x00030004 ; hi shouldnt matter
+  vmpy2hu     r1, r1, r1
+  chk_reg64  r1, hi=0x9, lo=0x10
+
+; Test case 15
+; Biggest positive multiplied with itself
+;    65535     65535
+; ( 0xffff  , 0xffff   ) *         r8
+; ( 0xffff  , 0xffff   ) +         r7
+; ----------------------
+; 4294836225, 4294836225
+; 0xfffe0001, 0xfffe0001
+  prep_test_case
+  set_reg32  r8, 0xffffffff
+  set_reg32  r7, 0xffffffff
+  vmpy2hu     r8, r7, r8
+  chk_reg64  r8, hi=0xfffe0001, lo=0xfffe0001
+
+; Test case 16
+; reg <- reg, u6 (u6 is extended to 16 bits and then replicated 4 times)
+;       65535       65535
+; (    0xffff,     0xffff) *        r7
+; (  0b111111,   0b111111) +        u6
+;       63          63
+; -------------------------
+; 65535 * 63 ,  65535 * 63
+;    4128705 ,     4128705
+; 0x003effc1 ,  0x003effc1
+  prep_test_case
+  set_reg32  r7, 0xffffffff
+  vmpy2hu     r6, r7, 63
+  chk_reg64  r6, hi=0x003effc1, lo=0x003effc1
+
+; Test case 17
+; reg <- reg, s12 (s12 is sign extended to 16 bits and then replicated 4 times)
+;    65535   65535
+; ( 0xffff   , 0xffff   ) *        r6
+; ( -1       , -1       ) +       s12
+;    65535   ,  65535
+; -------------------------
+;  4294836225, 4294836225
+;  0xfffe0001, 0xfffe0001
+  prep_test_case
+  set_reg32  r6, 0xffffffff
+  vmpy2hu     r6, r6, -1
+  chk_reg64  r6, hi=0xfffe0001, lo=0xfffe0001
+
+; Test case 18
+; reg <- reg, s12 (smallest negative s12)
+;     65535      65535
+; (  0xffff  ,  0xffff  ) *        r9
+; (   -2048  ,   -2048  ) +       s12;
+;     63488  ,   63488
+; -----------------------
+; 4160686080 , 4160686080
+; 0xf7ff0800 , 0xf7ff0800
+  prep_test_case
+  set_reg32  r9, 0xffffffff
+  vmpy2hu     r9, r9, -2048
+  chk_reg64  r9, hi=0xf7ff0800, lo=0xf7ff0800
+
+; Test case 19
+; reg <- reg, s12 (biggest positive s12)
+;     65535      65535
+; (  0xffff  ,  0xffff  ) *        r9
+; (    2047  ,    2047  ) +        s12
+; -----------------------
+;  134150145 , 134150145
+;  0x07fef801, 0x07fef801
+  prep_test_case
+  set_reg32  r7, lo=0xffffffff
+  vmpy2hu     r7, r7, 2047
+  chk_reg64  r7, hi=0x07fef801, lo=0x07fef801
+
+; Test case 20
+; check .cc when it is not met
+; ( 0         , 1         ) *         r7
+; ( 2         , 2         ) +        s12
+; -------------------------
+; set n flag
+; ----------------
+; ( 0, 2 ) if n flag isnt set
+prep_test_case
+  set_reg64  r7, hi=0x00000000, lo=0x00000001
+  set_reg64 r58, hi=0x00000000, lo=0x00000001
+  set_n_flag
+  vmpy2hu.p   r7, r7, 2
+  chk_reg64  r7, hi=0x00000000, lo=0x00000001
+
+; Test case 21
+; check .cc when it is met, as well as .f
+; ( 0         , 1         ) *        r7
+; ( 2         , 2         ) +       s12
+; -------------------------
+;  0 * 2 + 1 = 1 and n flag unset
+; -------------------------------
+; conditions are met, n flag should not be set
+;
+prep_test_case
+  set_reg64 r7, hi=0x00000000, lo=0x00000001
+  set_n_flag
+  vmpy2hu.n  r7, r7, 2
+  chk_reg64 r7, hi=0x00000000, lo=0x00000002
+
+; Test case 22
+; check basic limm (limm is duplicated)
+;    4096       1
+; ( 0x1000 , 0x0001 ) *         r0
+; ( 0x1000 , 0x0001 ) +       limm
+; -------------------
+;  16777216,     1
+; 0x1000000,   0x1
+prep_test_case
+  set_reg32  r0, 0x10000001
+  vmpy2hu     r0, r0, 0x10000001
+  chk_reg64  r0, hi=0x01000000, lo=0x00000001
+
+; Test case 23
+; check double limm (limm is duplicated)
+; (0x1000  , 0x0001 ) *       limm
+; (0x1000  , 0x0001 ) +       limm
+; -------------------
+; 16777216 ,    1
+; 0x1000000,    1 
+;
+prep_test_case
+  vmpy2hu    r0, 0x10000001, 0x10000001
+  chk_reg64  r0, hi=0x01000000, lo=0x00000001
+
+; Test case 24
+; 0 target register with 2 numbers (only use for this encoding)
+; ( 0         , 1         ) *       limm
+; ( 0         , 1         ) +       limm
+; -------------------------
+;   0         , 1
+;
+prep_test_case
+  vmpy2hu    r0, 1, 1
+  ; Validate that the accumulator was set accordingly
+  mov       r11, 0x1
+  xorl.f      0,   r58, r11
+  bne @fail
 ; Fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
