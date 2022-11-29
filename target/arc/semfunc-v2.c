@@ -29,10 +29,16 @@
  * @brief Generates the code for setting up a 64 bit register from a 32 bit one
  * Either by concatenating a pair or 0 extending it directly
  */
-#define ARC_GEN_SRC_PAIR(REGISTER) \
+#define ARC_GEN_SRC_PAIR_UNSIGNED(REGISTER) \
     arc_gen_next_register_i32_i64(ctx, r64_##REGISTER, REGISTER);
 
-#define ARC_GEN_SRC_NOT_PAIR(REGISTER) \
+#define ARC_GEN_SRC_PAIR_SIGNED(REGISTER) \
+    arc_gen_next_register_i32_i64(ctx, r64_##REGISTER, REGISTER);
+
+#define ARC_GEN_SRC_NOT_PAIR_SIGNED(REGISTER) \
+    tcg_gen_ext_i32_i64(r64_##REGISTER, REGISTER);
+
+#define ARC_GEN_SRC_NOT_PAIR_UNSIGNED(REGISTER) \
     tcg_gen_extu_i32_i64(r64_##REGISTER, REGISTER);
 
 #define ARC_GEN_DST_PAIR(REGISTER) \
@@ -58,30 +64,31 @@ OPERATION(ctx, r64_a, r64_b, r64_c , acc, false, \
  * their 64 bit counterparts.
  * It is assumed the accumulator is always a pair register
  * @param NAME The name of the function
- * @param A dest is PAIR or NOT_PAIR
- * @param B first operand is PAIR or NOT_PAIR
- * @param C second operand is PAIR or NOT_PAIR
- * @param SIGNED OPERATION is signed or unsigned
+ * @param A_REG_INFO dest is PAIR or NOT_PAIR
+ * @param B_REG_INFO first operand is PAIR or NOT_PAIR
+ * @param C_REG_INFO second operand is PAIR or NOT_PAIR
+ * @param IS_SIGNED OPERATION is signed or unsigned
  * @param OPERATION The operation to perform
  */
-#define ARC_GEN_32BIT_INTERFACE(NAME, A, B, C, SIGNED, OPERATION)       \
-static inline void                                                      \
-arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)       \
-{                                                                       \
-    TCGv_i64 r64_a = tcg_temp_new_i64();                                \
-    TCGv_i64 r64_b = tcg_temp_new_i64();                                \
-    TCGv_i64 r64_c = tcg_temp_new_i64();                                \
-    TCGv_i64 acc = tcg_temp_new_i64();                                  \
-    ARC_GEN_SRC_##B(b);                                                 \
-    ARC_GEN_SRC_##C(c);                                                 \
-    tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);                  \
-    ARC_GEN_BASE32_64_##SIGNED(OPERATION);                              \
-    tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);                    \
-    ARC_GEN_DST_##A(a);                                                 \
-    tcg_temp_free_i64(acc);                                             \
-    tcg_temp_free_i64(r64_a);                                           \
-    tcg_temp_free_i64(r64_b);                                           \
-    tcg_temp_free_i64(r64_c);                                           \
+#define ARC_GEN_32BIT_INTERFACE(NAME, A_REG_INFO, B_REG_INFO, C_REG_INFO,  \
+                                IS_SIGNED, OPERATION)                      \
+static inline void                                                         \
+arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)          \
+{                                                                          \
+    TCGv_i64 r64_a = tcg_temp_new_i64();                                   \
+    TCGv_i64 r64_b = tcg_temp_new_i64();                                   \
+    TCGv_i64 r64_c = tcg_temp_new_i64();                                   \
+    TCGv_i64 acc = tcg_temp_new_i64();                                     \
+    ARC_GEN_SRC_ ## B_REG_INFO ## _ ## IS_SIGNED(b);                       \
+    ARC_GEN_SRC_ ## C_REG_INFO ## _ ## IS_SIGNED(c);                       \
+    tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);                     \
+    ARC_GEN_BASE32_64_##IS_SIGNED(OPERATION);                              \
+    tcg_gen_extr_i64_i32(cpu_acclo, cpu_acchi, acc);                       \
+    ARC_GEN_DST_##A_REG_INFO(a);                                           \
+    tcg_temp_free_i64(acc);                                                \
+    tcg_temp_free_i64(r64_a);                                              \
+    tcg_temp_free_i64(r64_b);                                              \
+    tcg_temp_free_i64(r64_c);                                              \
 }
 
 /*
