@@ -111,7 +111,7 @@ arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
 }
 
 /**
- * @brief Analyzes operand flags and sets value accordingly
+ * @brief Analyzes operand flags and sets vector constant values accordingly
  * Current operations:
  *  - 32 bit duplication for limm
  *  - 16 bit quadriplication for s12 and u6
@@ -121,7 +121,7 @@ arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
  * @param operand Operand to analyze
  */
 static void
-arc_gen_set_vector_constant_operand(DisasCtxt *ctx, operand_t *operand) {
+arc_gen_set_vec_const_operand(DisasCtxt *ctx, operand_t *operand) {
     if (operand->type & ARC_OPERAND_LIMM) {
         operand->value = ctx->insn.limm & 0x00000000ffffffff;
         operand->value = operand->value | operand->value << 32;
@@ -133,11 +133,11 @@ arc_gen_set_vector_constant_operand(DisasCtxt *ctx, operand_t *operand) {
 }
 
 void
-arc_gen_set_vector_constant_operands(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
+arc_gen_set_vec_const_operands_i64(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
     TCGv_i64 tcg_operand_2, operand_t *operand_1, operand_t *operand_2)
 {
     if (!(operand_1->type & ARC_OPERAND_IR)) {
-        arc_gen_set_vector_constant_operand(ctx, operand_1);
+        arc_gen_set_vec_const_operand(ctx, operand_1);
         tcg_gen_movi_i64(tcg_operand_1, operand_1->value);
     }
 
@@ -146,7 +146,7 @@ arc_gen_set_vector_constant_operands(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
             operand_2->type & ARC_OPERAND_DUPLICATE){
             operand_2->value = operand_1->value;
         } else {
-            arc_gen_set_vector_constant_operand(ctx, operand_2);
+            arc_gen_set_vec_const_operand(ctx, operand_2);
         }
         tcg_gen_movi_i64(tcg_operand_2, operand_2->value);
     }
@@ -220,8 +220,8 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
-                                         &(ctx->insn.operands[2]));
+    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
+                                       &(ctx->insn.operands[2]));
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -285,8 +285,8 @@ arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
-                                         &(ctx->insn.operands[2]));
+    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
+                                       &(ctx->insn.operands[2]));
 
     extract_bits(b_w0, b, 0, 32);
     extract_bits(b_w1, b, 32, 32);
@@ -335,8 +335,8 @@ arc_gen_dmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
-                                         &(ctx->insn.operands[2]));
+    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
+                                       &(ctx->insn.operands[2]));
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -423,8 +423,8 @@ arc_gen_dmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
-                                         &(ctx->insn.operands[2]));
+    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
+                                       &(ctx->insn.operands[2]));
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -472,8 +472,8 @@ arc_gen_qmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
-                                         &(ctx->insn.operands[2]));
+    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
+                                       &(ctx->insn.operands[2]));
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -534,8 +534,8 @@ arc_gen_dmpywh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vector_constant_operands(ctx, b, c, &(ctx->insn.operands[1]), \
-                                         &(ctx->insn.operands[2]));
+    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
+                                       &(ctx->insn.operands[2]));
 
     extract_bits(b_w0, b, 0, 32);
     extract_bits(b_w1, b, 32, 32);
@@ -566,4 +566,49 @@ arc_gen_dmpywh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     tcg_temp_free_i64(c_h0);
     tcg_temp_free_i64(c_h1);
 
+}
+
+void
+arc_gen_vmpy2h_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                        TCGv_i64 acc, bool set_n_flag,
+                        ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
+{
+    TCGv_i64 b_h0 = tcg_temp_new_i64();
+    TCGv_i64 b_h1 = tcg_temp_new_i64();
+
+    TCGv_i64 c_h0 = tcg_temp_new_i64();
+    TCGv_i64 c_h1 = tcg_temp_new_i64();
+
+    /* Instruction code */
+
+    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
+                                       &(ctx->insn.operands[2]));
+
+    extract_bits(b_h0, b, 0, 16);
+    extract_bits(b_h1, b, 16, 16);
+
+    extract_bits(c_h0, c, 0, 16);
+    extract_bits(c_h1, c, 16, 16);
+
+    /* Multiply halfwords with words */
+    tcg_gen_mul_i64(b_h0, b_h0, c_h0);
+    tcg_gen_mul_i64(b_h1, b_h1, c_h1);
+
+    /*
+     * Assemble final result
+     */
+    tcg_gen_extract_i64(a, b_h0, 0, 32);
+    tcg_gen_shli_i64(b_h1, b_h1, 32);
+    tcg_gen_or_i64(a, a, b_h1);
+
+    /* Does not set/change any flag */
+
+    tcg_gen_mov_i64(acc, a);
+
+    tcg_temp_free_i64(b_h0);
+    tcg_temp_free_i64(b_h1);
+
+    tcg_temp_free_i64(c_h0);
+    tcg_temp_free_i64(c_h1);
 }
