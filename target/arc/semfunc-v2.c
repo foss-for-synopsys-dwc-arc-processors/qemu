@@ -9236,3 +9236,18 @@ arc_gen_DMPYWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+ARC_GEN_32BIT_INTERFACE(VMPY2H, PAIR, NOT_PAIR, NOT_PAIR, SIGNED, \
+                        arc_gen_vmpy2h_base_i64);
+
+int
+arc_gen_VMPY2H(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_VMPY2H(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
