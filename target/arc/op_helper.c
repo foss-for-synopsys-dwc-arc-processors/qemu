@@ -428,8 +428,13 @@ overflow_add_flag(target_ulong dest, target_ulong b, target_ulong c,
                   uint8_t size)
 {
     dest >>= (size - 1);
-    b >>= (size - 1);
-    c >>= (size - 1);
+    b    >>= (size - 1);
+    c    >>= (size - 1);
+
+    dest &= 1;
+    b    &= 1;
+    c    &= 1;
+
     if ((dest == 0 && b == 1 && c == 1)
         || (dest == 1 && b == 0 && c == 0)) {
         return 1;
