@@ -428,8 +428,20 @@ overflow_add_flag(target_ulong dest, target_ulong b, target_ulong c,
                   uint8_t size)
 {
     dest >>= (size - 1);
-    b >>= (size - 1);
-    c >>= (size - 1);
+    b    >>= (size - 1);
+    c    >>= (size - 1);
+
+    /*
+     * Truncate the result.
+     * Negative numbers may have 1s to the left of the 'size'th bit when the
+     * architecture has more bits than the requested operation i.e. 32 bit
+     * operation in a 64 bit architecture has the most significant 32 bits at 1
+     * for any and all negative numbers.
+     */
+    dest &= 1;
+    b    &= 1;
+    c    &= 1;
+
     if ((dest == 0 && b == 1 && c == 1)
         || (dest == 1 && b == 0 && c == 0)) {
         return 1;
