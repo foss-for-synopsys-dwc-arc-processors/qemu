@@ -64,15 +64,11 @@ test_nr:
 
 ; pair(HI, LOW) == pair(REG_HI, REG_LO) == pair(R59, R58)
 .macro  check_64bit_result      hi, low, reg_hi, reg_lo
-  mov   r11, \hi
-  mov   r10, \low
-  cmp   r11, \reg_hi
+  movhl r11, \hi
+  orl   r11, r11, \low
+  cmp   r11, \reg_lo
   bne   @fail
-  cmp   r11, r59
-  bne   @fail
-  cmp   r10, \reg_lo
-  bne   @fail
-  cmp   r10, r58
+  cmp   r11, r58
   bne   @fail
 .endm
 
@@ -300,7 +296,6 @@ instruction_error:
   mov       r2, 0xf00d      ; don't care ...
   mov       r3, 0xbad       ; as long as not (0x0,0x1)
   mov       r4, r58         ; record accl
-  mov       r5, r59         ; record acch
   mpyd.nv.f r0, r0, r2
   lr        r2, [status32]  ; take a snapshot of statu32 as is
   check_V_is_set r2
@@ -312,24 +307,24 @@ instruction_error:
 
 ; Test case 15
 ; Raise an Illegal Instruction exception if an odd register as dest.
-  prep_test_case
-  set_except_params @test_15_exception, @test_15_end
-test_15_exception:
-  mpyd  r3, r2, r4
-  b     @fail
-test_15_end:
-  ; Fall through
-
-; Test case 16
-; Raise an Illegal Instruction exception if an odd register as dest.
-; The exception should be made even if the CC indicates no execution.
-  prep_test_case
-  set_except_params @test_16_exception, @test_16_end
-  add.f   0,0,1         ; (Z,N,C,V)=(0,0,0,0)
-test_16_exception:
-  mpyd.z  r1, r1, r4
-  b       @fail
-test_16_end:
+;  prep_test_case
+;  set_except_params @test_15_exception, @test_15_end
+;test_15_exception:
+;  mpyd  r3, r2, r4
+;  b     @fail
+;test_15_end:
+;  ; Fall through
+;
+;; Test case 16
+;; Raise an Illegal Instruction exception if an odd register as dest.
+;; The exception should be made even if the CC indicates no execution.
+;  prep_test_case
+;  set_except_params @test_16_exception, @test_16_end
+;  add.f   0,0,1         ; (Z,N,C,V)=(0,0,0,0)
+;test_16_exception:
+;  mpyd.z  r1, r1, r4
+;  b       @fail
+;test_16_end:
   ; Fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MPYDU ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -492,7 +487,6 @@ test_16_end:
   mov       r2, 0xf00d      ; don't care ...
   mov       r3, 0xbad       ; as long as not (0x0,0x1)
   mov       r4, r58         ; record accl
-  mov       r5, r59         ; record acch
   mpyd.p.f r0, r0, r2       ; execute only if positive (N==0)
   lr        r2, [status32]  ; take a snapshot of statu32 as is
   check_V_is_set r2
@@ -504,24 +498,24 @@ test_16_end:
 
 ; Test case 31
 ; Raise an Illegal Instruction exception if an odd register as dest.
-  prep_test_case
-  set_except_params @test_31_exception, @test_31_end
-test_31_exception:
-  mpydu r1, r4, r0
-  b     @fail
-test_31_end:
-  ; Fall through
-
-; Test case 32
-; Raise an Illegal Instruction exception if an odd register as dest.
-; The exception should be made even if the CC indicates no execution.
-  prep_test_case
-  set_except_params @test_32_exception, @test_32_end
-  add.f   0,0,1         ; (Z,N,C,V)=(0,0,0,0)
-test_32_exception:
-  mpydu.v r5, r5, r4
-  b       @fail
-test_32_end:
+;  prep_test_case
+;  set_except_params @test_31_exception, @test_31_end
+;test_31_exception:
+;  mpydu r1, r4, r0
+;  b     @fail
+;test_31_end:
+;  ; Fall through
+;
+;; Test case 32
+;; Raise an Illegal Instruction exception if an odd register as dest.
+;; The exception should be made even if the CC indicates no execution.
+;  prep_test_case
+;  set_except_params @test_32_exception, @test_32_end
+;  add.f   0,0,1         ; (Z,N,C,V)=(0,0,0,0)
+;test_32_exception:
+;  mpydu.v r5, r5, r4
+;  b       @fail
+;test_32_end:
   ; Fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Reporting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -536,7 +530,7 @@ valhalla:
 ; here to check the R0 register for the test case number.
 fail:
   ld r0, [test_nr]
-  print_number r0
+  ;print_number r0
   print "[FAIL]"
 1:
   print " mpyd: mpyd mpydu\n"
