@@ -110,21 +110,11 @@ arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
     tcg_temp_free_i64(new_overflow);
 }
 
-/**
- * @brief Analyzes operand flags and sets vector constant values accordingly
- * Current operations:
- *  - 32 bit duplication for limm
- *  - 16 bit quadriplication for s12 and u6
- * This function assumes "non limm" can only be u6 or s12, and thus should only
- * be used by functions aware of that fact and handle registers themselves
- * @param ctx Current instruction context
- * @param operand Operand to analyze
- */
-static void
-arc_gen_set_vec_const_operand(DisasCtxt *ctx, operand_t *operand) {
+void
+arc_gen_set_operand_16bit_vec_const(DisasCtxt *ctx, operand_t *operand) {
     if (operand->type & ARC_OPERAND_LIMM) {
-        operand->value = ctx->insn.limm & 0x00000000ffffffff;
-        operand->value = operand->value | operand->value << 32;
+        operand->value  = ctx->insn.limm & 0x00000000ffffffff;
+        operand->value |= (operand->value << 32);
     } else {
         operand->value &= 0x0000ffff;
         operand->value |= (operand->value << 16);
@@ -133,22 +123,20 @@ arc_gen_set_vec_const_operand(DisasCtxt *ctx, operand_t *operand) {
 }
 
 void
-arc_gen_set_vec_const_operands_i64(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
-    TCGv_i64 tcg_operand_2, operand_t *operand_1, operand_t *operand_2)
-{
-    if (!(operand_1->type & ARC_OPERAND_IR)) {
-        arc_gen_set_vec_const_operand(ctx, operand_1);
-        tcg_gen_movi_i64(tcg_operand_1, operand_1->value);
+arc_gen_set_operand_32bit_vec_const(DisasCtxt *ctx, operand_t *operand) {
+    if (operand->type & ARC_OPERAND_LIMM) {
+        operand->value  = ctx->insn.limm & 0x00000000ffffffff;
+        operand->value |= operand->value << 32;
+    } else {
+        operand->value &= 0x00000000ffffffff;
+        operand->value |= (operand->value << 32);
     }
+}
 
-    if (!(operand_2->type & ARC_OPERAND_IR)) {
-        if (operand_2->type & ARC_OPERAND_LIMM &&
-            operand_2->type & ARC_OPERAND_DUPLICATE){
-            operand_2->value = operand_1->value;
-        } else {
-            arc_gen_set_vec_const_operand(ctx, operand_2);
-        }
-        tcg_gen_movi_i64(tcg_operand_2, operand_2->value);
+void
+arc_gen_set_operand_64bit_vec_const(DisasCtxt *ctx, operand_t *operand) {
+    if (operand->type & ARC_OPERAND_LIMM) {
+        operand->value  = ctx->insn.limm;
     }
 }
 
@@ -220,8 +208,8 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
-                                       &(ctx->insn.operands[2]));
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -285,8 +273,8 @@ arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
-                                       &(ctx->insn.operands[2]));
+    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
 
     extract_bits(b_w0, b, 0, 32);
     extract_bits(b_w1, b, 32, 32);
@@ -335,8 +323,8 @@ arc_gen_dmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
-                                       &(ctx->insn.operands[2]));
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -423,8 +411,8 @@ arc_gen_dmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
-                                       &(ctx->insn.operands[2]));
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -472,8 +460,8 @@ arc_gen_qmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
-                                       &(ctx->insn.operands[2]));
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -534,8 +522,8 @@ arc_gen_dmpywh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
-                                       &(ctx->insn.operands[2]));
+    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
 
     extract_bits(b_w0, b, 0, 32);
     extract_bits(b_w1, b, 32, 32);
@@ -582,8 +570,8 @@ arc_gen_vmpy2h_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    arc_gen_set_vec_const_operands_i64(ctx, b, c, &(ctx->insn.operands[1]), \
-                                       &(ctx->insn.operands[2]));
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
