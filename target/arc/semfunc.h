@@ -122,18 +122,74 @@ void arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1,
                              ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
 /**
- * @brief Sets the tcg_operand appropriately, with regards to the provided
- * operand metadata.
- * Ignores normal registers and doubles the LIMM.
- * Works on 64 bit data
+ * @brief Analyzes operand flags and sets vector constant values accordingly
+ * Operations:
+ *  - Set limm as operand value
+ * This should eventually be done by the decoder
  * @param ctx Current instruction context
- * @param tcg_operand The tcg operand to setup
- * @param operand The operand metadata for the tcg operand
+ * @param operand Operand to analyze
  */
 void
-arc_gen_set_vec_const_operands_i64(DisasCtxt *ctx, TCGv_i64 tcg_operand_1,
-    TCGv_i64 tcg_operand_2, operand_t *operand_1, operand_t *operand_2);
+arc_gen_set_operand_64bit_vec_const(DisasCtxt *ctx, operand_t *operand);
 
+/**
+ * @brief Analyzes operand flags and sets vector constant values accordingly
+ * Operations:
+ *  - 32 bit duplication for limm
+ *  - 32 bit duplication for s12 and u6
+ * This function assumes "non limm" can only be u6 or s12, and thus should only
+ * be used by functions aware of that fact and handle registers themselves
+ * @param ctx Current instruction context
+ * @param operand Operand to analyze
+ */
+void
+arc_gen_set_operand_32bit_vec_const(DisasCtxt *ctx, operand_t *operand);
+
+/**
+ * @brief Analyzes operand flags and sets vector constant values accordingly
+ * Operations:
+ *  - 32 bit duplication for limm
+ *  - 16 bit quadriplication for s12 and u6
+ * This function assumes "non limm" can only be u6 or s12, and thus should only
+ * be used by functions aware of that fact and handle registers themselves
+ * @param ctx Current instruction context
+ * @param operand Operand to analyze
+ */
+void
+arc_gen_set_operand_16bit_vec_const(DisasCtxt *ctx, operand_t *operand);
+
+/*
+ * Generate code to handle the first operand (TCG_OPERAND) in a vector
+ * operation to quadriplicate/duplicatie its' value based on the provided vector
+ * operand size (OP_SIZE)
+ */
+#define ARC_GEN_VEC_FIRST_OPERAND(OP_SIZE, TCG_OPERAND)                 \
+    do {                                                                \
+        operand_t *operand_1 = &(ctx->insn.operands[1]);                \
+        if (!(operand_1->type & ARC_OPERAND_IR)) {                      \
+            arc_gen_set_ ## OP_SIZE ## _vec_const(ctx, operand_1);      \
+            tcg_gen_movi_i64(TCG_OPERAND, operand_1->value);            \
+        }                                                               \
+    } while(0)
+
+/*
+ * Generate code to handle the second operand (TCG_OPERAND) in a vector
+ * operation to quadriplicate/duplicatie its' value based on the provided vector
+ * operand size (OP_SIZE).
+ */
+#define ARC_GEN_VEC_SECOND_OPERAND(OP_SIZE, TCG_OPERAND)                \
+    do {                                                                \
+        operand_t *operand_2 = &(ctx->insn.operands[2]);                \
+        if (!(operand_2->type & ARC_OPERAND_IR)) {                      \
+            if (operand_2->type & ARC_OPERAND_LIMM &&                   \
+                operand_2->type & ARC_OPERAND_DUPLICATE){               \
+                operand_2->value = ctx->insn.operands[1].value;         \
+            } else {                                                    \
+                arc_gen_set_ ## OP_SIZE ## _vec_const(ctx, operand_2);  \
+            }                                                           \
+            tcg_gen_movi_i64(TCG_OPERAND, operand_2->value);            \
+        }                                                               \
+    } while(0)
 
 /**
  * @brief Base for the 64 bit QMACH operation.
