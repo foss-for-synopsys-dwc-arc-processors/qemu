@@ -9214,3 +9214,35 @@ arc_gen_VMPY2HU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+ARC_GEN_32BIT_INTERFACE(MPYD, PAIR, NOT_PAIR, NOT_PAIR, SIGNED, \
+                        arc_gen_mpyd_base_i64);
+
+int
+arc_gen_MPYD(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_MPYD(ctx, a, b, c);
+
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+ARC_GEN_32BIT_INTERFACE(MPYDU, PAIR, NOT_PAIR, NOT_PAIR, UNSIGNED, \
+                        arc_gen_mpyd_base_i64);
+
+int
+arc_gen_MPYDU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_MPYDU(ctx, a, b, c);
+
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
