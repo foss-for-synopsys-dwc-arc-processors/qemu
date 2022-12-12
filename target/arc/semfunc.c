@@ -600,3 +600,24 @@ arc_gen_vmpy2h_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     tcg_temp_free_i64(c_h0);
     tcg_temp_free_i64(c_h1);
 }
+
+void
+arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                        TCGv_i64 acc, bool set_n_flag,
+                        ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
+{
+    /* Instruction code */
+    ARC_GEN_VEC_FIRST_OPERAND(operand_64bit, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_64bit, c);
+
+    extract_bits(b, b, 0, 32);
+    extract_bits(c, c, 0, 32);
+
+    tcg_gen_mul_i64(acc, b, c);
+
+    tcg_gen_mov_i64(a, acc);
+
+    arc_gen_mpy_check_fflags(ctx, a, set_n_flag);
+
+}
