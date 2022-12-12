@@ -307,6 +307,23 @@ arc_gen_vmpy2h_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
 /**
+ * @brief Base for the 64 bit MPYD operation.
+ * @param ctx Current instruction context
+ * @param a First (dest) operand of the instruction
+ * @param b Second operand of the instruction
+ * @param c Third operand of the instruction
+ * @param acc The current accumulator value
+ * @param set_n_flag Whether to set the N flag or not
+ * @param extract_bits The function to be used to extract the bits
+ * @param detect_overflow The function to use to detect 64 bit overflow
+ */
+void
+arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
+                        TCGv_i64 acc, bool set_n_flag,
+                        ARC_GEN_EXTRACT_BITS_FUNC extract_bits,
+                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
+
+/**
  * @brief Any required ARC semantic function initialization procedures such as
  * evaluating the cc flag
  */
