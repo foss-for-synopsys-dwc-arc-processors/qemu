@@ -14294,27 +14294,6 @@ arc_gen_VPACK2WM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
   return DISAS_NEXT;
 }
 
-static int 
-gen_vec_add_sub_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
-                   void (*OP)(TCGv, TCGv, TCGv))
-{
-  TCGv cc_temp = tcg_temp_local_new();
-  TCGLabel *cc_done = gen_new_label();
-
-  /* Conditional execution */
-  getCCFlag(cc_temp);
-  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
-
-  /* Instruction code */
-  OP(dest, b, c);
-
-  /* Conditional execution end. */
-  gen_set_label(cc_done);
-  tcg_temp_free(cc_temp);
-
-  return DISAS_NEXT;
-}
-
 #define VEC_ADD16_SUB16_I64_W0(NAME, OP)                 \
 static void                                              \
 arc_gen_vec_##NAME##16_i64_w0(TCGv dest, TCGv b, TCGv c) \
@@ -14330,19 +14309,30 @@ arc_gen_vec_##NAME##16_i64_w0(TCGv dest, TCGv b, TCGv c) \
 VEC_ADD16_SUB16_I64_W0(add, tcg_gen_vec_add16_i64)
 VEC_ADD16_SUB16_I64_W0(sub, tcg_gen_vec_sub16_i64)
 
-#define VEC_ADD_SUB(INSN, OP)                             \
+#define VEC_ADD_SUB(INSN, OP, FIELD_SIZE)                 \
 int                                                       \
 arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c) \
 {                                                         \
-  return gen_vec_add_sub_op(ctx, dest, b, c, OP);         \
+    ARC_GEN_SEMFUNC_INIT();                               \
+                                                          \
+    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, b);   \
+    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, c);  \
+                                                          \
+    /* Instruction code */                                \
+    OP(dest, b, c);                                       \
+                                                          \
+    ARC_GEN_SEMFUNC_DEINIT();                             \
+    return DISAS_NEXT;                                    \
 }
 
-VEC_ADD_SUB(VADD2, tcg_gen_vec_add32_i64)
-VEC_ADD_SUB(VADD2H, arc_gen_vec_add16_i64_w0)
-VEC_ADD_SUB(VADD4H, tcg_gen_vec_add16_i64)
-VEC_ADD_SUB(VSUB2, tcg_gen_vec_sub32_i64)
-VEC_ADD_SUB(VSUB2H, arc_gen_vec_sub16_i64_w0)
-VEC_ADD_SUB(VSUB4H, tcg_gen_vec_sub16_i64)
+VEC_ADD_SUB(VADD2,  tcg_gen_vec_add32_i64,    32bit)
+VEC_ADD_SUB(VADD2H, arc_gen_vec_add16_i64_w0, 16bit)
+VEC_ADD_SUB(VADD4H, tcg_gen_vec_add16_i64,    16bit)
+VEC_ADD_SUB(VSUB2,  tcg_gen_vec_sub32_i64,    32bit)
+VEC_ADD_SUB(VSUB2H, arc_gen_vec_sub16_i64_w0, 16bit)
+VEC_ADD_SUB(VSUB4H, tcg_gen_vec_sub16_i64,    16bit)
+
+
 
 static void
 arc_gen_vmac2_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
@@ -14375,55 +14365,52 @@ arc_gen_vmac2_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
   tcg_temp_free(t4);
 }
 
-#define ARC_GEN_VEC_MAC2H(INSN, OP)                         \
+#define ARC_GEN_VEC_MAC2H(INSN, OP, FIELD_SIZE)             \
 int                                                         \
 arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
 {                                                           \
-  TCGv cc_temp = tcg_temp_local_new();                      \
-  TCGLabel *cc_done = gen_new_label();                      \
+    ARC_GEN_SEMFUNC_INIT();                                 \
                                                             \
-  getCCFlag(cc_temp);                                       \
-  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);     \
+    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, b);     \
+    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, c);    \
                                                             \
-  arc_gen_vmac2_op(ctx, dest, b, c, OP);                    \
+    arc_gen_vmac2_op(ctx, dest, b, c, OP);                  \
                                                             \
-  gen_set_label(cc_done);                                   \
-  tcg_temp_free(cc_temp);                                   \
+    ARC_GEN_SEMFUNC_DEINIT();                               \
                                                             \
-  return DISAS_NEXT;                                        \
+    return DISAS_NEXT;                                      \
 }  
 
-ARC_GEN_VEC_MAC2H(VMAC2H, tcg_gen_sextract_tl)
-ARC_GEN_VEC_MAC2H(VMAC2HU, tcg_gen_extract_tl)
+ARC_GEN_VEC_MAC2H(VMAC2H, tcg_gen_sextract_tl, 16bit)
+ARC_GEN_VEC_MAC2H(VMAC2HU, tcg_gen_extract_tl, 16bit)
 
-#define ARC_GEN_VEC_ADD_SUB(INSN, FIELD, OP)                \
-int                                                         \
-arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
-{                                                           \
-  TCGv t1;                                                  \
-  TCGv cc_temp = tcg_temp_local_new();                      \
-  TCGLabel *cc_done = gen_new_label();                      \
-                                                            \
-  getCCFlag(cc_temp);                                       \
-  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);     \
-                                                            \
-  t1 = tcg_temp_new();                                      \
-  ARC_GEN_CMPL2_##FIELD##_I64(t1, c);                       \
-  OP(dest, b, t1);                                          \
-  tcg_temp_free(t1);                                        \
-                                                            \
-  gen_set_label(cc_done);                                   \
-  tcg_temp_free(cc_temp);                                   \
-                                                            \
-  return DISAS_NEXT;                                        \
+#define ARC_GEN_VEC_ADD_SUB(INSN, FIELD, OP, FIELD_SIZE)      \
+int                                                           \
+arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
+{                                                             \
+    TCGv t1;                                                  \
+    ARC_GEN_SEMFUNC_INIT();                                   \
+                                                              \
+    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, b);       \
+    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, c);      \
+                                                              \
+    t1 = tcg_temp_new();                                      \
+    ARC_GEN_CMPL2_##FIELD##_I64(t1, c);                       \
+    OP(dest, b, t1);                                          \
+    tcg_temp_free(t1);                                        \
+                                                              \
+    ARC_GEN_SEMFUNC_DEINIT();                                 \
+                                                              \
+    return DISAS_NEXT;                                        \
 }
 
-ARC_GEN_VEC_ADD_SUB(VADDSUB, W1, tcg_gen_vec_add32_i64)
-ARC_GEN_VEC_ADD_SUB(VADDSUB2H, H1, arc_gen_vec_add16_w0_i64)
-ARC_GEN_VEC_ADD_SUB(VADDSUB4H, H1_H3, tcg_gen_vec_add16_i64)
-ARC_GEN_VEC_ADD_SUB(VSUBADD, W0, tcg_gen_vec_add32_i64)
-ARC_GEN_VEC_ADD_SUB(VSUBADD2H, H0, arc_gen_vec_add16_w0_i64)
-ARC_GEN_VEC_ADD_SUB(VSUBADD4H, H0_H2, tcg_gen_vec_add16_i64)
+
+ARC_GEN_VEC_ADD_SUB(VADDSUB, W1, tcg_gen_vec_add32_i64,      32bit)
+ARC_GEN_VEC_ADD_SUB(VADDSUB2H, H1, arc_gen_vec_add16_w0_i64, 16bit)
+ARC_GEN_VEC_ADD_SUB(VADDSUB4H, H1_H3, tcg_gen_vec_add16_i64, 16bit)
+ARC_GEN_VEC_ADD_SUB(VSUBADD, W0, tcg_gen_vec_add32_i64,      32bit)
+ARC_GEN_VEC_ADD_SUB(VSUBADD2H, H0, arc_gen_vec_add16_w0_i64, 16bit)
+ARC_GEN_VEC_ADD_SUB(VSUBADD4H, H0_H2, tcg_gen_vec_add16_i64, 16bit)
 
 int
 arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
