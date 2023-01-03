@@ -242,52 +242,52 @@ test_nr:
 
 ; vaddsub a,limm,c 00101110001111100111CCCCCCAAAAAA
 ;   a.w0 = limm + c.w0;
-;   a.w1 = 0 - c.w1;
+;   a.w1 = limm - c.w1;
 
 ; Test case 8
 ; r0 <- limm, r1
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
 ;   (0x00000001, 0x00000002) [r1]
 ;   --------------------------------
-;   (0xffffffff, 0x1234567a) [r0]
+;   (0x12345677, 0x1234567a) [r0]
 ;
   prep_test_case
   set_reg64 r1, 0x00000001, 0x00000002
   vaddsub r0, 0x12345678, r1 
-  check_reg64 r0, 0xffffffff, 0x1234567a
+  check_reg64 r0, 0x12345677, 0x1234567a
 
 ;=== vaddsub a,b,limm ===
 
 ; vaddsub a,b,limm 00101bbb001111100BBB111110AAAAAA
 ;   a.w0 = b.w0 + limm;
-;   a.w1 = b.w1 - 0;
+;   a.w1 = b.w1 - limm;
 
 ; Test case 9
 ; r0 <- r1, limm
 ;
 ;   (0x00000001, 0x00000002) [r1]
 ;        -           +
-;   (         0, 0x12345678) [limm]
+;   (0xedcba989, 0x12345678) [limm]
 ;   --------------------------------
-;   (       0x1, 0x1234567a) [r0]
+;   (0xedcba989, 0x1234567a) [r0]
 ;
   prep_test_case
   set_reg64 r1, 0x00000001, 0x00000002
   vaddsub r0, r1, 0x12345678 
-  check_reg64 r0, 0x1, 0x1234567a
+  check_reg64 r0, 0xedcba989, 0x1234567a
 
 ;=== vaddsub 0,limm,c ===
 
 ; vaddsub 0,limm,c 00101110001111100111CCCCCC111110
 ;   0 = limm + c.w0;
-;   0 = 0 + c.w1;
+;   0 = limm + c.w1;
 
 ; Test case 10
 ; 0 <- limm, r0
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
 ;   (0x00000001, 0x00000002) [r0]
 ;   --------------------------------
@@ -301,14 +301,14 @@ test_nr:
 
 ; vaddsub 0,b,limm 00101bbb001111100BBB111110111110
 ;   0 = b.w0 + limm;
-;   0 = b.w1 - 0;
+;   0 = b.w1 - limm;
 
 ; Test case 11
 ; 0 <- r0, limm
 ;
 ;   (0x00000001, 0x00000002) [r0]
 ;        -           +
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;   --------------------------------
 ;   (----------, ----------) [0]
 ;
@@ -321,7 +321,7 @@ test_nr:
 ; vaddsub<.cc> b,b,limm 00101bbb111111100BBB1111100QQQQQ
 ;   if (cc) {
 ;     b.w0 = b.w0 + limm;
-;     b.w1 = b.w1 - 0;
+;     b.w1 = b.w1 - limm;
 ;   }
 
 ; Test case 12.1
@@ -330,15 +330,15 @@ test_nr:
 ;
 ;   (0x00000001, 0x00000002) [r0]
 ;        -           +
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;   --------------------------------
-;   (       0x1, 0x1234567a) [r0]
+;   (0xedcba989, 0x1234567a) [r0]
 ;
   prep_test_case
   set_reg64 r0, 0x00000001, 0x00000002
   add.f    0, 0, 0       ; Z=1
   vaddsub.z r0, r0, 0x12345678 
-  check_reg64 r0, 0x1, 0x1234567a
+  check_reg64 r0, 0xedcba989, 0x1234567a
 
 ; Test case 12.2
 ; CC=0
@@ -353,14 +353,14 @@ test_nr:
 ; vaddsub<.cc> 0,limm,c 00101110111111100111CCCCCC0QQQQQ
 ;   if (cc) {
 ;     0 = limm + c.w0;
-;     0 = 0 - c.w1;
+;     0 = limm - c.w1;
 ;   }
 
 ; Test case 13.1
 ; CC=1
 ; 0 <- limm, r0 (cc)
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
 ;   (0x00000001, 0x00000002) [r0]
 ;   --------------------------------
@@ -382,20 +382,20 @@ test_nr:
 
 ; vaddsub a,limm,u6 00101110011111100111uuuuuuAAAAAA
 ;   a.w0 = limm + u6;
-;   a.w1 = 0 - u6;
+;   a.w1 = limm - u6;
 
 ; Test case 14
 ; r0 <- limm, u6
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
 ;   (      0x3f,       0x3f) [u6]
 ;   --------------------------------
-;   (0xffffffc1, 0x123456b7) [r0]
+;   (0x12345639, 0x123456b7) [r0]
 ;
   prep_test_case
   vaddsub r0, 0x12345678, 0x3f 
-  check_reg64 r0, 0xffffffc1, 0x123456b7
+  check_reg64 r0, 0x12345639, 0x123456b7
 
 ;=== vaddsub 0,limm,u6 ===
 
@@ -406,7 +406,7 @@ test_nr:
 ; Test case 15
 ; 0 <- limm, u6
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
 ;   (      0x3f,       0x3f) [u6]
 ;   --------------------------------
@@ -420,14 +420,14 @@ test_nr:
 ; vaddsub<.cc> 0,limm,u6 00101110111111100111uuuuuu1QQQQQ
 ;   if (cc) {
 ;     0 = limm + u6;
-;     0 = 0 - u6;
+;     0 = limm - u6;
 ;   }
 
 ; Test case 16.1
 ; CC=1
 ; 0 <- limm, u6 (cc)
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
 ;   (      0x3f,       0x3f) [u6]
 ;   --------------------------------
@@ -447,12 +447,12 @@ test_nr:
 
 ; vaddsub 0,limm,s12 00101110101111100111ssssssSSSSSS
 ;   0 = limm + s12;
-;   0 = 0 - s12;
+;   0 = limm - s12;
 
 ; Test case 17
 ; 0 <- limm, s12
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
 ;   (0xfffffffe, 0xfffffffe) [s12]
 ;   --------------------------------
@@ -465,14 +465,14 @@ test_nr:
 
 ; vaddsub a,limm,limm 00101110001111100111111110AAAAAA
 ;   a.w0 = limm + limm;
-;   a.w1 = 0 - 0;
+;   a.w1 = limm - limm;
 
 ; Test case 18
 ; r0 <- limm, limm
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;   --------------------------------
 ;   (         0, 0x2468acf0) [r0]
 ;
@@ -484,14 +484,14 @@ test_nr:
 
 ; vaddsub 0,limm,limm 00101110001111100111111110111110
 ;   0 = limm + limm;
-;   0 = 0 - 0;
+;   0 = limm - limm;
 
 ; Test case 19
 ; 0 <- limm, limm
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;   --------------------------------
 ;   (----------, ----------) [0]
 ;
@@ -503,15 +503,15 @@ test_nr:
 ; vaddsub<.cc> 0,limm,limm 001011101111111001111111100QQQQQ
 ;   if (cc) {
 ;     0 = limm + limm;
-;     0 = 0 - 0;
+;     0 = limm - limm;
 ;   }
 
 ; Test case 20.1
 ; CC=1
 ;
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;        -           +
-;   (         0, 0x12345678) [limm]
+;   (0x12345678, 0x12345678) [limm]
 ;   --------------------------------
 ;   (----------, ----------) [0]
 ;

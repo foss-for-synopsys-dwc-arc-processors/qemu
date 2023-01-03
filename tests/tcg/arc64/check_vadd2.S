@@ -236,17 +236,17 @@ test_nr:
 ; vadd2 a,limm,c 00101110001111000111CCCCCCAAAAAA
 ; r0 <- limm, r1
 ;   r0.w0 = limm + r1.w0
-;   r0.w1 =   0  + r1.w1
+;   r0.w1 = limm + r1.w1
 ; 
-;    (          0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
 ;  + ( 0xedcba988, 0xedcba988) [r1]
 ; -----------------------------------
-;  = ( 0xedcba988,        0x0) [r0]
+;  = (        0x0,        0x0) [r0]
 ; 
   prep_test_case
   set_reg64 r1, 0xedcba988, 0xedcba988
   vadd2 r0, 0x12345678, r1
-  check_reg64 r0, 0xedcba988, 0x0
+  check_reg64 r0, 0x0, 0x0
 
 ;=== vadd2 a,b,limm ===
 
@@ -254,17 +254,17 @@ test_nr:
 ; vadd2 a,b,limm 00101bbb001111000BBB111110AAAAAA
 ; r0 <- r1, limm
 ;   r0.w0 = r1.w0 + limm
-;   r0.w1 = r1.w1 + 0
+;   r0.w1 = r1.w1 + limm
 ; 
 ;    ( 0xedcba988, 0xedcba988) [r1]
-;  + (          0, 0x12345678) [limm]
+;  + ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
-;  = ( 0xedcba988,        0x0) [r0]
+;  = (        0x0,        0x0) [r0]
 ; 
   prep_test_case
   set_reg64 r1, 0xedcba988, 0xedcba988
   vadd2 r0, r1, 0x12345678
-  check_reg64 r0, 0xedcba988, 0x0
+  check_reg64 r0, 0x0, 0x0
 
 ;=== vadd2 0,limm,c ===
 
@@ -272,9 +272,9 @@ test_nr:
 ; vadd2 0,limm,c 00101110001111000111CCCCCC111110
 ; 0 <- limm, r1
 ;   0 = limm + r1.w0
-;   0 = 0 + r1.w1
+;   0 = limm + r1.w1
 ; 
-;    (          0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
 ;  + ( 0xedcba988, 0xedcba988) [r1]
 ; -----------------------------------
 ;  = null destination          [0]
@@ -289,10 +289,10 @@ test_nr:
 ; vadd2 0,b,limm 00101bbb001111000BBB111110111110
 ; 0 <- r1, limm
 ;   0 = r1.w0 + limm
-;   0 = r1.w1 + 0
+;   0 = r1.w1 + limm
 ; 
 ;    ( 0xedcba988, 0xedcba988) [r1]
-;  + (          0, 0x12345678) [limm]
+;  + ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
 ;  = null destination          [0]
 ; 
@@ -308,21 +308,21 @@ test_nr:
 ; Testing when C=1, so vadd2 is executed
 ; if (cc) {
 ;   r0.w0 = r0.w0 + limm
-;   r0.w1 = r0.w1 + 0
+;   r0.w1 = r0.w1 + limm
 ; }
 ; 
 ; [C=1]
 ;    (0xffffffe0, 0x80000000) [r0]
-;  + (         0, 0x12345678) [limm]
+;  + (0x12345678, 0x12345678) [limm]
 ; -----------------------------------
-;  = (0xffffffe0, 0x92345678) [r0]
+;  = (0x12345658, 0x92345678) [r0]
 ; 
   prep_test_case
   set_reg64 r0, 0xffffffe0, 0x80000000
   add.f 0, r0, r0         ; ...C=1
   vadd2.c r0, r0, 0x12345678
   add.f 0, 0, 1           ; so that CHECK_FLAGS_REMAINED_ZERO won't fail.
-  check_reg64 r0, 0xffffffe0, 0x92345678
+  check_reg64 r0, 0x12345658, 0x92345678
 
 ; Test case 12.2
 ; vadd2<.cc> b,b,limm 00101bbb111111000BBB1111100QQQQQ
@@ -331,7 +331,7 @@ test_nr:
 ; if (cc) {
 ;   // code not executed
 ;   r0.w0 = r0.w0 + limm
-;   r0.w1 = r0.w1 + 0
+;   r0.w1 = r0.w1 + limm
 ; }
 ; 
 ; [C=0]
@@ -350,11 +350,11 @@ test_nr:
 ; Testing when C=1, so vadd2 is executed
 ; if (cc) {
 ;   0 = limm + r0.w0
-;   0 = 0 + r0.w1
+;   0 = limm + r0.w1
 ; }
 ; 
 ; [C=1]
-;    (         0, 0x12345678) [limm]
+;    (0x12345678, 0x12345678) [limm]
 ;  + (0xffffffe0, 0x80000000) [r0]
 ; -----------------------------------
 ;  = null destination         [0]
@@ -372,7 +372,7 @@ test_nr:
 ; if (cc) {
 ;   // code not executed
 ;   0 = limm + r0.w0
-;   0 = 0 + r0.w1
+;   0 = limm + r0.w1
 ; }
 ; 
 ; [C=0]
@@ -388,16 +388,16 @@ test_nr:
 ; vadd2 a,limm,u6 00101110011111000111uuuuuuAAAAAA
 ; r0 <- limm, u6
 ;   r0.w0 = limm + u6
-;   r0.w1 = 0 + u6
+;   r0.w1 = limm + u6
 ; 
-;    (         0, 0x12345678) [limm]
+;    (0x12345678, 0x12345678) [limm]
 ;  + (      0x3f,       0x3f) [u6]
 ; -----------------------------------
-;  = (      0x3f, 0x123456B7) [r0]
+;  = (0x123456B7, 0x123456B7) [r0]
 ; 
   prep_test_case
   vadd2 r0, 0x12345678, 0x3f
-  check_reg64 r0, 0x3f, 0x123456B7
+  check_reg64 r0, 0x123456B7, 0x123456B7
 
 ;;=== vadd2 0,limm,u6 ===
 
@@ -405,9 +405,9 @@ test_nr:
 ; vadd2 0,limm,u6 00101110011111000111uuuuuu111110
 ; 0 <- limm, u6
 ;   0 = limm + u6
-;   0 = 0 + u6
+;   0 = limm + u6
 ; 
-;    (         0, 0x12345678) [limm]
+;    (0x12345678, 0x12345678) [limm]
 ;  + (      0x3f,       0x3f) [u6]
 ; -----------------------------------
 ;  = null destination         [0]
@@ -423,12 +423,12 @@ test_nr:
 ; Testing when C=1, so vadd2 is executed
 ; if (cc) {
 ;   0 = limm + u6
-;   0 = 0 + u6
+;   0 = limm + u6
 ; }
 ; 
 ; [C=1]
-;    (   0, 0x12345678) [limm]
-;  + (0x3f,       0x3f) [u6] 
+;    (0x12345678, 0x12345678) [limm]
+;  + (      0x3f,       0x3f) [u6] 
 ; -----------------------------------
 ;  = null destination   [0]
 ; 
@@ -445,7 +445,7 @@ test_nr:
 ; if (cc) {
 ;   // code not executed
 ;   0 = limm + u6
-;   0 = 0 + u6
+;   0 = limm + u6
 ; }
 ; 
 ; [C=0]
@@ -460,7 +460,7 @@ test_nr:
 ; vadd2 0,limm,s12 00101110101111000111ssssssSSSSSS
 ; 0 <- limm, s12
 ;   0 = limm + s12
-;   0 = 0 + s12
+;   0 = limm + s12
 ; 
 ;    (    0, 0x12345678) [limm]
 ;  + (-2048,      -2048) [s12] 
@@ -476,16 +476,16 @@ test_nr:
 ; vadd2 a,limm,limm 00101110001111000111111110AAAAAA
 ; r0 <- limm, limm
 ;   r0.w0 = limm + limm
-;   r0.w1 = 0 + 0
+;   r0.w1 = limm + limm
 ; 
-;    (  0, 0x12345678) [limm]
-;  + (  0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
+;  + ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
-;  = (0x0, 0x2468ACF0) [r0]
+;  = ( 0x2468ACF0, 0x2468ACF0) [r0]
 ; 
   prep_test_case
   vadd2 r0, 0x12345678, 0x12345678
-  check_reg64 r0, 0x0, 0x2468ACF0
+  check_reg64 r0, 0x2468ACF0, 0x2468ACF0
 
 ;=== vadd2 0,limm,limm ===
 
@@ -493,10 +493,10 @@ test_nr:
 ; vadd2 0,limm,limm 00101110001111000111111110111110
 ; 0 <- limm, limm
 ;   0 = limm + limm
-;   0 = 0 + 0 
+;   0 = limm + limm
 ; 
-;    (0, 0x12345678)  [limm]
-;  + (0, 0x12345678)  [limm]
+;    (0x12345678, 0x12345678)  [limm]
+;  + (0x12345678, 0x12345678)  [limm]
 ; -----------------------------------
 ;  = null destination [0]
 ;
@@ -511,12 +511,12 @@ test_nr:
 ; Testing when C=1, so vadd2 is executed
 ; if (cc) {
 ;   0 = limm + limm
-;   0 = 0 + 0
+;   0 = limm + limm
 ; }
 ; 
 ; [C=1]
-;    (0, 0x12345678)  [limm]
-;  + (0, 0x12345678)  [limm]
+;    (0x12345678, 0x12345678)  [limm]
+;  + (0x12345678, 0x12345678)  [limm]
 ; -----------------------------------
 ;  = null destination [0]
 ; 
