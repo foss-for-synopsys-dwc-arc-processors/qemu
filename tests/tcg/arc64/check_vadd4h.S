@@ -258,18 +258,18 @@ test_nr:
 ; r0 <- limm, r1
 ;   r0.h0 = limm.h0 + r1.h0
 ;   r0.h1 = limm.h1 + r1.h1
-;   r0.h2 = 0 + r1.h2
-;   r0.h3 = 0 + r1.h3
+;   r0.h2 = limm.h0 + r1.h2
+;   r0.h3 = limm.h1 + r1.h3
 ; 
-;    (     0,      0, 0xf800, 0xf800) [limm]
+;    (0xf800, 0xf800, 0xf800, 0xf800) [limm]
 ;  + (0x8005, 0x8004, 0x1000, 0x0800) [r1]
 ; -----------------------------------
-;  = (0x8005, 0x8004, 0x0800, 0x0000) [r0]
+;  = (0x7805, 0x7804, 0x0800, 0x0000) [r0]
 ; 
   prep_test_case
   set_reg64 r1, 0x80058004, 0x10000800
   vadd4h r0, 0xf800f800, r1
-  check_reg64 r0, 0x80058004, 0x08000000
+  check_reg64 r0, 0x78057804, 0x08000000
 
 ;=== vadd4h a,b,limm ===
 
@@ -278,18 +278,18 @@ test_nr:
 ; r0 <- r1, limm
 ;   r0.h0 = r1.h0 + limm.h0
 ;   r0.h1 = r1.h1 + limm.h1
-;   r0.h2 = r1.h2 + 0
-;   r0.h3 = r1.h3 + 0
+;   r0.h2 = r1.h2 + limm.h0
+;   r0.h3 = r1.h3 + limm.h1
 ; 
 ;    (0x8005, 0x8004, 0x1000, 0x0800) [r1]
-;  + (     0,      0, 0xf800, 0xf800) [limm] 
+;  + (0xf800, 0xf800, 0xf800, 0xf800) [limm] 
 ; -----------------------------------
-;  = (0x8005, 0x8004, 0x0800, 0x0000) [r0]
+;  = (0x7805, 0x7804, 0x0800, 0x0000) [r0]
 ; 
   prep_test_case
   set_reg64 r1, 0x80058004, 0x10000800
   vadd4h r0, r1, 0xf800f800
-  check_reg64 r0, 0x80058004, 0x08000000
+  check_reg64 r0, 0x78057804, 0x08000000
 
 ;=== vadd4h 0,limm,c ===
 
@@ -298,10 +298,10 @@ test_nr:
 ; 0 <- limm, r1
 ;   0 = limm.h0 + r1.h0
 ;   0 = limm.h1 + r1.h1
-;   0 = 0 + r1.h2
-;   0 = 0 + r1.h3
+;   0 = limm.h0 + r1.h2
+;   0 = limm.h1 + r1.h3
 ; 
-;    (     0,      0, 0xf800, 0xf800) [limm]
+;    (0xf800, 0xf800, 0xf800, 0xf800) [limm]
 ;  + (0x8005, 0x8004, 0x1000, 0x0800) [r1]
 ; -----------------------------------
 ;  = null destination                 [0]
@@ -317,11 +317,11 @@ test_nr:
 ; 0 <- r1, limm
 ;   0 = r1.h0 + limm.h0
 ;   0 = r1.h1 + limm.h1
-;   0 = r1.h2 + 0
-;   0 = r1.h3 + 0
+;   0 = r1.h2 + limm.h0
+;   0 = r1.h3 + limm.h1
 ; 
 ;    (0x8005, 0x8004, 0x1000, 0x0800) [r1]
-;  + (     0,      0, 0xf800, 0xf800) [limm] 
+;  + (0xf800, 0xf800, 0xf800, 0xf800) [limm] 
 ; -----------------------------------
 ;  = null destination                 [0]
 ; 
@@ -338,22 +338,22 @@ test_nr:
 ; if (cc) {
 ;   r0.h0 = r0.h0 + limm.h0
 ;   r0.h1 = r0.h1 + limm.h1
-;   r0.h2 = r0.h2 + 0
-;   r0.h3 = r0.h3 + 0
+;   r0.h2 = r0.h2 + limm.h0
+;   r0.h3 = r0.h3 + limm.h1
 ; }
 ; 
 ; [C=1]
-;    (0x8005, 0x8004, 0x8000, 0x0800) [r0]
-;  + (     0,      0, 0x8000, 0xf800) [limm] 
+;    (0x8000,  0x0800, 0x8000, 0x0800) [r0]
+;  + (0x8000, 0xf800, 0x8000, 0xf800) [limm] 
 ; -----------------------------------
-;  = (0x8005, 0x8004, 0x0000, 0x0000) [0]
+;  = (0x0000, 0x0000, 0x0000, 0x0000) [0]
 ; 
   prep_test_case
-  set_reg64 r0, 0x80058004, 0x80000800
+  set_reg64 r0, 0x80000800, 0x80000800
   add.f 0, r0, r0         ; ...C=1
   vadd4h.c r0, r0, 0x8000f800
   add.f 0, 0, 1           ; so that CHECK_FLAGS_REMAINED_ZERO won't fail.
-  check_reg64 r0, 0x80058004, 0x00000000
+  check_reg64 r0, 0x00000000, 0x00000000
 
 ; Test case 12.2
 ; vadd4h<.cc> b,b,limm 00101bbb111110000BBB1111100QQQQQ
@@ -363,8 +363,8 @@ test_nr:
 ;   // code not executed
 ;   r0.h0 = r0.h0 + limm.h0
 ;   r0.h1 = r0.h1 + limm.h1
-;   r0.h2 = r0.h2 + 0
-;   r0.h3 = r0.h3 + 0
+;   r0.h2 = r0.h2 + limm.h0
+;   r0.h3 = r0.h3 + limm.h1
 ; }
 ; 
 ; [C=0]
@@ -384,12 +384,12 @@ test_nr:
 ; if (cc) {
 ;   0 = limm.h0 + r0.h0
 ;   0 = limm.h1 + r0.h1
-;   0 = 0 + r0.h2
-;   0 = 0 + r0.h3
+;   0 = limm.h0 + r0.h2
+;   0 = limm.h1 + r0.h3
 ; }
 ; 
 ; [C=1]
-;    (     0,      0, 0x8000, 0xf800) [limm]
+;    (0x8000, 0xf800, 0x8000, 0xf800) [limm]
 ;  + (0x8005, 0x8004, 0x8000, 0x0800) [r0] 
 ; -----------------------------------
 ;  = null destination                 [0]
@@ -408,8 +408,8 @@ test_nr:
 ;   // code not executed
 ;   0 = limm.h0 + r0.h0
 ;   0 = limm.h1 + r0.h1
-;   0 = 0 + r0.h2
-;   0 = 0 + r0.h3
+;   0 = limm.h0 + r0.h2
+;   0 = limm.h1 + r0.h3
 ; }
 ; 
 ; [C=0]
@@ -426,17 +426,17 @@ test_nr:
 ; r0 <- limm, u6
 ;   r0.h0 = limm.h0 + u6
 ;   r0.h1 = limm.h1 + u6
-;   r0.h2 = 0 + u6
-;   r0.h3 = 0 + u6
+;   r0.h2 = limm.h0 + u6
+;   r0.h3 = limm.h1 + u6
 ; 
-;    (     0,      0, 0xffc1, 0x0000) [limm]
+;    (0xffc1, 0x0000, 0xffc1, 0x0000) [limm]
 ;  + (  0x3f,   0x3f,   0x3f,   0x3f) [u6] 
 ; -----------------------------------
-;  = (0x003f, 0x003f, 0x0000, 0x003f) [r0]
+;  = (0x0000, 0x003f, 0x0000, 0x003f) [r0]
 ; 
   prep_test_case
   vadd4h r0, 0xffc10000, 0x3f 
-  check_reg64 r0, 0x003f003f, 0x0000003f
+  check_reg64 r0, 0x0000003f, 0x0000003f
 
 ;=== vadd4h 0,limm,u6 ===
 
@@ -445,10 +445,10 @@ test_nr:
 ; 0 <- limm, u6
 ;   0 = limm.h0 + u6
 ;   0 = limm.h1 + u6
-;   0 = 0 + u6
-;   0 = 0 + u6
+;   0 = limm.h0 + u6
+;   0 = limm.h1 + u6
 ; 
-;    (     0,      0, 0xffc1, 0x0000) [limm]
+;    (0xffc1, 0x0000, 0xffc1, 0x0000) [limm]
 ;  + (  0x3f,   0x3f,   0x3f,   0x3f) [u6] 
 ; -----------------------------------
 ;  = null destination                 [0]
@@ -465,12 +465,12 @@ test_nr:
 ; if (cc) {
 ;   0 = limm.h0 + u6
 ;   0 = limm.h1 + u6
-;   0 = 0 + u6
-;   0 = 0 + u6
+;   0 = limm.h0 + u6
+;   0 = limm.h1 + u6
 ; }
 ; 
 ; [C=1]
-;    (     0,      0, 0xffc1, 0x0000) [limm]
+;    (0xffc1, 0x0000, 0xffc1, 0x0000) [limm]
 ;  + (  0x3f,   0x3f,   0x3f,   0x3f) [u6] 
 ; -----------------------------------
 ;  = null destination                 [0]
@@ -489,8 +489,8 @@ test_nr:
 ;   // code not executed
 ;   0 = limm.h0 + u6
 ;   0 = limm.h1 + u6
-;   0 = 0 + u6
-;   0 = 0 + u6
+;   0 = limm.h0 + u6
+;   0 = limm.h1 + u6
 ; }
 ; 
 ; [C=0]
@@ -506,10 +506,10 @@ test_nr:
 ; 0 <- limm, s12
 ;   0 = limm.h0 + s12
 ;   0 = limm.h1 + s12
-;   0 = 0 + s12
-;   0 = 0 + s12
+;   0 = limm.h0 + s12
+;   0 = limm.h1 + s12
 ; 
-;    (     0,      0, 0xffc1, 0x0000) [limm]
+;    (0xffc1, 0x0000, 0xffc1, 0x0000) [limm]
 ;  + ( -2048,  -2048,  -2048,  -2048) [s12] 
 ; -----------------------------------
 ;  = null destination                 [0]
@@ -524,17 +524,17 @@ test_nr:
 ; r0 <- limm, limm
 ;   r0 = limm.h0 + limm.h0
 ;   r0 = limm.h1 + limm.h1
-;   r0 = 0
-;   r0 = 0
+;   r0 = limm.h0 + limm.h0
+;   r0 = limm.h1 + limm.h1
 ; 
-;    (     0,      0, 0x8003, 0x8002) [limm]
-;  + (     0,      0, 0x8003, 0x8002) [limm]
+;    (0x8003, 0x8002, 0x8003, 0x8002) [limm]
+;  + (0x8003, 0x8002, 0x8003, 0x8002) [limm]
 ; -----------------------------------
-;  = (0x0000, 0x0000, 0x0006, 0x0004) [r0]
+;  = (0x0006, 0x0004, 0x0006, 0x0004) [r0]
 ; 
   prep_test_case
   vadd4h r0, 0x80038002, 0x80038002
-  check_reg64 r0, 0x00000000, 0x00060004
+  check_reg64 r0, 0x00060004, 0x00060004
 
 ;=== vadd4h 0,limm,limm ===
 
@@ -543,11 +543,11 @@ test_nr:
 ; 0 <- limm, limm
 ;   0 = limm.h0 + limm.h0
 ;   0 = limm.h1 + limm.h1
-;   0 = 0
-;   0 = 0
+;   0 = limm.h0 + limm.h0
+;   0 = limm.h1 + limm.h1
 ; 
-;    (     0,      0, 0x8003, 0x8002) [limm]
-;  + (     0,      0, 0x8003, 0x8002) [limm]
+;    (0x8003, 0x8002, 0x8003, 0x8002) [limm]
+;  + (0x8003, 0x8002, 0x8003, 0x8002) [limm]
 ; -----------------------------------
 ;  = null destination                 [0]
 ; 
@@ -563,13 +563,13 @@ test_nr:
 ; if (cc) {
 ;   0 = limm.h0 + limm.h0
 ;   0 = limm.h1 + limm.h1
-;   0 = 0
-;   0 = 0
+;   0 = limm.h0 + limm.h0
+;   0 = limm.h1 + limm.h1
 ; }
 ; 
 ; [C=1]
-;    (     0,      0, 0x8003, 0x8002) [limm]
-;  + (     0,      0, 0x8003, 0x8002) [limm]
+;    (0x8003, 0x8002, 0x8003, 0x8002) [limm]
+;  + (0x8003, 0x8002, 0x8003, 0x8002) [limm]
 ; -----------------------------------
 ;  = null destination                 [0]
 ; 
@@ -587,8 +587,8 @@ test_nr:
 ;   // code not executed
 ;   0 = limm.h0 + limm.h0
 ;   0 = limm.h1 + limm.h1
-;   0 = 0
-;   0 = 0
+;   0 = limm.h0 + limm.h0
+;   0 = limm.h1 + limm.h1
 ; }
 ; 
 ; [C=0]

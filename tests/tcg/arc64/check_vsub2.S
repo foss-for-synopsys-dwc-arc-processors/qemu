@@ -237,17 +237,17 @@ test_nr:
 ; vsub2 a,limm,c 00101110001111010111CCCCCCAAAAAA
 ; r0 <- limm, r1
 ;   r0.w0 = limm - r1.w0
-;   r0.w1 =   0  - r1.w1
+;   r0.w1 = limm - r1.w1
 ; 
-;    (          0, 0x12345678) [limm]
-;  - (          1, 0x12345678) [r1]
+;    ( 0x12345678, 0x12345678) [limm]
+;  - ( 0x12345678, 0x12345678) [r1]
 ; -----------------------------------
-;  = ( 0xffffffff,        0x0) [r0]
+;  = (        0x0,        0x0) [r0]
 ; 
   prep_test_case
-  set_reg64 r1, 1, 0x12345678
+  set_reg64 r1, 0x12345678, 0x12345678
   vsub2 r0, 0x12345678, r1
-  check_reg64 r0, 0xffffffff, 0x0
+  check_reg64 r0, 0x0, 0x0
 
 ;=== vsub2 a,b,limm ===
 
@@ -255,17 +255,17 @@ test_nr:
 ; vsub2 a,b,limm 00101bbb001111010BBB111110AAAAAA
 ; r0 <- r1, limm
 ;   r0.w0 = r1.w0 - limm
-;   r0.w1 = r1.w1 - 0
+;   r0.w1 = r1.w1 - limm
 ; 
 ;    (          1, 0x12345678) [r1]
-;  - (          0, 0x12345678) [limm]
+;  - ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
-;  = (          1,        0x0) [r0]
+;  = ( 0xedcba989,        0x0) [r0]
 ; 
   prep_test_case
   set_reg64 r1, 1, 0x12345678
   vsub2 r0, r1, 0x12345678
-  check_reg64 r0, 1, 0x0
+  check_reg64 r0, 0xedcba989, 0x0
 
 ;=== vsub2 0,limm,c ===
 
@@ -273,9 +273,9 @@ test_nr:
 ; vsub2 0,limm,c 00101110001111010111CCCCCC111110
 ; 0 <- limm, r1
 ;   0 = limm - r1.w0
-;   0 = 0 - r1.w1
+;   0 = limm - r1.w1
 ; 
-;    (          0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
 ;  - (          1, 0x12345678) [r1]
 ; -----------------------------------
 ;  = null destination          [0]
@@ -290,10 +290,10 @@ test_nr:
 ; vsub2 0,b,limm 00101bbb001111010BBB111110111110
 ; 0 <- r1, limm
 ;   0 = r1.w0 - limm
-;   0 = r1.w1 - 0
+;   0 = r1.w1 - limm
 ; 
 ;    (          1, 0x12345678) [r1]
-;  - (          0, 0x12345678) [limm]
+;  - ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
 ;  = null destination          [0]
 ; 
@@ -309,22 +309,22 @@ test_nr:
 ; Testing when C=1, so vsub2 is executed
 ; if (cc) {
 ;   r0.w0 = r0.w0 - limm
-;   r0.w1 = r0.w1 - 0
+;   r0.w1 = r0.w1 - limm
 ; }
 ; 
 ; [C=1]
-;    (0x80000000, 0x12345678) [r0]
-;  - (         0, 0x12345678) [limm]
+;    (0x12345678, 0x12345678) [r0]
+;  - (0x12345678, 0x12345678) [limm]
 ; -----------------------------------
-;  = (0x80000000,        0x0) [r0]
+;  = (       0x0,        0x0) [r0]
 ; 
   prep_test_case
-  set_reg64 r0, 0x80000000, 0x12345678
+  set_reg64 r0, 0x12345678, 0x12345678
   set_reg64 r1, 0x80000000, 0x80000000
   add.f 0, r1, r1         ; ...C=1
   vsub2.c r0, r0, 0x12345678
   add.f 0, 0, 1           ; so that CHECK_FLAGS_REMAINED_ZERO won't fail.
-  check_reg64 r0, 0x80000000, 0x0
+  check_reg64 r0, 0x0, 0x0
 
 ; Test case 12.2
 ; vsub2<.cc> b,b,limm 00101bbb111111010BBB1111100QQQQQ
@@ -333,7 +333,7 @@ test_nr:
 ; if (cc) {
 ;   // code not executed
 ;   r0.w0 = r0.w0 - limm
-;   r0.w1 = r0.w1 - 0
+;   r0.w1 = r0.w1 - limm
 ; }
 ; 
 ; [C=0]
@@ -352,11 +352,11 @@ test_nr:
 ; Testing when C=1, so vsub2 is executed
 ; if (cc) {
 ;   0 = limm - r0.w0
-;   0 = 0 - r0.w1
+;   0 = limm - r0.w1
 ; }
 ; 
 ; [C=1]
-;    (          0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
 ;  - (          1, 0x12345678) [r0]
 ; -----------------------------------
 ;  = null destination         [0]
@@ -375,7 +375,7 @@ test_nr:
 ; if (cc) {
 ;   // code not executed
 ;   0 = limm - r0.w0
-;   0 = 0 - r0.w1
+;   0 = limm - r0.w1
 ; }
 ; 
 ; [C=0]
@@ -391,16 +391,16 @@ test_nr:
 ; vsub2 a,limm,u6 00101110011111010111uuuuuuAAAAAA
 ; r0 <- limm, u6
 ;   r0.w0 = limm - u6
-;   r0.w1 = 0 - u6
+;   r0.w1 = limm - u6
 ; 
-;    (         0, 0x12345678) [limm]
+;    (0x12345678, 0x12345678) [limm]
 ;  - (      0x3f,       0x3f) [u6]
 ; -----------------------------------
-;  = (0xffffffc1, 0x12345639) [r0]
+;  = (0x12345639, 0x12345639) [r0]
 ; 
   prep_test_case
   vsub2 r0, 0x12345678, 0x3f
-  check_reg64 r0, 0xffffffc1, 0x12345639
+  check_reg64 r0, 0x12345639, 0x12345639
 
 ;=== vsub2 0,limm,u6 ===
 
@@ -408,9 +408,9 @@ test_nr:
 ; vsub2 0,limm,u6 00101110011111010111uuuuuu111110
 ; 0 <- limm, u6
 ;   0 = limm - u6
-;   0 = 0 - u6
+;   0 = limm - u6
 ; 
-;    (         0, 0x12345678) [limm]
+;    (0x12345678, 0x12345678) [limm]
 ;  - (      0x3f,       0x3f) [u6]
 ; -----------------------------------
 ;  = null destination         [0]
@@ -426,11 +426,11 @@ test_nr:
 ; Testing when C=1, so vsub2 is executed
 ; if (cc) {
 ;   0 = limm - u6
-;   0 = 0 - u6
+;   0 = limm - u6
 ; }
 ; 
 ; [C=1]
-;    (         0, 0x12345678) [limm]
+;    (0x12345678, 0x12345678) [limm]
 ;  - (      0x3f,       0x3f) [u6]
 ; -----------------------------------
 ;  = null destination         [0]
@@ -448,7 +448,7 @@ test_nr:
 ; if (cc) {
 ;   // code not executed
 ;   0 = limm - u6
-;   0 = 0 - u6
+;   0 = limm - u6
 ; }
 ; 
 ; [C=0]
@@ -463,10 +463,10 @@ test_nr:
 ; vsub2 0,limm,s12 00101110101111010111ssssssSSSSSS
 ; 0 <- limm, s12
 ;   0 = limm - s12
-;   0 = 0 - s12
+;   0 = limm - s12
 ; 
-;    (    0, 0x12345678) [limm]
-;  - ( 2048,       2048) [s12] 
+;    (0x12345678, 0x12345678) [limm]
+;  - (      2048,       2048) [s12] 
 ; -----------------------------------
 ;  = null destination                 [0]
 ;
@@ -479,12 +479,12 @@ test_nr:
 ; vsub2 a,limm,limm 00101110001111010111111110AAAAAA
 ; r0 <- limm, limm
 ;   r0.w0 = limm - limm
-;   r0.w1 = 0 - 0
+;   r0.w1 = limm - limm
 ; 
-;    (  0, 0x12345678) [limm]
-;  - (  0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
+;  - ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
-;  = (0x0,        0x0) [r0]
+;  = (        0x0,        0x0) [r0]
 ; 
   prep_test_case
   vsub2 r0, 0x12345678, 0x12345678
@@ -496,10 +496,10 @@ test_nr:
 ; vsub2 0,limm,limm 00101110001111010111111110111110
 ; 0 <- limm, limm
 ;   0 = limm - limm
-;   0 = 0 - 0
+;   0 = limm - limm
 ; 
-;    (  0, 0x12345678) [limm]
-;  - (  0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
+;  - ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
 ;  = null destination  [0]
 ; 
@@ -514,12 +514,12 @@ test_nr:
 ; Testing when C=1, so vsub2 is executed
 ; if (cc) {
 ;   0 = limm - limm
-;   0 = 0 - 0
+;   0 = limm - limm
 ; }
 ; 
 ; [C=1]
-;    (         0, 0x12345678) [limm]
-;  - (         0, 0x12345678) [limm]
+;    ( 0x12345678, 0x12345678) [limm]
+;  - ( 0x12345678, 0x12345678) [limm]
 ; -----------------------------------
 ;  = null destination         [0]
 ; 
@@ -536,7 +536,7 @@ test_nr:
 ; if (cc) {
 ;   // code not executed
 ;   0 = limm - limm
-;   0 = 0 - 0
+;   0 = limm - limm
 ; }
 ; 
 ; [C=0]
