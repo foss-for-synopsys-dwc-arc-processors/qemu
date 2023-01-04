@@ -14313,7 +14313,7 @@ VEC_ADD16_SUB16_I64_W0(sub, tcg_gen_vec_sub16_i64)
 int                                                           \
 arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
 {                                                             \
-    ARC_GEN_SEMFUNC_INIT();                                   \
+    ARC_GEN_CC_PROLOGUE();                                   \
                                                               \
     ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, i64, b);  \
     ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, i64, c); \
@@ -14321,7 +14321,7 @@ arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
     /* Instruction code */                                    \
     OP(dest, b, c);                                           \
                                                               \
-    ARC_GEN_SEMFUNC_DEINIT();                                 \
+    ARC_GEN_CC_EPILOGUE();                                 \
     return DISAS_NEXT;                                        \
 }
 
@@ -14369,14 +14369,14 @@ arc_gen_vmac2_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
 int                                                           \
 arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
 {                                                             \
-    ARC_GEN_SEMFUNC_INIT();                                   \
+    ARC_GEN_CC_PROLOGUE();                                   \
                                                               \
     ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, i64, b);  \
     ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, i64, c); \
                                                               \
     arc_gen_vmac2_op(ctx, dest, b, c, OP);                    \
                                                               \
-    ARC_GEN_SEMFUNC_DEINIT();                                 \
+    ARC_GEN_CC_EPILOGUE();                                 \
                                                               \
     return DISAS_NEXT;                                        \
 }  
@@ -14389,7 +14389,7 @@ int                                                           \
 arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
 {                                                             \
     TCGv t1;                                                  \
-    ARC_GEN_SEMFUNC_INIT();                                   \
+    ARC_GEN_CC_PROLOGUE();                                   \
                                                               \
     ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, i64, b);  \
     ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, i64, c); \
@@ -14399,7 +14399,7 @@ arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
     OP(dest, b, t1);                                          \
     tcg_temp_free(t1);                                        \
                                                               \
-    ARC_GEN_SEMFUNC_DEINIT();                                 \
+    ARC_GEN_CC_EPILOGUE();                                 \
                                                               \
     return DISAS_NEXT;                                        \
 }
@@ -14415,13 +14415,13 @@ ARC_GEN_VEC_ADD_SUB(VSUBADD4H, H0_H2, tcg_gen_vec_add16_i64, 16bit)
 int
 arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_qmach_base_i64(ctx, a, b, c, cpu64_acc, true, \
                            tcg_gen_sextract_i64, \
                            arc_gen_add_signed_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14429,13 +14429,13 @@ arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_qmach_base_i64(ctx, a, b, c, cpu64_acc, false, \
                            tcg_gen_extract_i64, \
                            arc_gen_add_unsigned_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14443,13 +14443,13 @@ arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMACWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_dmacwh_base_i64(ctx, a, b, c, cpu64_acc, true, \
                             tcg_gen_sextract_i64, \
                             arc_gen_add_signed_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14457,13 +14457,13 @@ arc_gen_DMACWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMACWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_dmacwh_base_i64(ctx, a, b, c, cpu64_acc, false, \
                             tcg_gen_extract_i64, \
                             arc_gen_add_unsigned_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14471,13 +14471,13 @@ arc_gen_DMACWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_CC_PROLOGUE();
 
   arc_gen_dmach_base_i64(ctx, a, b, c, cpu64_acc, true, \
                          tcg_gen_sextract_i64, \
                          arc_gen_add_signed_overflow_i64);
 
-  ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_CC_EPILOGUE();
 
   return DISAS_NEXT;
 }
@@ -14485,13 +14485,13 @@ arc_gen_DMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_CC_PROLOGUE();
 
   arc_gen_dmach_base_i64(ctx, a, b, c, cpu64_acc, false, \
                          tcg_gen_extract_i64, \
                          arc_gen_add_unsigned_overflow_i64);
 
-  ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_CC_EPILOGUE();
 
   return DISAS_NEXT;
 }
@@ -14499,13 +14499,13 @@ arc_gen_DMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_dmpyh_base_i64(ctx, a, b, c, cpu64_acc, true, \
                             tcg_gen_sextract_i64, \
                             arc_gen_add_signed_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14513,13 +14513,13 @@ arc_gen_DMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_dmpyh_base_i64(ctx, a, b, c, cpu64_acc, false, \
                             tcg_gen_extract_i64, \
                             arc_gen_add_unsigned_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14527,13 +14527,13 @@ arc_gen_DMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_QMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_qmpyh_base_i64(ctx, a, b, c, cpu64_acc, true, \
                             tcg_gen_sextract_i64, \
                             arc_gen_add_signed_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14541,13 +14541,13 @@ arc_gen_QMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_QMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_qmpyh_base_i64(ctx, a, b, c, cpu64_acc, false, \
                             tcg_gen_extract_i64, \
                             arc_gen_add_unsigned_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14555,13 +14555,13 @@ arc_gen_QMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMPYWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_dmpywh_base_i64(ctx, a, b, c, cpu64_acc, true, \
                             tcg_gen_sextract_i64, \
                             arc_gen_add_signed_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14569,13 +14569,13 @@ arc_gen_DMPYWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_DMPYWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_dmpywh_base_i64(ctx, a, b, c, cpu64_acc, false, \
                             tcg_gen_extract_i64, \
                             arc_gen_add_unsigned_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14583,13 +14583,13 @@ arc_gen_DMPYWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_VMPY2H(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_vmpy2h_base_i64(ctx, a, b, c, cpu64_acc, true, \
                             tcg_gen_sextract_i64, \
                             arc_gen_add_signed_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14597,13 +14597,13 @@ arc_gen_VMPY2H(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_VMPY2HU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_vmpy2h_base_i64(ctx, a, b, c, cpu64_acc, false, \
                             tcg_gen_extract_i64, \
                             arc_gen_add_unsigned_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14611,13 +14611,13 @@ arc_gen_VMPY2HU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_MPYD(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_mpyd_base_i64(ctx, a, b, c, cpu64_acc, true, \
                           tcg_gen_sextract_i64, \
                           arc_gen_add_signed_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -14625,13 +14625,13 @@ arc_gen_MPYD(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 int
 arc_gen_MPYDU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_gen_mpyd_base_i64(ctx, a, b, c, cpu64_acc, false, \
                           tcg_gen_extract_i64, \
                           arc_gen_add_unsigned_overflow_i64);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
