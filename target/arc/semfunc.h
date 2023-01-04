@@ -338,10 +338,9 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
 /**
- * @brief Any required ARC semantic function initialization procedures such as
- * evaluating the cc flag
+ * @brief Prologue for the CC flag handling and jump
  */
-#define ARC_GEN_SEMFUNC_INIT()                                          \
+#define ARC_GEN_CC_PROLOGUE()                                           \
     TCGv cc_temp;                                                       \
     TCGLabel *cc_done;                                                  \
     if (ctx->insn.cc != ARC_COND_AL && ctx->insn.cc != ARC_COND_RA) {   \
@@ -352,10 +351,9 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
     }
 
 /**
- * @brief Any required ARC semantic function de-initialization procedures such
- * as freeing initialization variables
+ * @brief Epilogue for the CC flag handling and jump
  */
-#define ARC_GEN_SEMFUNC_DEINIT()                                        \
+#define ARC_GEN_CC_EPILOGUE()                                           \
     if (ctx->insn.cc != ARC_COND_AL && ctx->insn.cc != ARC_COND_RA) {   \
         gen_set_label(cc_done);                                         \
         tcg_temp_free(cc_temp);                                         \

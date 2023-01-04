@@ -8943,11 +8943,11 @@ ARC_GEN_32BIT_INTERFACE(QMACH, PAIR, PAIR, PAIR, SIGNED, \
 int
 arc_gen_QMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_QMACH(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -8958,11 +8958,11 @@ ARC_GEN_32BIT_INTERFACE(QMACHU, PAIR, PAIR, PAIR, UNSIGNED, \
 int
 arc_gen_QMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_QMACHU(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -8973,11 +8973,11 @@ ARC_GEN_32BIT_INTERFACE(DMACWH, PAIR, PAIR, NOT_PAIR, SIGNED, \
 int
 arc_gen_DMACWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_DMACWH(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -8988,11 +8988,11 @@ ARC_GEN_32BIT_INTERFACE(DMACWHU, PAIR, PAIR, NOT_PAIR, UNSIGNED, \
 int
 arc_gen_DMACWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_DMACWHU(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9003,11 +9003,11 @@ ARC_GEN_32BIT_INTERFACE(DMACH, NOT_PAIR, NOT_PAIR, NOT_PAIR, SIGNED, \
 int
 arc_gen_DMACH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_CC_PROLOGUE();
 
   arc_autogen_base32_DMACH(ctx, a, b, c);
 
-  ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_CC_EPILOGUE();
 
   return DISAS_NEXT;
 }
@@ -9018,11 +9018,11 @@ ARC_GEN_32BIT_INTERFACE(DMACHU, NOT_PAIR, NOT_PAIR, NOT_PAIR, UNSIGNED, \
 int
 arc_gen_DMACHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-  ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_CC_PROLOGUE();
 
   arc_autogen_base32_DMACHU(ctx, a, b, c);
 
-  ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_CC_EPILOGUE();
 
   return DISAS_NEXT;
 }
@@ -9033,11 +9033,11 @@ ARC_GEN_32BIT_INTERFACE(DMPYH, NOT_PAIR, NOT_PAIR, NOT_PAIR, SIGNED, \
 int
 arc_gen_DMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_DMPYH(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9048,11 +9048,11 @@ ARC_GEN_32BIT_INTERFACE(DMPYHU, NOT_PAIR, NOT_PAIR, NOT_PAIR, UNSIGNED, \
 int
 arc_gen_DMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_DMPYHU(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9063,11 +9063,11 @@ ARC_GEN_32BIT_INTERFACE(QMPYH, PAIR, PAIR, PAIR, SIGNED, \
 int
 arc_gen_QMPYH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_QMPYH(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9078,11 +9078,11 @@ ARC_GEN_32BIT_INTERFACE(QMPYHU, PAIR, PAIR, PAIR, UNSIGNED, \
 int
 arc_gen_QMPYHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_QMPYHU(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9093,11 +9093,11 @@ ARC_GEN_32BIT_INTERFACE(DMPYWH, PAIR, PAIR, NOT_PAIR, SIGNED, \
 int
 arc_gen_DMPYWH(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_DMPYWH(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9108,11 +9108,11 @@ ARC_GEN_32BIT_INTERFACE(DMPYWHU, PAIR, PAIR, NOT_PAIR, UNSIGNED, \
 int
 arc_gen_DMPYWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_DMPYWHU(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9123,11 +9123,11 @@ ARC_GEN_32BIT_INTERFACE(VMPY2H, PAIR, NOT_PAIR, NOT_PAIR, SIGNED, \
 int
 arc_gen_VMPY2H(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_VMPY2H(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9138,11 +9138,11 @@ ARC_GEN_32BIT_INTERFACE(VMPY2HU, PAIR, NOT_PAIR, NOT_PAIR, UNSIGNED, \
 int
 arc_gen_VMPY2HU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_VMPY2HU(ctx, a, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9153,12 +9153,12 @@ ARC_GEN_32BIT_INTERFACE(MPYD, PAIR, NOT_PAIR, NOT_PAIR, SIGNED, \
 int
 arc_gen_MPYD(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_MPYD(ctx, a, b, c);
 
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
@@ -9169,12 +9169,12 @@ ARC_GEN_32BIT_INTERFACE(MPYDU, PAIR, NOT_PAIR, NOT_PAIR, UNSIGNED, \
 int
 arc_gen_MPYDU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+    ARC_GEN_CC_PROLOGUE();
 
     arc_autogen_base32_MPYDU(ctx, a, b, c);
 
 
-    ARC_GEN_SEMFUNC_DEINIT();
+    ARC_GEN_CC_EPILOGUE();
 
     return DISAS_NEXT;
 }
