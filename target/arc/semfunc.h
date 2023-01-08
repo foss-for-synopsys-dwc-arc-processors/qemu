@@ -72,9 +72,23 @@ void arc_gen_vec_add16_w0_i64(TCGv_i64 d, TCGv_i64 a, TCGv_i64 b);
 void arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
                        unsigned int ofs, unsigned int len);
 
-/**
+/*
+ * @brief Verifies if an signed add resulted in an overflow. Only works with
+ * numbers smaller than the architecture size.
+ * @param overflow Set in case of overflow
+ * @param result The result of the addition
+ * @param op1 Operand of the add
+ * @param op2 Operand of the add
+ * @param operator_size Size of the add operands
+ */
+void arc_gen_add_signed_overflow_tl(TCGv overflow, TCGv result,
+                                    TCGv op1, TCGv op2, uint8_t operator_size);
+
+/*
  * @brief Verifies if a 64 bit signed add resulted in an overflow
- * @param overflow Is set to 1 or 0 on no overflow, or overflow, respectively
+ * This function is necessary because the _tl version cannot handle 64 bit
+ * computations in a 32 bit architecture
+ * @param overflow Set in case of overflow
  * @param result The result of the addition
  * @param op1 Operand of the add
  * @param op2 Operand of the add
