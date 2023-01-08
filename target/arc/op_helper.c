@@ -424,37 +424,6 @@ target_ulong helper_carry_add_flag(target_ulong dest, target_ulong b,
 }
 
 static inline target_ulong
-overflow_add_flag(target_ulong dest, target_ulong b, target_ulong c,
-                  uint8_t size)
-{
-    dest >>= (size - 1);
-    b    >>= (size - 1);
-    c    >>= (size - 1);
-
-    /*
-     * Truncate the result.
-     * Negative numbers may have 1s to the left of the 'size'th bit when the
-     * architecture has more bits than the requested operation i.e. 32 bit
-     * operation in a 64 bit architecture has the most significant 32 bits at 1
-     * for any and all negative numbers.
-     */
-    dest &= 1;
-    b    &= 1;
-    c    &= 1;
-
-    if ((dest == 0 && b == 1 && c == 1)
-        || (dest == 1 && b == 0 && c == 0)) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-target_ulong helper_overflow_add_flag(target_ulong dest, target_ulong b,
-                                      target_ulong c) {
-    return overflow_add_flag(dest, b, c, TARGET_LONG_BITS);
-}
-
-static inline target_ulong
 overflow_sub_flag(target_ulong dest, target_ulong b, target_ulong c,
                   uint8_t size)
 {
@@ -552,10 +521,6 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
 #ifdef TARGET_ARC64
 uint64_t helper_carry_add_flag32(uint64_t dest, uint64_t b, uint64_t c) {
     return carry_add_flag(dest, b, c, 32);
-}
-
-target_ulong helper_overflow_add_flag32(target_ulong dest, target_ulong b, target_ulong c) {
-    return overflow_add_flag(dest, b, c, 32);
 }
 
 target_ulong helper_overflow_sub_flag32(target_ulong dest, target_ulong b, target_ulong c) {
