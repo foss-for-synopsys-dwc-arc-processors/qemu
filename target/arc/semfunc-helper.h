@@ -171,35 +171,36 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define setBLINK(BLINK_ADDR) \
   tcg_gen_mov_tl(cpu_blink, BLINK_ADDR);
 
-#ifdef TARGET_ARC32
-
-#define Carry(R, A)             tcg_gen_shri_tl(R, A, 31);
-
-#endif
-
 
 #ifdef TARGET_ARC64
 
-#define Carry(R, A)             tcg_gen_shri_tl(R, A, 63);
 #define Carry32(R, A) \
-                                tcg_gen_shri_tl(R, A, 31); \
-                                tcg_gen_andi_tl(R, R, 0x1);
+                                  tcg_gen_shri_tl(R, A, 31); \
+                                  tcg_gen_andi_tl(R, R, 0x1);
+
+#define OverflowADD32(R, A, B, C) arc_gen_add_signed_overflow_tl(R, A, B, C, 32)
+
+#define CarryADD32(R, A, B, C)    gen_helper_carry_add_flag32(R, A, B, C)
+
+#define CarrySUB32(R, A, B, C)    gen_helper_carry_sub_flag32(R, A, B, C)
+
+#define OverflowSUB32(R, A, B, C) gen_helper_overflow_sub_flag32(R, A, B, C)
 
 #endif
 
-#define CarryADD(R, A, B, C)    gen_helper_carry_add_flag(R, A, B, C)
-#define OverflowADD(R, A, B, C) gen_helper_overflow_add_flag(R, A, B, C)
+#define Carry(R, A)               tcg_gen_shri_tl(R, A, TARGET_LONG_BITS - 1);
 
-#define CarryADD32(R, A, B, C)    gen_helper_carry_add_flag32(R, A, B, C)
-#define OverflowADD32(R, A, B, C) gen_helper_overflow_add_flag32(R, A, B, C)
+#define OverflowADD(R, A, B, C)   arc_gen_add_signed_overflow_tl(R, A, B, C, TARGET_LONG_BITS);
+
+#define CarryADD(R, A, B, C)    gen_helper_carry_add_flag(R, A, B, C)
+
+
 
 void arc_gen_sub_Cf(TCGv ret, TCGv dest, TCGv src1, TCGv src2);
 #define CarrySUB(R, A, B, C)    arc_gen_sub_Cf(R, A, B, C); \
                                 tcg_gen_setcondi_tl(TCG_COND_NE, R, R, 0)
 #define OverflowSUB(R, A, B, C) gen_helper_overflow_sub_flag(R, A, B, C)
 
-#define CarrySUB32(R, A, B, C)    gen_helper_carry_sub_flag32(R, A, B, C)
-#define OverflowSUB32(R, A, B, C) gen_helper_overflow_sub_flag32(R, A, B, C)
 
 
 #define unsignedLT(R, B, C)           tcg_gen_setcond_tl(TCG_COND_LTU, R, B, C)
