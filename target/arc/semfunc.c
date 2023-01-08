@@ -54,27 +54,54 @@ arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
 	tcg_temp_free_i64(t1);
 }
 
+/*
+ * In a signed addition, there is an overflow when these conditions are met:
+ * (1) Both operands are of the same sign.
+ * (2) The result's sign is different from the operand's.
+ */
+void
+arc_gen_add_signed_overflow_tl(TCGv overflow, TCGv result,
+                               TCGv op1, TCGv op2, uint8_t operand_size)
+{
+    TCGv diff_operand_sign = tcg_temp_new();
+    TCGv diff_result_sign = tcg_temp_new();
+
+    tcg_gen_xor_tl(diff_operand_sign, op1, op2);
+    tcg_gen_xor_tl(diff_result_sign, op1, result);
+    /* if (diff_result_sign AND !diff_operand_sign) */
+    tcg_gen_andc_tl(overflow, diff_result_sign, diff_operand_sign);
+
+    tcg_gen_shri_tl(overflow, overflow, operand_size - 1);
+    tcg_gen_andi_tl(overflow, overflow, 1);
+
+    tcg_temp_free(diff_operand_sign);
+    tcg_temp_free(diff_result_sign);
+}
+
+/*
+ * In a signed addition, there is an overflow when these conditions are met:
+ * (1) Both operands are of the same sign.
+ * (2) The result's sign is different from the operand's.
+ */
 void
 arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
                                 TCGv_i64 op1, TCGv_i64 op2)
 {
-    TCGv_i64 t1 = tcg_temp_new_i64();
-    TCGv_i64 t2 = tcg_temp_new_i64();
+    TCGv_i64 diff_operand_sign = tcg_temp_new_i64();
+    TCGv_i64 diff_result_sign = tcg_temp_new_i64();
 
-    /*
-     * Check if the result has a different sign from one of the opperands:
-     *   Last bit of t1 must be 1 (Different sign)
-     *   Last bit of t2 must be 0 (Same sign)
-     */
-    tcg_gen_xor_i64(t1, op1, result);
-    tcg_gen_xor_i64(t2, op1, op2);
-    tcg_gen_andc_i64(t1, t1, t2);
+    tcg_gen_xor_i64(diff_operand_sign, op1, op2);
+    tcg_gen_xor_i64(diff_result_sign, op1, result);
+    /* if (diff_result_sign AND !diff_operand_sign) */
+    tcg_gen_andc_i64(overflow, diff_result_sign, diff_operand_sign);
 
-    tcg_gen_shri_i64(overflow, t1, 63);
+    tcg_gen_shri_i64(overflow, overflow, 63);
+    tcg_gen_andi_i64(overflow, overflow, 1);
 
-    tcg_temp_free_i64(t1);
-    tcg_temp_free_i64(t2);
+    tcg_temp_free_i64(diff_operand_sign);
+    tcg_temp_free_i64(diff_result_sign);
 }
+
 
 void
 arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
