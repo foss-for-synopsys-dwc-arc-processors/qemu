@@ -67,7 +67,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
      * semihosting enabled.
      */
     if (cs->exception_index == EXCP_SWI
-        && semihosting_enabled()){
+        && semihosting_enabled(false)){
         qemu_log_mask(CPU_LOG_INT, "Entering semihosting\n");
         do_arc_semihosting(env);
         /* Return to the next instruction. */

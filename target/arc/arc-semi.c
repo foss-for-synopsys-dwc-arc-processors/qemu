@@ -213,22 +213,23 @@ void do_arc_semihosting(CPUARCState *env)
 
     case TARGET_SYS_gettimeofday:
     {
-        qemu_timeval tv;
+        int64_t epoch_time_us;
         struct timeval p;
-        uint32_t result = qemu_gettimeofday(&tv);
+        
+        epoch_time_us = g_get_real_time();
         target_ulong base = regs[0];
         uint32_t sz = sizeof (struct timeval);
         hwaddr len = sz;
         void *buf = cpu_physical_memory_map(base, &len, 1);
 
-        p.tv_sec = tv.tv_sec;
-        p.tv_usec = tv.tv_usec;
+        p.tv_sec = epoch_time_us / G_USEC_PER_SEC;
+        p.tv_usec = epoch_time_us;
         if (buf)
         {
             memcpy(buf, &p, sizeof (struct timeval));
             cpu_physical_memory_unmap(buf, len, 1, len);
         }
-        regs[0] = result;
+        regs[0] = 0;
         break;
     }
 
