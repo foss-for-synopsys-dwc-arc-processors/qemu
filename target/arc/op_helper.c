@@ -278,7 +278,7 @@ target_ulong helper_lr(CPUARCState *env, target_ulong aux)
     return result;
 }
 
-void QEMU_NORETURN helper_halt(CPUARCState *env, target_ulong npc)
+G_NORETURN void helper_halt(CPUARCState *env, target_ulong npc)
 {
     CPUState *cs = env_cpu(env);
     if (GET_STATUS_BIT(env->stat, Uf)) {
@@ -348,7 +348,7 @@ void helper_flush(CPUARCState *env)
  * We expect that ENV->PC has already been updated.
  */
 
-void QEMU_NORETURN helper_raise_exception(CPUARCState *env,
+G_NORETURN void helper_raise_exception(CPUARCState *env,
                                           target_ulong index,
                                           target_ulong causecode,
                                           target_ulong param)

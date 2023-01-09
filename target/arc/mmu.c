@@ -598,7 +598,7 @@ arc_mmu_get_prot_for_index(uint32_t index, CPUARCState *env)
 }
 #endif
 
-static void QEMU_NORETURN raise_mem_exception(
+static G_NORETURN void raise_mem_exception(
         CPUState *cs, target_ulong addr, uintptr_t host_pc,
         struct mem_exception *excp)
 {

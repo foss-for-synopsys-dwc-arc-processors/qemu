@@ -320,7 +320,7 @@ void helper_debug(CPUARCState *env)
  * else the cpu_restore_state() will not be helpful and we end up
  * with incorrect registers in env.
  */
-void QEMU_NORETURN arc_raise_exception(CPUARCState *env, uintptr_t host_pc, int32_t excp_idx)
+G_NORETURN void arc_raise_exception(CPUARCState *env, uintptr_t host_pc, int32_t excp_idx)
 {
     CPUState *cs = env_cpu(env);
     cpu_restore_state(cs, host_pc, true);
