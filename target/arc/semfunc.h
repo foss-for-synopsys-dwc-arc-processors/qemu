@@ -73,6 +73,18 @@ void arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
                        unsigned int ofs, unsigned int len);
 
 /*
+ * @brief Verifies if a signed subtraction resulted in an overflow
+ * @param overflow Set in case of overflow
+ * @param result The result of the subtraction
+ * @param op1 Operand of the subtraction
+ * @param op2 Operand of the subtraction
+ * @param operator_size Size of the subtraction operands
+ */
+void
+arc_gen_sub_signed_overflow_tl(TCGv overflow, TCGv result,
+                               TCGv op1, TCGv op2, uint8_t operand_size);
+
+/*
  * @brief Verifies if an signed add resulted in an overflow. Only works with
  * numbers smaller than the architecture size.
  * @param overflow Set in case of overflow

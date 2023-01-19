@@ -55,6 +55,32 @@ arc_gen_cmpl2_i64(TCGv_i64 ret, TCGv_i64 arg1,
 }
 
 /*
+ *  Result = Op1 - Op2
+ * In a signed subtraction, there is an overflow when all of these conditions
+ *  are met:
+ * (1) The operands have different signs
+ * (2) The result does not have the same sign as the first operand
+ */
+void
+arc_gen_sub_signed_overflow_tl(TCGv overflow, TCGv result,
+                               TCGv op1, TCGv op2, uint8_t operand_size)
+{
+    TCGv diff_operand_sign = tcg_temp_new();
+    TCGv diff_result_sign = tcg_temp_new();
+
+    tcg_gen_xor_tl(diff_operand_sign, op1, op2);
+    tcg_gen_xor_tl(diff_result_sign, result, op1);
+    ///* if (diff_operand_sign AND diff_result_sign) */
+    tcg_gen_and_tl(overflow, diff_operand_sign, diff_result_sign);
+
+    tcg_gen_shri_tl(overflow, overflow, operand_size - 1);
+    tcg_gen_andi_tl(overflow, overflow, 1);
+
+    tcg_temp_free(diff_operand_sign);
+    tcg_temp_free(diff_result_sign);
+}
+
+/*
  * In a signed addition, there is an overflow when these conditions are met:
  * (1) Both operands are of the same sign.
  * (2) The result's sign is different from the operand's.
