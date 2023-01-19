@@ -328,11 +328,9 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
  * evaluating the cc flag
  */
 #define ARC_GEN_SEMFUNC_INIT()                                          \
-    TCGv cc_temp;                                                       \
-    TCGLabel *cc_done;                                                  \
+    TCGv cc_temp = tcg_temp_local_new();                                \
+    TCGLabel *cc_done  = gen_new_label();                               \
     if (ctx->insn.cc != ARC_COND_AL && ctx->insn.cc != ARC_COND_RA) {   \
-        cc_temp = tcg_temp_local_new();                                 \
-        cc_done = gen_new_label();                                      \
         getCCFlag(cc_temp);                                             \
         tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);           \
     }
@@ -344,8 +342,8 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 #define ARC_GEN_SEMFUNC_DEINIT()                                        \
     if (ctx->insn.cc != ARC_COND_AL && ctx->insn.cc != ARC_COND_RA) {   \
         gen_set_label(cc_done);                                         \
-        tcg_temp_free(cc_temp);                                         \
-    }
+    }                                                                   \
+    tcg_temp_free(cc_temp);
 
 #define ARC_GEN_CMPL2_H0_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 0, 16)
 #define ARC_GEN_CMPL2_H1_I64(RET, ARG1)     arc_gen_cmpl2_i64(RET, ARG1, 16, 16)
