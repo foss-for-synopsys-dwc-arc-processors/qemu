@@ -213,6 +213,30 @@ arc_gen_arithmetic_shift_right32_i64(TCGv_i64 destination,
 }
 
 void
+arc_gen_add_signed_carry32_i64(TCGv_i64 carry, TCGv_i64 result,
+                               TCGv_i64 op1, TCGv_i64 op2)
+{
+    tcg_gen_andi_i64(op1, op1, 0xFFFFFFFF);
+    tcg_gen_andi_i64(op2, op2, 0xFFFFFFFF);
+    tcg_gen_add_i64(carry, op1, op2);
+
+    tcg_gen_shri_i64(carry, carry, 32);
+    tcg_gen_andi_i64(carry, carry, 1);
+}
+
+void
+arc_gen_add_signed_carry_tl(TCGv carry, TCGv result,
+                            TCGv op1, TCGv op2)
+{
+    TCGv tmp = tcg_temp_new();
+
+    tcg_gen_movi_tl(tmp, 0);
+    tcg_gen_add2_tl(tmp, carry, op1, tmp, op2, tmp);
+
+    tcg_temp_free(tmp);
+}
+
+void
 arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
                         TCGv_i64 overflow,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)

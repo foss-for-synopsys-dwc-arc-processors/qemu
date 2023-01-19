@@ -108,6 +108,29 @@ void arc_gen_add_signed_overflow_tl(TCGv overflow, TCGv result,
 void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
                                      TCGv_i64 op1, TCGv_i64 op2);
 
+/*
+ * @brief Verifies if a 32 bit signed add generated a carry for 64 bit
+ * architectures
+ * @param overflow Set in case of carry
+ * @param result The result of the addition
+ * @param op1 Operand of the add
+ * @param op2 Operand of the add
+ */
+void
+arc_gen_add_signed_carry32_i64(TCGv_i64 carry, TCGv_i64 result,
+                               TCGv_i64 op1, TCGv_i64 op2);
+
+/*
+ * @brief Verifies if a signed add generated a carry
+ * @param overflow Set in case of carry
+ * @param result The result of the addition
+ * @param op1 Operand of the add
+ * @param op2 Operand of the add
+ */
+void
+arc_gen_add_signed_carry_tl(TCGv carry, TCGv result,
+                            TCGv op1, TCGv op2);
+
 /**
  * @brief Verifies if a 64 bit unsigned add resulted in an overflow
  * @param overflow Is set to 1 or 0 on no overflow, or overflow, respectively
