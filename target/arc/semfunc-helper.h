@@ -184,7 +184,7 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 
 #define CarrySUB32(R, A, B, C)    gen_helper_carry_sub_flag32(R, A, B, C)
 
-#define OverflowSUB32(R, A, B, C) gen_helper_overflow_sub_flag32(R, A, B, C)
+#define OverflowSUB32(R, A, B, C) arc_gen_sub_signed_overflow_tl(R, A, B, C, 32)
 
 #endif
 
@@ -199,7 +199,7 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 void arc_gen_sub_Cf(TCGv ret, TCGv dest, TCGv src1, TCGv src2);
 #define CarrySUB(R, A, B, C)    arc_gen_sub_Cf(R, A, B, C); \
                                 tcg_gen_setcondi_tl(TCG_COND_NE, R, R, 0)
-#define OverflowSUB(R, A, B, C) gen_helper_overflow_sub_flag(R, A, B, C)
+#define OverflowSUB(R, A, B, C) arc_gen_sub_signed_overflow_tl(R, A, B, C, TARGET_LONG_BITS)
 
 
 
