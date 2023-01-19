@@ -85,6 +85,17 @@ arc_gen_sub_signed_overflow_tl(TCGv overflow, TCGv result,
                                TCGv op1, TCGv op2, uint8_t operand_size);
 
 /*
+ * @brief Verifies if a 64 bit signed subtraction generated a carry
+ * @param carry Set in case of carry
+ * @param result The result of the subtraction
+ * @param op1 Operand of the subtraction
+ * @param op2 Operand of the subtraction
+ */
+void
+arc_gen_sub_signed_carry_tl(TCGv carry, TCGv result,
+                            TCGv op1, TCGv op2, uint8_t operand_size);
+
+/*
  * @brief Verifies if an signed add resulted in an overflow. Only works with
  * numbers smaller than the architecture size.
  * @param overflow Set in case of overflow
