@@ -485,17 +485,7 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
 
 #ifdef TARGET_ARC64
 
-uint64_t helper_carry_sub_flag32(uint64_t dest, uint64_t b, uint64_t c)
-{
-    uint32_t t1, t2, t3;
 
-    t1 = ~b;
-    t2 = t1 & c;
-    t3 = (t1 | c) & dest;
-
-    t2 = t2 | t3;
-    return (t2 >> 31) & 1;
-}
 
 
 
