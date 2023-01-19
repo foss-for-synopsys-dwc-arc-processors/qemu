@@ -180,7 +180,7 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 
 #define OverflowADD32(R, A, B, C) arc_gen_add_signed_overflow_tl(R, A, B, C, 32)
 
-#define CarryADD32(R, A, B, C)    gen_helper_carry_add_flag32(R, A, B, C)
+#define CarryADD32(R, A, B, C)    arc_gen_add_signed_carry32_i64(R, A, B, C)
 
 #define CarrySUB32(R, A, B, C)    gen_helper_carry_sub_flag32(R, A, B, C)
 
@@ -192,7 +192,7 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 
 #define OverflowADD(R, A, B, C)   arc_gen_add_signed_overflow_tl(R, A, B, C, TARGET_LONG_BITS);
 
-#define CarryADD(R, A, B, C)    gen_helper_carry_add_flag(R, A, B, C)
+#define CarryADD(R, A, B, C)    arc_gen_add_signed_carry_tl(R, A, B, C)
 
 
 
