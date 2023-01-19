@@ -407,22 +407,6 @@ void helper_set_status32_bit(CPUARCState *env, target_ulong bit,
     env->stat.pstate |= (value << bit);
 }
 
-static inline target_ulong
-carry_add_flag(target_ulong dest, target_ulong b, target_ulong c, uint8_t size)
-{
-    target_ulong t1, t2, t3;
-
-    t1 = b & c;
-    t2 = b & (~dest);
-    t3 = c & (~dest);
-    t1 = t1 | t2 | t3;
-    return (t1 >> (size - 1)) & 1;
-}
-
-target_ulong helper_carry_add_flag(target_ulong dest, target_ulong b,
-                                   target_ulong c) {
-    return carry_add_flag(dest, b, c, TARGET_LONG_BITS);
-}
 
 target_ulong helper_repl_mask(target_ulong dest, target_ulong src,
                               target_ulong mask)
@@ -501,9 +485,6 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
 }
 
 #ifdef TARGET_ARC64
-uint64_t helper_carry_add_flag32(uint64_t dest, uint64_t b, uint64_t c) {
-    return carry_add_flag(dest, b, c, 32);
-}
 
 uint64_t helper_carry_sub_flag32(uint64_t dest, uint64_t b, uint64_t c)
 {
