@@ -81,6 +81,46 @@ arc_gen_sub_signed_overflow_tl(TCGv overflow, TCGv result,
 }
 
 /*
+ * Result = Op1 - Op2
+ * In a signed subtraction, a carry is generated when one of these conditions
+ *  is met:
+ * (1) The second operand has the most significant bit set but the first one
+ *  doesnt (value to subtract is too larger than the value to subtract from)
+ * (2) The result has the most significant bit set but the first operand does'nt
+ * (3) The result and second operand have the most significant bit set
+ */
+void
+arc_gen_sub_signed_carry_tl(TCGv carry, TCGv result,
+                            TCGv op1, TCGv op2, uint8_t operand_size)
+{
+    TCGv op1_clear_op2_set = tcg_temp_new();
+    TCGv res_set_op2_set = tcg_temp_new();
+    TCGv res_set_op1_clear = tcg_temp_new();
+
+    // !OP1 & OP2
+    tcg_gen_andc_tl(op1_clear_op2_set, op2, op1);
+
+    // RESULT & OP2
+    tcg_gen_and_tl(res_set_op2_set, result, op2);
+
+    // RESULT & !OP1
+    tcg_gen_andc_tl(res_set_op1_clear, result, op1);
+
+
+    // !OP1 & OP2 | OP1 & ~RESULT | OP2 & ~RESULT
+    tcg_gen_or_tl(carry, res_set_op1_clear, res_set_op2_set);
+    tcg_gen_or_tl(carry, carry, op1_clear_op2_set);
+
+
+    tcg_gen_shri_tl(carry, carry, operand_size - 1);
+    tcg_gen_andi_tl(carry, carry, 1);
+
+    tcg_temp_free(op1_clear_op2_set);
+    tcg_temp_free(res_set_op2_set);
+    tcg_temp_free(res_set_op1_clear);
+}
+
+/*
  * In a signed addition, there is an overflow when these conditions are met:
  * (1) Both operands are of the same sign.
  * (2) The result's sign is different from the operand's.
