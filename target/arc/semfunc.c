@@ -70,7 +70,7 @@ arc_gen_sub_signed_overflow_tl(TCGv overflow, TCGv result,
 
     tcg_gen_xor_tl(diff_operand_sign, op1, op2);
     tcg_gen_xor_tl(diff_result_sign, result, op1);
-    ///* if (diff_operand_sign AND diff_result_sign) */
+    /* if (diff_operand_sign AND diff_result_sign) */
     tcg_gen_and_tl(overflow, diff_operand_sign, diff_result_sign);
 
     tcg_gen_shri_tl(overflow, overflow, operand_size - 1);
@@ -97,17 +97,17 @@ arc_gen_sub_signed_carry_tl(TCGv carry, TCGv result,
     TCGv res_set_op2_set = tcg_temp_new();
     TCGv res_set_op1_clear = tcg_temp_new();
 
-    // !OP1 & OP2
+    /* !OP1 & OP2 */
     tcg_gen_andc_tl(op1_clear_op2_set, op2, op1);
 
-    // RESULT & OP2
+    /* RESULT & OP2 */
     tcg_gen_and_tl(res_set_op2_set, result, op2);
 
-    // RESULT & !OP1
+    /* RESULT & !OP1 */
     tcg_gen_andc_tl(res_set_op1_clear, result, op1);
 
 
-    // !OP1 & OP2 | OP1 & ~RESULT | OP2 & ~RESULT
+    /* !OP1 & OP2 | OP1 & ~RESULT | OP2 & ~RESULT */
     tcg_gen_or_tl(carry, res_set_op1_clear, res_set_op2_set);
     tcg_gen_or_tl(carry, carry, op1_clear_op2_set);
 
@@ -195,14 +195,14 @@ arc_gen_rotate_right32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
     TCGv_i64 temp1 = tcg_temp_new_i64();
     TCGv_i64 temp2 = tcg_temp_new_i64();
 
-    // Basic shift
+    /* Basic shift */
     tcg_gen_shr_i64(temp1, target_operand, rotate_by);
-    // Obtain rotated chunk
+    /* Obtain rotated chunk */
     tcg_gen_subfi_i64(temp2, 32, rotate_by);
     tcg_gen_shl_i64(temp2, target_operand, temp2);
-    // Assemble
+    /* Assemble */
     tcg_gen_or_i64(destination, temp1, temp2);
-    // Snip out what was shifted outside the 64 bits
+    /* Snip out what was shifted outside the 64 bits */
     tcg_gen_andi_i64(destination, destination, 0xFFFFFFFF);
 
     tcg_temp_free_i64(temp1);
@@ -216,14 +216,14 @@ arc_gen_rotate_left32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
     TCGv_i64 temp1 = tcg_temp_new_i64();
     TCGv_i64 temp2 = tcg_temp_new_i64();
 
-    // Basic shift
+    /* Basic shift */
     tcg_gen_shl_i64(temp1, target_operand, rotate_by);
-    // Obtain rotated chunk
+    /* Obtain rotated chunk */
     tcg_gen_subfi_i64(temp2, 32, rotate_by);
     tcg_gen_shr_i64(temp2, target_operand, temp2);
-    // Assemble
+    /* Assemble */
     tcg_gen_or_i64(destination, temp1, temp2);
-    // Snip out what was shifted outside the 64 bits
+    /* Snip out what was shifted outside the 64 bits */
     tcg_gen_andi_i64(destination, destination, 0xFFFFFFFF);
 
     tcg_temp_free_i64(temp1);
@@ -238,14 +238,14 @@ arc_gen_arithmetic_shift_right32_i64(TCGv_i64 destination,
     TCGv_i32 temp = tcg_temp_new_i32();
     TCGv_i32 shift_by_i32 = tcg_temp_new_i32();
 
-    // Extract 32 bit values
+    /* Extract 32 bit values */
     tcg_gen_extrl_i64_i32(temp, target_operand);
     tcg_gen_extrl_i64_i32(shift_by_i32, shift_by);
-    // Truncate size appropriately
+    /* Truncate size appropriately */
     tcg_gen_andi_i32(shift_by_i32, shift_by_i32, 31);
-    // Use built in arithmetic shift
+    /* Use built in arithmetic shift */
     tcg_gen_sar_i32(temp, temp, shift_by_i32);
-    // Unsigned extend into destination register
+    /* Unsigned extend into destination register */
     tcg_gen_extu_i32_i64(destination, temp);
 
     tcg_temp_free_i32(shift_by_i32);

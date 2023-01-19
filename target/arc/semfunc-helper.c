@@ -174,27 +174,6 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value)
     /* TODO: Could not find a reson to set this. */
 }
 
-/* dest = src1 - src2. Compute C, N, V and Z flags */
-void arc_gen_sub_Cf(TCGv ret, TCGv dest, TCGv src1, TCGv src2)
-{
-    TCGv t1 = tcg_temp_new();
-    TCGv t2 = tcg_temp_new();
-    TCGv t3 = tcg_temp_new();
-
-    tcg_gen_not_tl(t1, src1);       /* t1 = ~src1                 */
-    tcg_gen_and_tl(t2, t1, src2);   /* t2 = ~src1 & src2          */
-    tcg_gen_or_tl(t3, t1, src2);    /* t3 = (~src1 | src2) & dest */
-    tcg_gen_and_tl(t3, t3, dest);
-    /* t2 = ~src1 & src2 | ~src1 & dest | dest & src2 */
-    tcg_gen_or_tl(t2, t2, t3);
-    tcg_gen_shri_tl(ret, t2, TARGET_LONG_BITS - 1);   /* Cf = t2[31/63] */
-
-    tcg_temp_free(t3);
-    tcg_temp_free(t2);
-    tcg_temp_free(t1);
-}
-
-
 void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos)
 {
     tcg_gen_rotr_tl(ret, a, pos);
