@@ -424,25 +424,6 @@ target_ulong helper_carry_add_flag(target_ulong dest, target_ulong b,
     return carry_add_flag(dest, b, c, TARGET_LONG_BITS);
 }
 
-static inline target_ulong
-overflow_sub_flag(target_ulong dest, target_ulong b, target_ulong c,
-                  uint8_t size)
-{
-    dest >>= (size - 1);
-    b >>= (size - 1);
-    c >>= (size - 1);
-    if ((dest == 1 && b == 0 && c == 1)
-        || (dest == 0 && b == 1 && c == 0)) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-target_ulong helper_overflow_sub_flag(target_ulong dest, target_ulong b,
-                                      target_ulong c) {
-    return overflow_sub_flag(dest, b, c, TARGET_LONG_BITS);
-}
-
 target_ulong helper_repl_mask(target_ulong dest, target_ulong src,
                               target_ulong mask)
 {
@@ -522,13 +503,6 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
 #ifdef TARGET_ARC64
 uint64_t helper_carry_add_flag32(uint64_t dest, uint64_t b, uint64_t c) {
     return carry_add_flag(dest, b, c, 32);
-}
-
-target_ulong helper_overflow_sub_flag32(target_ulong dest, target_ulong b, target_ulong c) {
-    dest = dest & 0xffffffff;
-    b = b & 0xffffffff;
-    c = c & 0xffffffff;
-    return overflow_sub_flag(dest, b, c, 32);
 }
 
 uint64_t helper_carry_sub_flag32(uint64_t dest, uint64_t b, uint64_t c)
