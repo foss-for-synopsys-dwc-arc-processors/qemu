@@ -516,16 +516,6 @@ uint64_t helper_carry_sub_flag32(uint64_t dest, uint64_t b, uint64_t c)
     return (t2 >> 31) & 1;
 }
 
-uint64_t helper_rotate_left32(uint64_t orig, uint64_t n)
-{
-    uint64_t t;
-    uint64_t dest = (orig << n) & ((0xffffffff << n) & 0xffffffff);
-
-    t = (orig >> (32 - n)) & ((1 << n) - 1);
-    dest |= t;
-
-    return dest;
-}
 
 
 target_ulong helper_ffs32(CPUARCState *env, uint64_t src)

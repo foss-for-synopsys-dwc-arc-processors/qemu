@@ -212,7 +212,7 @@ void arc_gen_sub_Cf(TCGv ret, TCGv dest, TCGv src1, TCGv src2);
 #define rotateRight(R, B, C)          tcg_gen_rotr_tl(R, B, C)
 
 #ifdef TARGET_ARC64
-#define rotateLeft32(R, B, C)     gen_helper_rotate_left32(R, B, C)
+#define rotateLeft32(R, B, C)     arc_gen_rotate_left32_i64(R, B, C)
 #define rotateRight32(R, B, C)    arc_gen_rotate_right32_i64(R, B, C)
 
 #define arithmeticShiftRight32(R, B, C)   arc_gen_arithmetic_shift_right32_i64(R, B, C)
