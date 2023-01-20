@@ -147,6 +147,7 @@ arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
     tcg_temp_free_i64(t1);
 }
 
+
 void
 arc_gen_rotate_right32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
                            TCGv_i64 rotate_by)
@@ -159,6 +160,27 @@ arc_gen_rotate_right32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
     // Obtain rotated chunk
     tcg_gen_subfi_i64(temp2, 32, rotate_by);
     tcg_gen_shl_i64(temp2, target_operand, temp2);
+    // Assemble
+    tcg_gen_or_i64(destination, temp1, temp2);
+    // Snip out what was shifted outside the 64 bits
+    tcg_gen_andi_i64(destination, destination, 0xFFFFFFFF);
+
+    tcg_temp_free_i64(temp1);
+    tcg_temp_free_i64(temp2);
+}
+
+void
+arc_gen_rotate_left32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
+                          TCGv_i64 rotate_by)
+{
+    TCGv_i64 temp1 = tcg_temp_new_i64();
+    TCGv_i64 temp2 = tcg_temp_new_i64();
+
+    // Basic shift
+    tcg_gen_shl_i64(temp1, target_operand, rotate_by);
+    // Obtain rotated chunk
+    tcg_gen_subfi_i64(temp2, 32, rotate_by);
+    tcg_gen_shr_i64(temp2, target_operand, temp2);
     // Assemble
     tcg_gen_or_i64(destination, temp1, temp2);
     // Snip out what was shifted outside the 64 bits
