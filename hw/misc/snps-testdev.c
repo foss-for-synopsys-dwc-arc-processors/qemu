@@ -36,6 +36,7 @@ typedef struct SnpsTestBar {
 } SnpsTestBar;
 
 typedef struct SnpsTestState {
+    PCIDevice parent_obj;
     SnpsTestBar bars[SNPS_MAX_BARS];
     MemoryRegion mmio[SNPS_MAX_BARS];
     uint64_t membar_size;
