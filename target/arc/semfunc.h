@@ -106,6 +106,16 @@ void arc_gen_add_signed_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
 void arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
                                        TCGv_i64 op1, TCGv_i64 op2);
 
+/*
+ * @brief Perform a 32 bit right rotate on 64 bit target
+ * @param destination Where to store the rotated variable
+ * @param target_operand The TCG variable to rotate
+ * @param rotate_by Amount to rotate by
+ */
+void
+arc_gen_rotate_right32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
+                           TCGv_i64 rotate_by);
+
 /**
  * Some macro definitions for using function pointers as arguments
  */
