@@ -553,17 +553,6 @@ uint64_t helper_rotate_left32(uint64_t orig, uint64_t n)
     return dest;
 }
 
-uint64_t helper_rotate_right32(uint64_t orig, uint64_t n)
-{
-    uint64_t t;
-    uint64_t dest = (orig >> n) & (0xffffffff >> n);
-
-    t = ((orig & ((1 << n) - 1)) << (32 - n));
-    dest |= t;
-
-    return dest;
-}
-
 uint64_t helper_asr_32(uint64_t b, uint64_t c)
 {
   uint64_t t;
