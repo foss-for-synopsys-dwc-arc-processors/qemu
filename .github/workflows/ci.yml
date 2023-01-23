@@ -5,8 +5,9 @@ on:
     branches:
       - master
       - "^cuper.*"
-  pull_request:
-    branches: [master]
+      - "124-semenov-add-acceptance-tests"
+  # pull_request:
+  #   branches: [master]
 
 env:
   BUILD_DIR: ${{ github.workspace }}/build
