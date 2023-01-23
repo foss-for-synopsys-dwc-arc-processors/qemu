@@ -528,20 +528,6 @@ uint64_t helper_rotate_left32(uint64_t orig, uint64_t n)
     return dest;
 }
 
-uint64_t helper_asr_32(uint64_t b, uint64_t c)
-{
-  uint64_t t;
-  c = c & 31;
-  t = b;
-  for(int i = 0; i < c; i++) {
-    t >>= 1;
-    if((b & 0x80000000) != 0)
-      t |= 0x80000000;
-  }
-      //t |= ((1 << (c+1)) - 1) << (32 - c);
-
-  return t;
-}
 
 target_ulong helper_ffs32(CPUARCState *env, uint64_t src)
 {
