@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - "^cuper.*"
+  pull_request:
+    branches: [master]
+
+env:
+  BUILD_DIR: ${{ github.workspace }}/build
+
+jobs:
+  build:
+    name: Build QEMU for ${{ matrix.host.name }}
+    runs-on: ${{ matrix.host.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        host:
+          - { name: linux-x86_64, runner: ubuntu-20.04 }
+          - { name: macos-x86_64, runner: macos-11 }
+
+    steps:
+      - name: Set up build environment (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install ninja
+          echo "TAR=gtar" >> $GITHUB_ENV
+      - name: Set up build environment (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bison \
+            flex \
+            gettext \
+            help2man \
+            libncurses5-dev \
+            libtool-bin \
+            libtool-doc \
+            meson \
+            ninja-build \
+            tar \
+            texinfo
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - run: git fetch --prune --unshallow --tags --force
+
+      - name: Build QEMU
+        run: |
+          QEMU_TARGETS="arc-softmmu arc64-softmmu"
+          QEMU_FLAGS="--disable-werror"
+          # Target linux-user is only available on a Linux host
+          if [ "${{ matrix.host.name }}" == "linux-x86_64" ]; then
+            QEMU_TARGETS="${QEMU_TARGETS} arc-linux-user arc64-linux-user"
+          fi
+          ${{ github.workspace }}/configure \
+            ${QEMU_FLAGS} \
+            --target-list="${QEMU_TARGETS}" \
+            --prefix="${{ env.BUILD_DIR }}"
+          make -j $(nproc)
+      - name: Run acceptance tests
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          make check-avocado
+      - name: "Upload log"
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.host.name }}.log
+          path: ${{ env.BUILD_DIR }}/tests/results/job-*/job.log
+        if: ${{ always() }}
