@@ -169,6 +169,28 @@ arc_gen_rotate_right32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
 }
 
 void
+arc_gen_arithmetic_shift_right32_i64(TCGv_i64 destination,
+                                     TCGv_i64 target_operand,
+                                     TCGv_i64 shift_by)
+{
+    TCGv_i32 temp = tcg_temp_new_i32();
+    TCGv_i32 shift_by_i32 = tcg_temp_new_i32();
+
+    // Extract 32 bit values
+    tcg_gen_extrl_i64_i32(temp, target_operand);
+    tcg_gen_extrl_i64_i32(shift_by_i32, shift_by);
+    // Truncate size appropriately
+    tcg_gen_andi_i32(shift_by_i32, shift_by_i32, 31);
+    // Use built in arithmetic shift
+    tcg_gen_sar_i32(temp, temp, shift_by_i32);
+    // Unsigned extend into destination register
+    tcg_gen_extu_i32_i64(destination, temp);
+
+    tcg_temp_free_i32(shift_by_i32);
+    tcg_temp_free_i32(temp);
+}
+
+void
 arc_gen_set_if_overflow(TCGv_i64 res, TCGv_i64 operand_1, TCGv_i64 operand_2,
                         TCGv_i64 overflow,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
