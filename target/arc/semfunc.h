@@ -127,6 +127,16 @@ void arc_gen_add_unsigned_overflow_i64(TCGv_i64 overflow, TCGv_i64 result,
 void
 arc_gen_rotate_right32_i64(TCGv_i64 destination, TCGv_i64 target_operand,
                            TCGv_i64 rotate_by);
+/*
+ * @brief Performs a 32 bit arithmetic shift right on 64 bit operands
+ * @param destination The 64 bit destination register
+ * @param target_operand The 64 bit target operand
+ * @param shift_len How much to shift the target by
+ */
+void
+arc_gen_arithmetic_shift_right32_i64(TCGv_i64 destination,
+                                     TCGv_i64 target_operand,
+                                     TCGv_i64 shift_by);
 
 /**
  * Some macro definitions for using function pointers as arguments
