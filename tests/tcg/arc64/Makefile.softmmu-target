@@ -57,3 +57,8 @@ $(ARC_USABLE_TESTS): $(CRT) Makefile.softmmu-target
 	cd ${TEST_DIR} && \
 	echo "$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT);" && \
 	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT)
+
+check_mmuv48_%: check_mmuv48_%.o
+	cd ${TEST_DIR} && \
+	echo "$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT);" && \
+	$(CC) -I$(ARC_SRC) $(ASFLAGS) $(EXTRA_CFLAGS) $< -o $@ $(MMU_LDFLAGS) $(NOSTDFLAGS) $(CRT)

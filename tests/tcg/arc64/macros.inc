@@ -267,3 +267,11 @@ tn_\name:
   sr  r11, [eret]
   rtie
 .endm
+
+; Clobbers r12
+.macro COPY dest_reg source_reg size_reg
+1:
+  ldb.ab r12, [\source_reg, 1]
+  dbnz.d \size_reg, @1b
+  stb.ab r12, [\dest_reg, 1]
+.endm
