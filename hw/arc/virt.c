@@ -13,6 +13,8 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Trigger GitHub CI */
+
 #include "qemu/osdep.h"
 #include "qemu/units.h"
 #include "qapi/error.h"
