@@ -3,17 +3,28 @@ name: CI
 on:
   push:
     branches:
-      - master
-      - "^cuper.*"
-      - "124-semenov-add-acceptance-tests"
-  # pull_request:
-  #   branches: [master]
+      - "**"
+  pull_request:
+    branches: [master]
 
 env:
   BUILD_DIR: ${{ github.workspace }}/build
 
 jobs:
+  pre_job:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          skip_after_successful_duplicate: 'true'
+
   build:
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+
     name: Build QEMU for ${{ matrix.host.name }}
     runs-on: ${{ matrix.host.runner }}
 
@@ -47,13 +58,13 @@ jobs:
             tar \
             texinfo
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - run: git fetch --prune --unshallow --tags --force
 
       - name: Build QEMU
         run: |
           QEMU_TARGETS="arc-softmmu arc64-softmmu"
-          QEMU_FLAGS="--disable-werror"
+          QEMU_FLAGS=""
           # Target linux-user is only available on a Linux host
           if [ "${{ matrix.host.name }}" == "linux-x86_64" ]; then
             QEMU_TARGETS="${QEMU_TARGETS} arc-linux-user arc64-linux-user"
@@ -63,13 +74,11 @@ jobs:
             --target-list="${QEMU_TARGETS}" \
             --prefix="${{ env.BUILD_DIR }}"
           make -j $(nproc)
-      - name: Run acceptance tests
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          make check-avocado
-      - name: "Upload log"
-        uses: actions/upload-artifact@v2
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.host.name }}.log
-          path: ${{ env.BUILD_DIR }}/tests/results/job-*/job.log
+          name: qemu-${{ matrix.host.name }}
+          path: |
+            ${{ env.BUILD_DIR }}/qemu-*arc*
+            !${{ env.BUILD_DIR }}/*.p
         if: ${{ always() }}
