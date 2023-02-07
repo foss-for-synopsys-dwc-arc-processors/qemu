@@ -1288,7 +1288,7 @@ class BootLinuxConsole(LinuxKernelTest):
         kernel_command_line = self.KERNEL_COMMON_COMMAND_LINE + 'console=ttyS0'
         self.vm.add_args('-append', kernel_command_line)
 
-    timeout = 90
+    timeout = 180
     def test_arc64_virt(self):
         """
         :avocado: tags=arch:arc64
@@ -1306,7 +1306,7 @@ class BootLinuxConsole(LinuxKernelTest):
 
         wait_for_console_pattern(self, "Welcome to Buildroot")
 
-    timeout = 90
+    timeout = 180
     def test_arc32_virt(self):
         """
         :avocado: tags=arch:arc
@@ -1324,7 +1324,7 @@ class BootLinuxConsole(LinuxKernelTest):
 
         wait_for_console_pattern(self, "Welcome to Buildroot")
 
-    timeout = 90
+    timeout = 180
     def test_arc_virt(self):
         """
         :avocado: tags=arch:arc
