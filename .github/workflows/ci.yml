@@ -75,11 +75,23 @@ jobs:
             --prefix="${{ env.BUILD_DIR }}"
           make -j $(nproc)
 
-      - name: Upload artifacts
+      - name: Run acceptance tests
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          make check-avocado
+
+      - name: Upload binaries
+        if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: qemu-${{ matrix.host.name }}
           path: |
             ${{ env.BUILD_DIR }}/qemu-*arc*
             !${{ env.BUILD_DIR }}/*.p
-        if: ${{ always() }}
+
+      - name: Upload logs
+        if: ${{ runner.os == 'Linux' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.host.name }}.log
+          path: ${{ env.BUILD_DIR }}/tests/results/job-*/job.log
