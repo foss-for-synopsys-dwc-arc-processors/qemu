@@ -136,6 +136,18 @@ arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
         reg = cpu->mpy_build;
         break;
 
+    case AUX_ID_swap_build:
+        reg = cpu->swap_build;
+        break;
+
+    case AUX_ID_norm_build:
+        reg = cpu->norm_build;
+        break;
+
+    case AUX_ID_barrel_build:
+        reg = cpu->barrel_build;
+        break;
+
     case AUX_ID_isa_config:
         reg = cpu->isa_config;
         break;

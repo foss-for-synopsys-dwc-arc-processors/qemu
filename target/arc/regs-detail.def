@@ -523,6 +523,9 @@ DEF(0x77, ARC_OPCODE_ARCV2,  NONE, ic_build)
 DEF(0x77, ARC_OPCODE_V3_ALL, NONE, ic_build)
 DEF(0x7b, ARC_OPCODE_ARCV2,  NONE, mpy_build)
 DEF(0x7b, ARC_OPCODE_V3_ALL, NONE, mpy_build)
+DEF(0x7c, ARC_OPCODE_ARCALL, NONE, swap_build)
+DEF(0x7d, ARC_OPCODE_ARCALL, NONE, norm_build)
+DEF(0x7f, ARC_OPCODE_ARCALL, NONE, barrel_build)
 
 /* OLD BCR definitions */
 /*
