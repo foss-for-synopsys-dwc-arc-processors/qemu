@@ -14886,7 +14886,7 @@ arc_gen_FLDD64 (DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
   arc_gen_ldst_post (ctx, src1, l_src1, l_src2);
 
   tcg_gen_mov_tl(dest, new_dest);
-  tcg_gen_mov_tl(arc_gen_next_reg(ctx, dest), new_dest_hi);
+  tcg_gen_mov_tl(nextFPURegWithNull(ctx, dest), new_dest_hi);
 
   tcg_temp_free(address_high);
   tcg_temp_free(address);
@@ -14917,7 +14917,7 @@ arc_gen_FSTD64 (DisasCtxt *ctx, TCGv data_reg, TCGv dest, TCGv offset)
 
   setMemory(address, ZZ, data_reg);
   tcg_gen_addi_tl(address_high, address, 8);
-  setMemory(address_high, ZZ, arc_gen_next_reg(ctx, data_reg));
+  setMemory(address_high, ZZ, nextFPURegWithNull(ctx, data_reg));
 
   arc_gen_ldst_post (ctx, dest, l_dest, l_offset);
 
@@ -15187,7 +15187,7 @@ int arc_gen_VF##TYPE##INS(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
     TCGv index = tcg_temp_new(); \
     tcg_gen_subi_tl(index, b, mid_index); \
  \
-    TCGv reg = arc_gen_next_reg(ctx, a); \
+    TCGv reg = nextFPURegWithNull(ctx, a); \
     TCGv size1 = tcg_const_tl(SIZE); \
  \
     gen_helper_vfins(reg, cpu_env, reg, index, c, size1); \
@@ -15226,7 +15226,7 @@ int arc_gen_VF##TYPE##EXT(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
     TCGv index = tcg_temp_new(); \
     tcg_gen_subi_tl(index, c, mid_index); \
  \
-    TCGv reg = arc_gen_next_reg(ctx, b); \
+    TCGv reg = nextFPURegWithNull(ctx, b); \
     TCGv size1 = tcg_const_tl(SIZE); \
  \
     gen_helper_vfext(a, cpu_env, reg, index, size1); \
@@ -15253,7 +15253,7 @@ int arc_gen_VF##TYPE##REP(DisasCtxt *ctx, TCGv a, TCGv b) \
     gen_helper_vfrep(a, cpu_env, b, size); \
  \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
-    TCGv na = arc_gen_next_reg(ctx, a); \
+    TCGv na = nextFPURegWithNull(ctx, a); \
     gen_helper_vfrep(na, cpu_env, b, size); \
   } \
  \
@@ -15273,8 +15273,8 @@ int arc_gen_VFMOV(DisasCtxt *ctx, TCGv a, TCGv b)
   tcg_gen_mov_tl(a, b);
 
   if(vfp_width > (sizeof(target_ulong) << 3)) {
-      TCGv na = arc_gen_next_reg(ctx, a);
-      TCGv nb = arc_gen_next_reg(ctx, b);
+      TCGv na = nextFPURegWithNull(ctx, a);
+      TCGv nb = nextFPURegWithNull(ctx, b);
       tcg_gen_mov_tl(na, nb);
   }
   return ret;
@@ -15289,8 +15289,8 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b) \
   gen_helper_##HELPERFN(a, cpu_env, b); \
  \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
       gen_helper_##HELPERFN(na, cpu_env, nb); \
   } \
   return ret; \
@@ -15310,9 +15310,9 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
   gen_helper_##HELPERFN(a, cpu_env, b, c); \
  \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
-      TCGv nc = arc_gen_next_reg(ctx, c); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
+      TCGv nc = nextFPURegWithNull(ctx, c); \
       gen_helper_##HELPERFN(na, cpu_env, nb, nc); \
   } \
   return ret; \
@@ -15327,8 +15327,8 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
   gen_helper_##HELPERFN(a, cpu_env, b, c); \
  \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
       gen_helper_##HELPERFN(na, cpu_env, nb, c); \
   } \
   return ret; \
@@ -15382,10 +15382,10 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
   gen_helper_##HELPERFN(a, cpu_env, b, c, d); \
  \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
-      TCGv nc = arc_gen_next_reg(ctx, c); \
-      TCGv nd = arc_gen_next_reg(ctx, d); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
+      TCGv nc = nextFPURegWithNull(ctx, c); \
+      TCGv nd = nextFPURegWithNull(ctx, d); \
       gen_helper_##HELPERFN(na, cpu_env, nb, nc, nd); \
   } \
   return ret; \
@@ -15416,9 +15416,9 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
   gen_helper_##HELPERFN(a, cpu_env, b, c, d); \
  \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
-      TCGv nc = arc_gen_next_reg(ctx, c); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
+      TCGv nc = nextFPURegWithNull(ctx, c); \
       gen_helper_##HELPERFN(na, cpu_env, nb, nc, d); \
   } \
   return ret; \
@@ -15449,9 +15449,9 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
   gen_helper_##HELPERFN(a, cpu_env, b, c, d); \
  \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
-      TCGv nc = arc_gen_next_reg(ctx, c); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
+      TCGv nc = nextFPURegWithNull(ctx, c); \
       gen_helper_##HELPERFN(na, cpu_env, nb, nc, d); \
   } \
   return ret; \
@@ -15466,8 +15466,8 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b) \
   TCGv type = tcg_const_tl(TYPE); \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
       TCGv tmp = tcg_temp_new(); \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
       gen_helper_vector_shuffle(tmp,  cpu_env, type, zero, nb, b, zero, zero); \
       gen_helper_vector_shuffle(na, cpu_env, type, one,  nb, b, zero, zero); \
       tcg_gen_mov_tl(a, tmp); \
@@ -15494,9 +15494,9 @@ int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
   TCGv type = tcg_const_tl(TYPE); \
   if(vfp_width > (sizeof(target_ulong) << 3)) { \
       TCGv tmp = tcg_temp_new(); \
-      TCGv na = arc_gen_next_reg(ctx, a); \
-      TCGv nb = arc_gen_next_reg(ctx, b); \
-      TCGv nc = arc_gen_next_reg(ctx, c); \
+      TCGv na = nextFPURegWithNull(ctx, a); \
+      TCGv nb = nextFPURegWithNull(ctx, b); \
+      TCGv nc = nextFPURegWithNull(ctx, c); \
       gen_helper_vector_shuffle(tmp,  cpu_env, type, zero, nb, b, nc, c); \
       gen_helper_vector_shuffle(na, cpu_env, type, one,  nb, b, nc, c); \
       tcg_gen_mov_tl(a, tmp); \
