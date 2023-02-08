@@ -328,6 +328,26 @@ TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg, bool fail)
     return reg;
 }
 
+TCGv arc_gen_next_fpu_reg(const DisasCtxt *ctx, TCGv reg, bool fail)
+{
+    ptrdiff_t n = arc_tcgv_tl_temp(reg) - arc_tcgv_tl_temp(cpu_fpr[0]);
+    if (n >= 0 && n < 32) {
+        /* Check if REG is an even register. */
+        if (n % 2 == 0)
+            return cpu_fpr[n + 1];
+
+        /* REG is an odd register. */
+        arc_gen_excp(ctx, EXCP_INST_ERROR, 0, 0);
+        return reg;
+    }
+
+    /* REG was not a register after all. */
+    if (fail)
+        g_assert_not_reached();
+
+    return reg;
+}
+
 bool arc_target_has_option(enum target_options option)
 {
     /* TODO: Fill with meaningful cases. */
