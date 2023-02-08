@@ -420,6 +420,9 @@ struct ArchCPU {
     uint32_t irq_build;     /* Interrupt Build Configuration Register. */
     uint32_t vecbase_build; /* Interrupt Vector Base Address Configuration. */
     uint32_t mpy_build;     /* Multiply configuration register. */
+    uint32_t swap_build;    /* Swap instruction configuration register. */
+    uint32_t norm_build;    /* Normalize instruction configuration register. */
+    uint32_t barrel_build;  /* Barrel shifter configuration register. */
     uint32_t isa_config;    /* Instruction Set Configuration Register. */
 
     uint8_t core_id;        /* Core id holder. */

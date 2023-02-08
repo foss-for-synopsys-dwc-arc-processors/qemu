@@ -191,6 +191,15 @@ static void arc_cpu_reset(DeviceState *dev)
      * DSP=0x1: MPY_OPTION 7
      */
     cpu->mpy_build = 0x00001006;
+
+    /*
+     * Some runtime libraries check build registers to
+     * determine enabled features. Thus, it's necessary
+     * to configure them properly.
+     */
+    cpu->swap_build = 0x3;
+    cpu->norm_build = 0x3;
+    cpu->barrel_build = 0x303;
 }
 
 int print_insn_arc_v3(bfd_vma memaddr, struct disassemble_info *info);
