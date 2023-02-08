@@ -819,6 +819,14 @@ arc_gen_SYNC(DisasCtxt *ctx)
     return ret;
 }
 
+int
+arc_gen_DSYNC(DisasCtxt *ctx)
+{
+    /* Generate all memory operations barrier */
+    tcg_gen_mb(TCG_MO_ALL);
+    /* Close TLB */
+    return DISAS_UPDATE;
+}
 
 int
 arc_gen_HALT(DisasCtxt *ctx)
