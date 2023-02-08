@@ -459,7 +459,7 @@ HELPER(NAME)(CPUARCState *env, uint64_t b, uint64_t c, uint64_t d) \
   for(int i = 0; i <= VLEN(SIZE); i++) { \
     uint64_t _b = (b >> (i * SIZE)) & mask; \
     uint64_t _c = (c >> (i * SIZE)) & mask; \
-    uint64_t _d = (c >> (i * SIZE)) & mask; \
+    uint64_t _d = (d >> (i * SIZE)) & mask; \
     uint64_t _ret = HELPER(OP)(env, _b, _c, _d); \
     ret |= (_ret & mask) << (i * SIZE); \
   } \
