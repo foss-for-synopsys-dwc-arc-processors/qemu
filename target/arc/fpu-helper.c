@@ -614,7 +614,7 @@ enum shuffle_operand {
 
 struct shuffle_patterns_t {
   bool double_register;
-  const char vector_size;
+  const unsigned char vector_size;
   const char elem_size;
   const char length;
   struct shuffle_replacement {
@@ -751,7 +751,7 @@ helper_vector_shuffle(CPUARCState *env, target_ulong type, target_ulong high_par
     int p = pat->length - (high_part == true ? length : 0) - i - 1;
     uint64_t index = pat->index[p].index;
 
-    bool input_in_high_part = pat->double_register == true && index >= length ? true : false;
+    bool input_in_high_part = (pat->double_register == true && index > 3) ? true : false;
 
     switch(pat->index[p].operand) {
       case B:
@@ -764,7 +764,7 @@ helper_vector_shuffle(CPUARCState *env, target_ulong type, target_ulong high_par
 	assert("This cannot happen!" == 0);
     }
 
-    index = index > length ? index - length : index;
+    index = index > 3 ? index - 4: index;
 
     uint64_t mask = -1;
     mask >>= (64 - elem_size);
