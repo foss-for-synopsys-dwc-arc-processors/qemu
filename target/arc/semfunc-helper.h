@@ -81,8 +81,11 @@ enum target_options {
 #define LP_END      \
     (arc_aux_reg_address_for(AUX_ID_lp_end, ARC_OPCODE_ARCv2HS))
 
+/* @brief Replace in DEST the bitfield represented by MASK from SRC */
 #define ReplMask(DEST, SRC, MASK) \
     gen_helper_repl_mask(DEST, DEST, SRC, MASK)
+#define ReplMaski(DEST, SRC, MASK) \
+    gen_helper_repl_mask(DEST, DEST, SRC, tcg_constant_i64(MASK))
 
 void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 #define getCCFlag(R)    arc_gen_verifyCCFlag(ctx, R)
@@ -218,7 +221,8 @@ void arc_gen_sub_Cf(TCGv ret, TCGv dest, TCGv src1, TCGv src2);
 #endif
 
 void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
-#define getBit(R, A, POS)   arc_gen_get_bit(R, A, POS)
+#define getBit(R, A, POS)    arc_gen_get_bit(R, A, POS)
+#define getBiti(R, A, POS)   arc_gen_get_bit(R, A, tcg_constant_tl(POS))
 
 #define getRegIndex(R, ID)  tcg_gen_movi_tl(R, (int) ID)
 
