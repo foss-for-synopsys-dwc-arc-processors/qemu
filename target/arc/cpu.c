@@ -349,8 +349,15 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
                     | BIT(21)   /* atomic */
                     | (cpu->cfg.dmp_unaligned ? BIT(22) : 0) /* unaligned */
                     | BIT(23) /* ll64 */
-                    | (cpu->cfg.code_density ? (2 << 24) : 0)
                     | BIT(28) /* div_rem */;
+
+    if (cpu->cfg.code_density) {
+        if (cpu->family == ARC_OPCODE_ARC32) {
+            cpu->isa_config |= BIT(26);
+        } else {
+            cpu->isa_config |= BIT(25);
+        }
+    }
 
 #elif defined(TARGET_ARC64)
     cpu->isa_config = 0x03        /* ver */
