@@ -184,13 +184,30 @@ static void arc_cpu_reset(DeviceState *dev)
     env->lock_lf_var = 0;
 
     /*
-     * kernel expects MPY support to check for presence of
-     * extension core regs r58/r59.
-     *
-     * VERSION32x32=0x06: ARCv2 32x32 Multiply
-     * DSP=0x1: MPY_OPTION 7
+     * The Linux kernel and runtimes expect MULTIPLY_BUILD
+     * to be configured properly.
      */
-    cpu->mpy_build = 0x00001006;
+    switch (cpu->family) {
+    case ARC_OPCODE_ARCv2EM:
+    case ARC_OPCODE_ARCv2HS:
+    case ARC_OPCODE_ARC32:
+        /*
+         * VERSION32x32=0x06: ARCv2 or ARCv3 (32-bit) 32x32 Multiply
+         * DSP=0x3: MPY_OPTION 9
+         * VERSION16x16=0x02
+         */
+        cpu->mpy_build = 0x00023006;
+        break;
+    case ARC_OPCODE_ARC64:
+        /*
+         * VERSION32x32=0x10: ARCv3 (64-bit) 32x32 Multiply
+         * LM=0x1 (10th bit): Indicates support for 64x64 multiply instructions
+         */
+        cpu->mpy_build = 0x00000410;
+        break;
+    default:
+        assert(!"MULTIPLY_BUILD register is not implemented for this CPU family.");
+    }
 
     /*
      * Some runtime libraries check build registers to
