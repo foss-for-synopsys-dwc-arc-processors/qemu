@@ -231,11 +231,8 @@ arc_gen_FLAG (DisasCtxt *ctx, TCGv src)
       status32 = getRegister (R_STATUS32);
       if(((getBit (@src, 0) == 1) && (getBit (status32, 7) == 0)))
         {
-          if((hasInterrupts () > 0))
-            {
-              status32 = (status32 | 1);
-              Halt ();
-            };
+            status32 = (status32 | 1);
+            Halt ();
         }
       else
         {
@@ -294,9 +291,9 @@ arc_gen_KFLAG (DisasCtxt *ctx, TCGv src)
     tcg_gen_and_tl(temp_2, temp_1, temp_2);
     tcg_gen_brcond_tl(TCG_COND_NE, temp_2, arc_true, else_1);
 
-    /* hasInterrupts () > 0 */
-    hasInterrupts(temp_1);
-    tcg_gen_brcond_tl(TCG_COND_LE, temp_1, 0, end);
+    // if((hasInterrupts () > 0))
+    //hasInterrupts(temp_1);
+    //tcg_gen_brcond_tl(TCG_COND_LE, temp_1, 0, end);
 
     tcg_gen_ori_tl(status32, status32, 1);
 
@@ -306,6 +303,7 @@ arc_gen_KFLAG (DisasCtxt *ctx, TCGv src)
     /* } else { */
     gen_set_label(else_1);
 
+    /* STATUS32[11:8] = src[11:8] */
     ReplMaski(status32, src, 0b111100000000U);
 
     /* getBit (status32, 7) == 0 */
@@ -320,24 +318,31 @@ arc_gen_KFLAG (DisasCtxt *ctx, TCGv src)
     tcg_gen_and_tl(temp_1, temp_1, temp_2);
     tcg_gen_brcond_tl(TCG_COND_NE, temp_1, arc_true, end);
 
+    /* STATUS32[5:1] = src[5:1] */
     ReplMaski(status32, src, 0b111110U);
 
     if (targetHasOption (DIV_REM_OPTION)) {
+        /* STATUS32[13] = src[13] */
         ReplMaski(status32, src, 0x2000U);
     }
     
     if (targetHasOption (STACK_CHECKING)) {
+        /* STATUS32[14] = src[14] */
         ReplMaski(status32, src, 0x4000U);
     }
 
-    ReplMaski(status32, src, 0x10000U);
+    //ReplMaski(status32, src, 0x10000U);
+    // STATUS32[b:16] = src[b:16] /* b = 15+log2(RGF_NUM_BANKS)*/
 
     if (targetHasOption (LL64_OPTION)) {
+        // STATUS32[19] = src[19]
         ReplMaski(status32, src, 0x80000U);
     }
 
+    // STATUS32[20] = src[20]
     ReplMaski(status32, src, 0x100000U);
 
+    // STATUS32[31] = src[31]
     ReplMaski(status32, src, 0x80000000U);
 
     gen_set_label(end);
