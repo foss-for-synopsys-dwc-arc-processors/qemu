@@ -238,13 +238,6 @@ void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
         ret = DISAS_UPDATE;              \
     } while (0)
 
-/*
- * At the end of a SYNC instruction, it is guaranteed that
- * handling the current interrupt is finished and the raising
- * pulse signal (if any), is cleared. By marking SYNC as the
- * end of a TB we gave a chance to interrupt threads to execute.
- */
-#define syncReturnDisasUpdate()     (ret = DISAS_UPDATE)
 
 /*
  * An enter_s may change code like below:

@@ -813,10 +813,15 @@ arc_gen_SRL(DisasCtxt *ctx, TCGv src2, TCGv src1)
 int
 arc_gen_SYNC(DisasCtxt *ctx)
 {
-    int ret = DISAS_NEXT;
-
-    syncReturnDisasUpdate();
-    return ret;
+    /* Full memory barrier */
+    tcg_gen_mb(TCG_BAR_SC);
+    /*
+    * At the end of a SYNC instruction, it is guaranteed that
+    * handling the current interrupt is finished and the raising
+    * pulse signal (if any), is cleared. By marking SYNC as the
+    * end of a TB we gave a chance to interrupt threads to execute.
+    */
+    return DISAS_UPDATE;
 }
 
 int
