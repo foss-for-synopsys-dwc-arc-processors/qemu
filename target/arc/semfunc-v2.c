@@ -7663,7 +7663,7 @@ arc_gen_SCONDD(DisasCtxt *ctx, TCGv addr, TCGv value)
     TCGv_i64 exclusive_val = tcg_temp_local_new_i64();
 
     tcg_gen_ext_i32_i64(temp_1, pair);
-    tcg_gen_ext_i32_i64(temp_2, value);
+    tcg_gen_extu_i32_i64(temp_2, value);
     tcg_gen_shli_i64(temp_1, temp_1, 32);
     tcg_gen_or_i64(temp_1, temp_1, temp_2);
 

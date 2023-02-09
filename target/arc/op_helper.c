@@ -183,7 +183,7 @@ uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
     env->arconnect.locked_mutex = &entry->mutex;
     target_ulong read1 = cpu_ldl_data(env, addr);
     target_ulong read2 = cpu_ldl_data(env, addr+4);
-    target_ulong ret = ((uint64_t ) read1) | (((uint64_t) read2) << 32);
+    uint64_t ret = ((uint64_t ) read1) | (((uint64_t) read2) << 32);
     env->arconnect.lpa_lf = entry;
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
