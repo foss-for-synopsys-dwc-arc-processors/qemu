@@ -335,6 +335,9 @@ bool arc_target_has_option(enum target_options option)
     case LL64_OPTION:
         return true;
         break;
+    case DIV_REM_OPTION:
+        return true;
+        break;
     default:
         break;
     }
