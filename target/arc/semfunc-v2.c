@@ -90,7 +90,6 @@ arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)          \
     tcg_temp_free_i64(r64_b);                                              \
     tcg_temp_free_i64(r64_c);                                              \
 }
-
 /*
  * FLAG
  *    Variables: @src
@@ -8669,57 +8668,82 @@ arc_gen_VMAC2HU(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
  * VADD: VADD2, VADD2H, VADD4H
  */
 
+#define ARC_GEN_VADD2_BASE_I64(NAME, OP, SIZE)                                      \
+static void                                                                         \
+arc_gen_##NAME##_base_i64(DisasCtxt *ctx, TCGv_i64 dest, TCGv_i64 b, TCGv_i64 c,    \
+                       TCGv_i64 acc, bool set_n_flag,                               \
+                       ARC_GEN_EXTRACT_BITS_FUNC extract_bits,                      \
+                       ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)            \
+{                                                                                   \
+    ARC_GEN_VEC_FIRST_OPERAND(operand_##SIZE, i64, b);                              \
+    ARC_GEN_VEC_SECOND_OPERAND(operand_##SIZE, i64, c);                             \
+                                                                                    \
+    OP(dest, b, c);                                                                 \
+}
+
+ARC_GEN_VADD2_BASE_I64(vadd2, tcg_gen_vec_add32_i64,    32bit);
+ARC_GEN_VADD2_BASE_I64(vadd4h, tcg_gen_vec_add16_i64,   16bit);
+
+
+ARC_GEN_32BIT_INTERFACE(VADD2, PAIR, PAIR, PAIR, UNSIGNED, \
+                        arc_gen_vadd2_base_i64);
+
 int
 arc_gen_VADD2(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-  TCGv cc_temp = tcg_temp_local_new();
-  TCGLabel *cc_done = gen_new_label();
+    ARC_GEN_SEMFUNC_INIT();
 
-  getCCFlag(cc_temp);
-  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+    arc_autogen_base32_VADD2(ctx, dest, b, c);
 
-  arc_gen_vec_pair_i32(ctx, dest, b, c,
-                       tcg_gen_vec_add32_i64);
+    ARC_GEN_SEMFUNC_DEINIT();
 
-  gen_set_label(cc_done);
-  tcg_temp_free(cc_temp);
-
-  return DISAS_NEXT;
+    return DISAS_NEXT;
 }
+
+
+#define VEC_ADD16_SUB16_I32_W0(NAME, OP)                 \
+static void                                              \
+arc_gen_vec_##NAME##16_i32_w0(TCGv dest, TCGv b, TCGv c) \
+{                                                        \
+  TCGv t1 = tcg_temp_new();                              \
+                                                         \
+  OP(t1, b, c);                                          \
+  tcg_gen_deposit_i32(dest, dest, t1, 0, 32);            \
+                                                         \
+  tcg_temp_free(t1);                                     \
+}
+
+VEC_ADD16_SUB16_I32_W0(add, tcg_gen_vec_add16_i32)
 
 int
 arc_gen_VADD2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-  TCGv cc_temp = tcg_temp_local_new();
-  TCGLabel *cc_done = gen_new_label();
+    ARC_GEN_SEMFUNC_INIT();
 
-  getCCFlag(cc_temp);
-  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i32, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i32, c);
 
-  tcg_gen_vec_add16_i32(dest, b, c);
+    arc_gen_vec_add16_i32_w0(dest, b, c);
 
-  gen_set_label(cc_done);
-  tcg_temp_free(cc_temp);
+    ARC_GEN_SEMFUNC_DEINIT();
 
-  return DISAS_NEXT;
+    return DISAS_NEXT;
 }
+
+
+ARC_GEN_32BIT_INTERFACE(VADD4H, PAIR, PAIR, PAIR, UNSIGNED, \
+                        arc_gen_vadd4h_base_i64);
 
 int
 arc_gen_VADD4H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-  TCGv cc_temp = tcg_temp_local_new();
-  TCGLabel *cc_done = gen_new_label();
+    ARC_GEN_SEMFUNC_INIT();
 
-  getCCFlag(cc_temp);
-  tcg_gen_brcondi_tl(TCG_COND_EQ, cc_temp, 0, cc_done);
+    arc_autogen_base32_VADD4H(ctx, dest, b, c);
 
-  arc_gen_vec_pair_i32(ctx, dest, b, c,
-                       tcg_gen_vec_add16_i64);
+    ARC_GEN_SEMFUNC_DEINIT();
 
-  gen_set_label(cc_done);
-  tcg_temp_free(cc_temp);
-
-  return DISAS_NEXT;
+    return DISAS_NEXT;
 }
 
 /*

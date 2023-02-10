@@ -14309,20 +14309,20 @@ arc_gen_vec_##NAME##16_i64_w0(TCGv dest, TCGv b, TCGv c) \
 VEC_ADD16_SUB16_I64_W0(add, tcg_gen_vec_add16_i64)
 VEC_ADD16_SUB16_I64_W0(sub, tcg_gen_vec_sub16_i64)
 
-#define VEC_ADD_SUB(INSN, OP, FIELD_SIZE)                 \
-int                                                       \
-arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c) \
-{                                                         \
-    ARC_GEN_SEMFUNC_INIT();                               \
-                                                          \
-    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, b);   \
-    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, c);  \
-                                                          \
-    /* Instruction code */                                \
-    OP(dest, b, c);                                       \
-                                                          \
-    ARC_GEN_SEMFUNC_DEINIT();                             \
-    return DISAS_NEXT;                                    \
+#define VEC_ADD_SUB(INSN, OP, FIELD_SIZE)                     \
+int                                                           \
+arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
+{                                                             \
+    ARC_GEN_SEMFUNC_INIT();                                   \
+                                                              \
+    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, i64, b);  \
+    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, i64, c); \
+                                                              \
+    /* Instruction code */                                    \
+    OP(dest, b, c);                                           \
+                                                              \
+    ARC_GEN_SEMFUNC_DEINIT();                                 \
+    return DISAS_NEXT;                                        \
 }
 
 VEC_ADD_SUB(VADD2,  tcg_gen_vec_add32_i64,    32bit)
@@ -14365,20 +14365,20 @@ arc_gen_vmac2_op(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c,
   tcg_temp_free(t4);
 }
 
-#define ARC_GEN_VEC_MAC2H(INSN, OP, FIELD_SIZE)             \
-int                                                         \
-arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)   \
-{                                                           \
-    ARC_GEN_SEMFUNC_INIT();                                 \
-                                                            \
-    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, b);     \
-    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, c);    \
-                                                            \
-    arc_gen_vmac2_op(ctx, dest, b, c, OP);                  \
-                                                            \
-    ARC_GEN_SEMFUNC_DEINIT();                               \
-                                                            \
-    return DISAS_NEXT;                                      \
+#define ARC_GEN_VEC_MAC2H(INSN, OP, FIELD_SIZE)               \
+int                                                           \
+arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
+{                                                             \
+    ARC_GEN_SEMFUNC_INIT();                                   \
+                                                              \
+    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, i64, b);  \
+    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, i64, c); \
+                                                              \
+    arc_gen_vmac2_op(ctx, dest, b, c, OP);                    \
+                                                              \
+    ARC_GEN_SEMFUNC_DEINIT();                                 \
+                                                              \
+    return DISAS_NEXT;                                        \
 }  
 
 ARC_GEN_VEC_MAC2H(VMAC2H, tcg_gen_sextract_tl, 16bit)
@@ -14391,8 +14391,8 @@ arc_gen_##INSN(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)     \
     TCGv t1;                                                  \
     ARC_GEN_SEMFUNC_INIT();                                   \
                                                               \
-    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, b);       \
-    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, c);      \
+    ARC_GEN_VEC_FIRST_OPERAND(operand_##FIELD_SIZE, i64, b);  \
+    ARC_GEN_VEC_SECOND_OPERAND(operand_##FIELD_SIZE, i64, c); \
                                                               \
     t1 = tcg_temp_new();                                      \
     ARC_GEN_CMPL2_##FIELD##_I64(t1, c);                       \

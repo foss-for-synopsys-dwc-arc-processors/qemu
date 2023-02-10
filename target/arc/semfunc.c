@@ -190,6 +190,7 @@ arc_gen_mac_check_fflags(DisasCtxt *ctx, TCGv_i64 result, TCGv_i64 operand_1,
     }
 }
 
+
 void
 arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                        TCGv_i64 acc, bool set_n_flag,
@@ -208,8 +209,8 @@ arc_gen_qmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i64, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -273,8 +274,8 @@ arc_gen_dmacwh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i64, c);
 
     extract_bits(b_w0, b, 0, 32);
     extract_bits(b_w1, b, 32, 32);
@@ -323,8 +324,8 @@ arc_gen_dmach_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i64, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -411,8 +412,8 @@ arc_gen_dmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i64, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -460,8 +461,8 @@ arc_gen_qmpyh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i64, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -522,8 +523,8 @@ arc_gen_dmpywh_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i64, c);
 
     extract_bits(b_w0, b, 0, 32);
     extract_bits(b_w1, b, 32, 32);
@@ -570,8 +571,8 @@ arc_gen_vmpy2h_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
     /* Instruction code */
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i64, c);
 
     extract_bits(b_h0, b, 0, 16);
     extract_bits(b_h1, b, 16, 16);
@@ -608,8 +609,8 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)
 {
     /* Instruction code */
-    ARC_GEN_VEC_FIRST_OPERAND(operand_64bit, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_64bit, c);
+    ARC_GEN_VEC_FIRST_OPERAND(operand_64bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_64bit, i64, c);
 
     extract_bits(b, b, 0, 32);
     extract_bits(c, c, 0, 32);
