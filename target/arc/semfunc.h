@@ -161,34 +161,34 @@ arc_gen_set_operand_16bit_vec_const(DisasCtxt *ctx, operand_t *operand);
 /*
  * Generate code to handle the first operand (TCG_OPERAND) in a vector
  * operation to quadriplicate/duplicatie its' value based on the provided vector
- * operand size (OP_SIZE)
  */
-#define ARC_GEN_VEC_FIRST_OPERAND(OP_SIZE, TCG_OPERAND)                 \
-    do {                                                                \
-        operand_t *operand_1 = &(ctx->insn.operands[1]);                \
-        if (!(operand_1->type & ARC_OPERAND_IR)) {                      \
-            arc_gen_set_ ## OP_SIZE ## _vec_const(ctx, operand_1);      \
-            tcg_gen_movi_i64(TCG_OPERAND, operand_1->value);            \
-        }                                                               \
+#define ARC_GEN_VEC_FIRST_OPERAND(OPERAND_SIZE, OPERATION_SIZE,             \
+                                TCG_OPERAND)                                \
+    do {                                                                    \
+        operand_t *operand_1 = &(ctx->insn.operands[1]);                    \
+        if (!(operand_1->type & ARC_OPERAND_IR)) {                          \
+            arc_gen_set_ ## OPERAND_SIZE ## _vec_const(ctx, operand_1);     \
+            tcg_gen_movi_##OPERATION_SIZE(TCG_OPERAND, operand_1->value);   \
+        }                                                                   \
     } while(0)
 
 /*
  * Generate code to handle the second operand (TCG_OPERAND) in a vector
  * operation to quadriplicate/duplicatie its' value based on the provided vector
- * operand size (OP_SIZE).
  */
-#define ARC_GEN_VEC_SECOND_OPERAND(OP_SIZE, TCG_OPERAND)                \
-    do {                                                                \
-        operand_t *operand_2 = &(ctx->insn.operands[2]);                \
-        if (!(operand_2->type & ARC_OPERAND_IR)) {                      \
-            if (operand_2->type & ARC_OPERAND_LIMM &&                   \
-                operand_2->type & ARC_OPERAND_DUPLICATE){               \
-                operand_2->value = ctx->insn.operands[1].value;         \
-            } else {                                                    \
-                arc_gen_set_ ## OP_SIZE ## _vec_const(ctx, operand_2);  \
-            }                                                           \
-            tcg_gen_movi_i64(TCG_OPERAND, operand_2->value);            \
-        }                                                               \
+#define ARC_GEN_VEC_SECOND_OPERAND(OPERAND_SIZE, OPERATION_SIZE,            \
+                                TCG_OPERAND)                                \
+    do {                                                                    \
+        operand_t *operand_2 = &(ctx->insn.operands[2]);                    \
+        if (!(operand_2->type & ARC_OPERAND_IR)) {                          \
+            if (operand_2->type & ARC_OPERAND_LIMM &&                       \
+                operand_2->type & ARC_OPERAND_DUPLICATE){                   \
+                operand_2->value = ctx->insn.operands[1].value;             \
+            } else {                                                        \
+                arc_gen_set_ ## OPERAND_SIZE ## _vec_const(ctx, operand_2); \
+            }                                                               \
+            tcg_gen_movi_ ##OPERATION_SIZE(TCG_OPERAND, operand_2->value);  \
+        }                                                                   \
     } while(0)
 
 /**
