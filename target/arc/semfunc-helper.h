@@ -200,23 +200,6 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
                                 tcg_gen_setcondi_tl(TCG_COND_NE, R, R, 0)
 #define OverflowSUB(R, A, B, C) arc_gen_sub_signed_overflow_tl(R, A, B, C, TARGET_LONG_BITS)
 
-
-
-#define unsignedLT(R, B, C)           tcg_gen_setcond_tl(TCG_COND_LTU, R, B, C)
-#define unsignedGE(R, B, C)           tcg_gen_setcond_tl(TCG_COND_GEU, R, B, C)
-#define logicalShiftRight(R, B, C)    tcg_gen_shr_tl(R, B, C)
-#define logicalShiftLeft(R, B, C)     tcg_gen_shl_tl(R, B, C)
-#define arithmeticShiftRight(R, B, C) tcg_gen_sar_tl(R, B, C)
-#define rotateLeft(R, B, C)           tcg_gen_rotl_tl(R, B, C)
-#define rotateRight(R, B, C)          tcg_gen_rotr_tl(R, B, C)
-
-#ifdef TARGET_ARC64
-#define rotateLeft32(R, B, C)     arc_gen_rotate_left32_i64(R, B, C)
-#define rotateRight32(R, B, C)    arc_gen_rotate_right32_i64(R, B, C)
-
-#define arithmeticShiftRight32(R, B, C)   arc_gen_arithmetic_shift_right32_i64(R, B, C)
-#endif
-
 void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
 #define getBit(R, A, POS)   arc_gen_get_bit(R, A, POS)
 
@@ -272,13 +255,10 @@ void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
     } while (0)
 
 void arc_gen_mac(TCGv phi, TCGv b, TCGv c);
-#define MAC(R, B, C)  arc_gen_mac(R, B, C)
 void arc_gen_macu(TCGv phi, TCGv b, TCGv c);
-#define MACU(R, B, C) arc_gen_macu(R, B, C)
 
 void arc_gen_extract_bits(TCGv ret, TCGv a, TCGv start, TCGv end);
-#define extractBits(R, ELEM, START, END) \
-    arc_gen_extract_bits(R, ELEM, START, END)
+
 void arc_gen_get_register(TCGv ret, enum arc_registers reg);
 #define getRegister(R, REG) arc_gen_get_register(R, REG)
 void arc_gen_set_register(enum arc_registers reg, TCGv value);
@@ -295,11 +275,6 @@ void arc_gen_set_register(enum arc_registers reg, TCGv value);
 /* TODO: This is going to be revisited. */
 #define throwExcpPriviledgeV() \
     arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);
-
-#define divSigned(R, SRC1, SRC2)            tcg_gen_div_tl(R, SRC1, SRC2)
-#define divUnsigned(R, SRC1, SRC2)          tcg_gen_divu_tl(R, SRC1, SRC2)
-#define divRemainingSigned(R, SRC1, SRC2)   tcg_gen_rem_tl(R, SRC1, SRC2)
-#define divRemainingUnsigned(R, SRC1, SRC2) tcg_gen_remu_tl(R, SRC1, SRC2)
 
 #define DO_IN_32BIT_SIGNED(OP, R, SRC1, SRC2) \
     TCGv_i32 lr = tcg_temp_new_i32(); \
@@ -326,16 +301,11 @@ void arc_gen_set_register(enum arc_registers reg, TCGv value);
     tcg_temp_free_i32(lsrc2);
 
 
-#define divSigned32(R, SRC1, SRC2)   DO_IN_32BIT_SIGNED(   tcg_gen_div_i32, R, SRC1, SRC2)
-#define divUnsigned32(R, SRC1, SRC2) DO_IN_32BIT_UNSIGNED(tcg_gen_divu_i32, R, SRC1, SRC2)
-#define divRemainingSigned32(R, SRC1, SRC2)   DO_IN_32BIT_SIGNED(  tcg_gen_rem_i32, R, SRC1, SRC2)
-#define divRemainingUnsigned32(R, SRC1, SRC2) DO_IN_32BIT_UNSIGNED(tcg_gen_remu_i32, R, SRC1, SRC2)
-
 /* TODO: To implement */
 #define Halt()
 
 void arc_has_interrupts(const DisasCtxt *ctx, TCGv ret);
-#define hasInterrupts(R)    arc_has_interrupts(ctx, R)
+
 #define doNothing()
 
 #define setLF(VALUE)    tcg_gen_mov_tl(cpu_lock_lf_var, VALUE)
@@ -351,18 +321,13 @@ TCGv arc_gen_next_reg(const DisasCtxt *ctx, TCGv reg, bool fail);
 #define Zero()  (ctx->zero)
 
 bool arc_target_has_option(enum target_options option);
-#define targetHasOption(OPTION) arc_target_has_option(OPTION)
 
 bool arc_is_instruction_operand_a_register(const DisasCtxt *ctx, int nop);
-#define instructionHasRegisterOperandIn(NOP) \
-    arc_is_instruction_operand_a_register(ctx, NOP)
 
 void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
 
 #ifdef TARGET_ARC64
 
-//#define se32to64(A, B) gen_helper_se32to64(A, B)
-#define se32to64(A, B) tcg_gen_ext32s_tl(A, B)
 
 #define ARC64_ADDRESS_ADD(A, B, C) { \
   ARCCPU *cpu = env_archcpu(ctx->env); \
