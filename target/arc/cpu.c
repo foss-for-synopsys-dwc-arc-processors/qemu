@@ -368,7 +368,7 @@ static void arc_cpu_realizefn(DeviceState *dev, Error **errp)
                       | ((cpu->cfg.dmp_unaligned ? 1 : 0) << 23) /* unaliged access */
                       | (1 << 24) /* 128-bit load/store */
                       | (3 << 26) /* Code density instructions */
-                      | (1 << 28); /* 64-bit DIV/REM TBD */
+                      | (3 << 28); /* 64-bit DIV/REM TBD */
 #endif
 
     arc_initializeTIMER(cpu);
