@@ -84,6 +84,9 @@ enum target_options {
 #define ReplMask(DEST, SRC, MASK) \
     gen_helper_repl_mask(DEST, DEST, SRC, MASK)
 
+#define ReplMaski(DEST, SRC, MASK) \
+    gen_helper_repl_mask(DEST, DEST, SRC, tcg_constant_i64(MASK))
+
 void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 #define getCCFlag(R)    arc_gen_verifyCCFlag(ctx, R)
 
@@ -120,9 +123,13 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 
 #define getNFlag(R)     cpu_Nf
 #define setNFlag(ELEM)  tcg_gen_shri_tl(cpu_Nf, ELEM, (TARGET_LONG_BITS - 1))
+#define clearNFlag()    tcg_gen_movi_tl(cpu_Cf, 0)
+
 #ifdef TARGET_ARC64
 #define setNFlag32(ELEM)  tcg_gen_shri_tl(cpu_Nf, ELEM, 31)
 #endif
+
+
 #define setNFlagByNum(ELEM, N) { \
     TCGv _tmp = tcg_temp_local_new(); \
     tcg_gen_shri_tl(_tmp, ELEM, (N - 1)); \
@@ -132,8 +139,11 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 
 #define setCFlag(ELEM)  tcg_gen_andi_tl(cpu_Cf, ELEM, 1)
 #define getCFlag(R)     tcg_gen_mov_tl(R, cpu_Cf)
+#define clearCFlag()    tcg_gen_movi_tl(cpu_Cf, 0)
 
 #define setVFlag(ELEM)  tcg_gen_andi_tl(cpu_Vf, ELEM, 1)
+#define setVFlagTo1()   tcg_gen_movi_tl(cpu_Vf, 1)
+#define clearVFlag()    tcg_gen_movi_tl(cpu_Vf, 0)
 
 #define setZFlag(ELEM)  \
     tcg_gen_setcondi_tl(TCG_COND_EQ, cpu_Zf, ELEM, 0);
@@ -202,6 +212,7 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 
 void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
 #define getBit(R, A, POS)   arc_gen_get_bit(R, A, POS)
+#define getBiti(R, A, POS)   arc_gen_get_bit(R, A, tcg_constant_tl(POS))
 
 #define getRegIndex(R, ID)  tcg_gen_movi_tl(R, (int) ID)
 
