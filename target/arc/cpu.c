@@ -177,7 +177,7 @@ static void arc_cpu_reset(DeviceState *dev)
 
     /* FPU init */
     /* TODO: Make init_fpu parameters based on options. */
-    init_fpu(true, true, true);
+    init_fpu(env, true, true, true);
 
     arc_resetTIMER(cpu);
     arc_resetIRQ(cpu);
@@ -222,8 +222,6 @@ static void arc_cpu_reset(DeviceState *dev)
     cpu->norm_build = 0x3;
     cpu->barrel_build = 0x303;
 
-    set_default_nan_mode(1, &env->fp_status);
-    set_float_rounding_mode(float_round_nearest_even, &env->fp_status);
 }
 
 int print_insn_arc_v3(bfd_vma memaddr, struct disassemble_info *info);

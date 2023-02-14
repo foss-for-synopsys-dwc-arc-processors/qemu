@@ -55,6 +55,6 @@ target_ulong arc_fpu_status_get_internal(CPUARCState *env);
 target_ulong arc_fpu_ctrl_get_internal(CPUARCState *env);
 void arc_fpu_ctrl_set_internal(CPUARCState *env, target_ulong val);
 
-void init_fpu(bool fp_dp, bool fp_wide, bool fp_hp);
+void init_fpu(CPUARCState *env, bool fp_dp, bool fp_wide, bool fp_hp);
 
 #endif
