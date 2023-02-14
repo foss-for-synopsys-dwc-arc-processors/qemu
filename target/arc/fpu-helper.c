@@ -65,7 +65,7 @@ init_fpu(CPUARCState *env, bool fp_dp, bool fp_wide, bool fp_hp)
   vfp_max_length = fpr_per_vector_operand * (vfp_width / 32) * (fp_hp != 0 ? 2 : 1);
 
   uint32_t tmp = 0;
-  set_default_nan_mode(1, &env->fp_status);
+  set_default_nan_mode(0, &env->fp_status);
   set_float_rounding_mode(float_round_nearest_even, &env->fp_status);
   set_float_exception_flags(tmp, &env->fp_status);
 
