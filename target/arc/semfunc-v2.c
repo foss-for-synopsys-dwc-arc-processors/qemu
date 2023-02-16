@@ -8668,17 +8668,18 @@ arc_gen_VMAC2HU(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
  * VADD: VADD2, VADD2H, VADD4H
  */
 
-#define ARC_GEN_BASE_I64(NAME, OP, SIZE)                                            \
-static void                                                                         \
-arc_gen_##NAME##_base_i64(DisasCtxt *ctx, TCGv_i64 dest, TCGv_i64 b, TCGv_i64 c,    \
-                       TCGv_i64 acc, bool set_n_flag,                               \
-                       ARC_GEN_EXTRACT_BITS_FUNC extract_bits,                      \
-                       ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)            \
-{                                                                                   \
-    ARC_GEN_VEC_FIRST_OPERAND(operand_##SIZE, i64, b);                              \
-    ARC_GEN_VEC_SECOND_OPERAND(operand_##SIZE, i64, c);                             \
-                                                                                    \
-    OP(dest, b, c);                                                                 \
+#define ARC_GEN_BASE_I64(NAME, OP, SIZE)                                    \
+static void                                                                 \
+arc_gen_##NAME##_base_i64(DisasCtxt *ctx,                                   \
+                        TCGv_i64 dest, TCGv_i64 b, TCGv_i64 c,              \
+                        TCGv_i64 acc, bool set_n_flag,                      \
+                        ARC_GEN_EXTRACT_BITS_FUNC extract_bits,             \
+                        ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64)   \
+{                                                                           \
+  ARC_GEN_VEC_FIRST_OPERAND(operand_##SIZE, i64, b);                        \
+  ARC_GEN_VEC_SECOND_OPERAND(operand_##SIZE, i64, c);                       \
+                                                                            \
+  OP(dest, b, c);                                                           \
 }
 
 ARC_GEN_BASE_I64(vadd2, tcg_gen_vec_add32_i64,    32bit);
@@ -8694,13 +8695,13 @@ ARC_GEN_32BIT_INTERFACE(VADD2, PAIR, PAIR, PAIR, UNSIGNED, \
 int
 arc_gen_VADD2(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_SEMFUNC_INIT();
 
-    arc_autogen_base32_VADD2(ctx, dest, b, c);
+  arc_autogen_base32_VADD2(ctx, dest, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_SEMFUNC_DEINIT();
 
-    return DISAS_NEXT;
+  return DISAS_NEXT;
 }
 
 
@@ -8722,16 +8723,16 @@ VEC_ADD16_SUB16_I32_W0(sub, tcg_gen_vec_sub16_i32)
 int
 arc_gen_VADD2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_SEMFUNC_INIT();
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i32, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i32, c);
+  ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i32, b);
+  ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i32, c);
 
-    arc_gen_vec_add16_i32_w0(dest, b, c);
+  arc_gen_vec_add16_i32_w0(dest, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_SEMFUNC_DEINIT();
 
-    return DISAS_NEXT;
+  return DISAS_NEXT;
 }
 
 
@@ -8741,13 +8742,13 @@ ARC_GEN_32BIT_INTERFACE(VADD4H, PAIR, PAIR, PAIR, UNSIGNED, \
 int
 arc_gen_VADD4H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_SEMFUNC_INIT();
 
-    arc_autogen_base32_VADD4H(ctx, dest, b, c);
+  arc_autogen_base32_VADD4H(ctx, dest, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_SEMFUNC_DEINIT();
 
-    return DISAS_NEXT;
+  return DISAS_NEXT;
 }
 
 /*
@@ -8760,28 +8761,28 @@ ARC_GEN_32BIT_INTERFACE(VSUB2, PAIR, PAIR, PAIR, UNSIGNED, \
 int
 arc_gen_VSUB2(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_SEMFUNC_INIT();
 
-    arc_autogen_base32_VSUB2(ctx, dest, b, c);
+  arc_autogen_base32_VSUB2(ctx, dest, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_SEMFUNC_DEINIT();
 
-    return DISAS_NEXT;
+  return DISAS_NEXT;
 }
 
 int
 arc_gen_VSUB2H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_SEMFUNC_INIT();
 
-    ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i32, b);
-    ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i32, c);
+  ARC_GEN_VEC_FIRST_OPERAND(operand_16bit, i32, b);
+  ARC_GEN_VEC_SECOND_OPERAND(operand_16bit, i32, c);
 
-    arc_gen_vec_sub16_i32_w0(dest, b, c);
+  arc_gen_vec_sub16_i32_w0(dest, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_SEMFUNC_DEINIT();
 
-    return DISAS_NEXT;
+  return DISAS_NEXT;
 }
 
 
@@ -8791,13 +8792,13 @@ ARC_GEN_32BIT_INTERFACE(VSUB4H, PAIR, PAIR, PAIR, UNSIGNED, \
 int
 arc_gen_VSUB4H(DisasCtxt *ctx, TCGv dest, TCGv b, TCGv c)
 {
-    ARC_GEN_SEMFUNC_INIT();
+  ARC_GEN_SEMFUNC_INIT();
 
-    arc_autogen_base32_VSUB4H(ctx, dest, b, c);
+  arc_autogen_base32_VSUB4H(ctx, dest, b, c);
 
-    ARC_GEN_SEMFUNC_DEINIT();
+  ARC_GEN_SEMFUNC_DEINIT();
 
-    return DISAS_NEXT;
+  return DISAS_NEXT;
 }
 
 /*
