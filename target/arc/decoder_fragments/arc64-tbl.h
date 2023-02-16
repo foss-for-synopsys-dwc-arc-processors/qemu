@@ -970,6 +970,12 @@
 /* add_s ZA_S,LIMM_S,SIMM3_5_S 01110xxx11000111 */
 { "add_s", 0x000070c7, 0x0000f8ff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, ARITH, NONE, { ZA_S, LIMM_S, SIMM3_5_S }, { 0 } }
 
+/* add_s b,sp,u7 11000bbb100uuuuu.  */
+{ "add_s", 0x0000C080, 0x0000F8E0, ARC_OPCODE_ARC32, ARITH, NONE, { RB_S, SP_S, UIMM7_A32_11_S }, { 0 }},
+
+/* add_s SP,SP,u7 11000000101uuuuu.  */
+{ "add_s", 0x0000C0A0, 0x0000FFE0, ARC_OPCODE_ARC32, ARITH, NONE, { SP_S, SP_Sdup, UIMM7_A32_11_S }, { 0 }},
+
 /* aex RB_CHK,BRAKET,RC,BRAKETdup 00100xxx00100111xxxxxxxxxxxxxxxx */
 { "aex", 0x20270000, 0xf8ff0000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, AUXREG, NONE, { RB_CHK, BRAKET, RC, BRAKETdup }, { 0 } }
 
@@ -6574,6 +6580,12 @@
 /* or_s RB_S,RB_Sdup,RC_S 01111xxxxxx00101 */
 { "or_s", 0x00007805, 0x0000f81f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, LOGICAL, NONE, { RB_S, RB_Sdup, RC_S }, { 0 } }
 
+/* pop_s b 11000bbb11000001.  */
+{ "pop_s", 0x0000C0C1, 0x0000F8FF, ARC_OPCODE_ARC32, POP, NONE, { RB_S }, { C_AA_AB }},
+
+/* pop_s BLINK 11000RRR11010001.  */
+{ "pop_s", 0x0000C0D1, 0x0000F8FF, ARC_OPCODE_ARC32, POP, NONE, { BLINK_S }, { C_AA_AB }},
+
 /* popdl_s RBB_S 11000xxx1101xxx1 */
 { "popdl_s", 0x0000c0d1, 0x0000f8f1, ARC_OPCODE_ARC64, ARITH, NONE, { RBB_S }, { 0 } }
 
@@ -6633,6 +6645,12 @@
 
 /* prefetchw BRAKET,LIMM,SIMM9_8,BRAKETdup 00010110xxxxxxxxx1111xx000111110 */
 { "prefetchw", 0x1600783e, 0xff0079ff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MEMORY, NONE, { BRAKET, LIMM, SIMM9_8, BRAKETdup }, { 0 } }
+
+/* push_s b 11000bbb11100001.  */
+{ "push_s", 0x0000C0E1, 0x0000F8FF, ARC_OPCODE_ARC32, PUSH, NONE, { RB_S }, { C_AA_AW }},
+
+/* push_s blink 11000RRR11110001.  */
+{ "push_s", 0x0000C0F1, 0x0000F8FF, ARC_OPCODE_ARC32, PUSH, NONE, { BLINK_S }, { C_AA_AW }},
 
 /* pushdl_s RBB_S 11000xxx1111xxx1 */
 { "pushdl_s", 0x0000c0f1, 0x0000f8f1, ARC_OPCODE_ARC64, ARITH, NONE, { RBB_S }, { 0 } }
@@ -9963,6 +9981,9 @@
 
 /* sub_s RB_S,RB_Sdup,UIMM5_11_S 10111xxx011xxxxx */
 { "sub_s", 0x0000b860, 0x0000f8e0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, SUB, NONE, { RB_S, RB_Sdup, UIMM5_11_S }, { 0 } }
+
+/* sub_s SP,SP,u7 11000001101uuuuu.  */
+{ "sub_s", 0x0000C1A0, 0x0000FFE0, ARC_OPCODE_ARC32, SUB, NONE, { SP_S, SP_Sdup, UIMM7_A32_11_S }, { 0 }},
 
 /* swap<.f> RB,RC 00101xxx00101111xxxxxxxxxx000000 */
 { "swap", 0x282f0000, 0xf8ff003f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, ARITH, SWAP, { RB, RC }, { C_F } }
