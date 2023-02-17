@@ -335,6 +335,7 @@ MAPPING(dmachu, DMACHU, 3, 0, 1, 2)
 MAPPING(dmach, DMACH, 3, 0, 1, 2)
 
 MAPPING(brk, HALT, 0)
+MAPPING(brk_s, HALT, 0)
 
 /* Long instruction */
 
