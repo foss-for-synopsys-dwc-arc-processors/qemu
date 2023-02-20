@@ -254,13 +254,23 @@ CONVERTION_HELPERS(fsrnd, float32_round_to_int)
 
 #define CONVERTION_HELPERS_RZ(NAME, FLT_HELPER) \
 uint64_t helper_##NAME(CPUARCState *env, uint64_t src) \
-{ \
-    bool save = get_flush_to_zero(&env->fp_status); \
-    set_flush_to_zero(true, &env->fp_status); \
-    uint64_t ret = FLT_HELPER(src, &env->fp_status); \
-    set_flush_to_zero(save, &env->fp_status); \
-    check_fpu_raise_exception(env); \
-    return ret; \
+{                                                                     \
+    FloatRoundMode saved_rounding_mode;                               \
+    bool saved_flush_zero;                                            \
+                                                                      \
+    saved_flush_zero = get_flush_to_zero(&env->fp_status);            \
+    saved_rounding_mode = get_float_rounding_mode(&env->fp_status);   \
+                                                                      \
+    set_flush_to_zero(true, &env->fp_status);                         \
+    set_float_rounding_mode(float_round_to_zero, &env->fp_status);    \
+                                                                      \
+    uint64_t ret = FLT_HELPER(src, &env->fp_status);                  \
+                                                                      \
+    set_flush_to_zero(saved_flush_zero, &env->fp_status);             \
+    set_float_rounding_mode(saved_rounding_mode, &env->fp_status);    \
+                                                                      \
+    check_fpu_raise_exception(env);                                   \
+    return ret;                                                       \
 }
 
 CONVERTION_HELPERS_RZ(fdrnd_rz, float64_round_to_int)
@@ -275,13 +285,24 @@ uint64_t helper_fs2h(CPUARCState *env, uint64_t src)
 
 uint64_t helper_fs2h_rz(CPUARCState *env, uint64_t src)
 {
-    bool save = get_flush_to_zero(&env->fp_status);
+    FloatRoundMode saved_rounding_mode;
+    bool saved_flush_zero;
+
+    saved_flush_zero = get_flush_to_zero(&env->fp_status);
+    saved_rounding_mode = get_float_rounding_mode(&env->fp_status);
+
     set_flush_to_zero(true, &env->fp_status);
-    uint64_t ret =  float32_to_float16(src, true, &env->fp_status);
-    set_flush_to_zero(save, &env->fp_status);
+    set_float_rounding_mode(float_round_to_zero, &env->fp_status);
+
+    uint64_t ret = float32_to_float16(src, true, &env->fp_status);
+
+    set_flush_to_zero(saved_flush_zero, &env->fp_status);
+    set_float_rounding_mode(saved_rounding_mode, &env->fp_status);
+
     check_fpu_raise_exception(env);
     return ret;
 }
+
 
 uint64_t helper_fh2s(CPUARCState *env, uint64_t src)
 {
