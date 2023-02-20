@@ -185,6 +185,7 @@ static void arc_cpu_reset(DeviceState *dev)
     arcc->parent_reset(dev);
 
     memset(env->r, 0, sizeof(env->r));
+    memset(env->fpr, 0, sizeof(env->fpr));
     env->lock_lf_var = 0;
 
     /*
