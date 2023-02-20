@@ -15141,27 +15141,6 @@ SGNJX(FH, 16)
 
 /* Vector floating point instructions */
 
-#define SGNJX(NAME, SIZE) \
-int arc_gen_##NAME##SGNJX (DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
-{ \
-  int ret = DISAS_NEXT; \
-  TCGv l_b = tcg_temp_new(); \
-  TCGv l_c = tcg_temp_new(); \
- \
-  tcg_gen_andi_tl(l_b, b, (1ull << (SIZE-1))); \
-  tcg_gen_andi_tl(l_c, c, (1ull << (SIZE-1))); \
-  tcg_gen_xor_tl(l_c, l_b, l_c); \
- \
-  tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE-1))); \
- \
-  tcg_gen_or_tl(a, l_b, l_c); \
- \
-  tcg_temp_free(l_b); \
-  tcg_temp_free(l_c); \
-   \
-  return ret; \
-}
-
 #include "fpu.h"
 
 #define VFINS(TYPE, SIZE) \
