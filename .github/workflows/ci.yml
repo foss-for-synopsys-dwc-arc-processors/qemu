@@ -39,7 +39,9 @@ jobs:
       - name: Set up build environment (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install ninja
+          brew install \
+            ninja \
+            pkg-config
           echo "TAR=gtar" >> $GITHUB_ENV
       - name: Set up build environment (Linux)
         if: ${{ runner.os == 'Linux' }}
