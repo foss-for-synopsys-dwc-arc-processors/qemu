@@ -186,8 +186,11 @@ tn_\name:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Auxilary registers
-.equ REG_IRQ_SELECT, 0x40B
-
+.equ REG_IRQ_SELECT,   0x40B   ; Interrupt select
+.equ REG_IVT_BASE,     0x25    ; Interrupt vector base
+.equ REG_IRQ_PRIORITY, 0x206   ; Interrupt priority
+.equ REG_IRQ_HINT,     0x201   ; Software Interrupt Trigger
+.equ REG_IRQ_ENABLE,   0x40C   ; Software Interrupt Enable
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
