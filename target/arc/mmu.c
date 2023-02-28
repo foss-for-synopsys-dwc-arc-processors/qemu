@@ -720,9 +720,7 @@ void arc_mmu_init_v3(CPUARCState *env)
     env->mmu.v3.scratch_data0 = 0;
 
     mmu_v3_page_size = cpu->cfg.mmu_page_size_sel0;
-    if(mmu_v3_page_size < 12 || mmu_v3_page_size > 24) {
-	assert("mmu-pagesize0 should be between 12 and 24." == 0);
-    }
+    assert(mmu_v3_page_size == 13);
 
     memset(env->mmu.v3.nTLB, 0, sizeof(env->mmu.v3.nTLB));
 }
