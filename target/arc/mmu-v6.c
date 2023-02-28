@@ -713,7 +713,12 @@ void arc_mmu_init_v6(CPUARCState *env)
         }
         break;
     case ARC_OPCODE_ARC32:
-        mmu_v6_version = &mmuv6_info[MMUV6_32_4K];
+        if(cpu->cfg.mmuv6_version == NULL ||
+           !g_strcmp0(cpu->cfg.mmuv6_version, "32_4k")) {
+            mmu_v6_version = &mmuv6_info[MMUV6_32_4K];
+        } else {
+            assert("MMUV6 mmuv6_version is invalid !!!" == 0);
+        }
         break;
     default:
         assert("Should not happen!!!" == 0);
