@@ -79,7 +79,7 @@ jobs:
       - name: Run acceptance tests
         if: ${{ runner.os == 'Linux' }}
         run: |
-          make check-avocado
+          GITLAB_CI=1 make check-avocado
 
       - name: Upload binaries
         if: ${{ always() }}

@@ -1,6 +1,8 @@
 # Tests for ARC MMU
 #
+from os import getenv
 
+from avocado import skipIf
 from avocado_qemu import QemuSystemTest
 from avocado_qemu import wait_for_console_pattern
 
@@ -60,6 +62,7 @@ class ARCMMUTest(ARCMMUTestBase):
 
         self.__run__(url, hash)
 
+    @skipIf(getenv('GITLAB_CI'), 'Running on GitLab')
     def test2(self):
         """
         :avocado: tags=arch:arc64
@@ -74,6 +77,7 @@ class ARCMMUTest(ARCMMUTestBase):
 
         self.__run__(url, hash)
 
+    @skipIf(getenv('GITLAB_CI'), 'Running on GitLab')
     def test3(self):
         """
         :avocado: tags=arch:arc64
@@ -117,6 +121,7 @@ class ARCMMUTest(ARCMMUTestBase):
         self.__run__(url, hash)
 
     # Update TLB sequence (QEMU does not currently support this)
+    @skipIf(getenv('GITLAB_CI'), 'Running on GitLab')
     def test6(self):
         """
         :avocado: tags=arch:arc64
