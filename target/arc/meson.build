@@ -36,6 +36,7 @@ arc_softmmu_ss.add(files(
   'regs-impl.c',
   'semfunc.c',
   'semfunc-helper.c',
+  'tcg-arc-adapter.c',
   'mpu.c',
   'timer.c',
   'irq.c',

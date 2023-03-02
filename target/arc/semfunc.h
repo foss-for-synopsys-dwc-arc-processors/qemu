@@ -22,6 +22,7 @@
 #ifndef __ARC_SEMFUNC_H__
 #define __ARC_SEMFUNC_H__
 
+#include "tcg-arc-adapter.h"
 #include "translate.h"
 #include "semfunc-helper.h"
 
