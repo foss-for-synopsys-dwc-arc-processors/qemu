@@ -1251,9 +1251,12 @@ arc_gen_RTIE(DisasCtxt *ctx)
     return DISAS_NORETURN;
 }
 
-/* Generate sleep insn. */
-int
-arc_gen_SLEEP(DisasCtxt *ctx, TCGv a)
+
+/**
+ * @brief Basic sleep operation
+ */
+static void
+arc_gen_sleep(DisasCtxt *ctx, TCGv a)
 {
     uint32_t param = 0;
 
@@ -1285,6 +1288,12 @@ arc_gen_SLEEP(DisasCtxt *ctx, TCGv a)
     tcg_gen_movi_tl(npc, ctx->npc);
     gen_helper_halt(cpu_env, npc);
     tcg_temp_free(npc);
+}
+
+int
+arc_gen_SLEEP(DisasCtxt *ctx, TCGv a)
+{
+    arc_gen_sleep(ctx, a);
     return DISAS_NEXT;
 }
 
