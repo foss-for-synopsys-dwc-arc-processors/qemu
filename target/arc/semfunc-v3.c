@@ -14580,6 +14580,105 @@ arc_gen_DMPYWHU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
     return DISAS_NEXT;
 }
 
+
+/*
+ * Compare the 32-bit signed vector elements of the 64-bit operands b and c.
+ * The minimum value of the two elements is stored in the corresponding
+ * element of the destination operand a.
+ * This instruction does not update any STATUS32 flags.
+ */
+int
+arc_gen_VMIN2(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 b_h0 = tcg_temp_new_i64();
+    TCGv_i64 b_h1 = tcg_temp_new_i64();
+
+    TCGv_i64 c_h0 = tcg_temp_new_i64();
+    TCGv_i64 c_h1 = tcg_temp_new_i64();
+
+    /* Instruction code */
+
+    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_32bit, i64, c);
+
+    tcg_gen_sextract_i64(b_h0, b, 0, 32);
+    tcg_gen_sextract_i64(b_h1, b, 32, 32);
+
+    tcg_gen_sextract_i64(c_h0, c, 0, 32);
+    tcg_gen_sextract_i64(c_h1, c, 32, 32);
+
+    tcg_gen_smin_i64(b_h0, b_h0, c_h0);
+    tcg_gen_smin_i64(b_h1, b_h1, c_h1);
+
+    /* Assemble final result */
+
+    tcg_gen_extract_i64(a, b_h0, 0, 32);
+    tcg_gen_shli_i64(b_h1, b_h1, 32);
+    tcg_gen_or_i64(a, a, b_h1);
+
+    tcg_temp_free_i64(b_h0);
+    tcg_temp_free_i64(b_h1);
+
+    tcg_temp_free_i64(c_h0);
+    tcg_temp_free_i64(c_h1);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+/*
+ * Compare the 32-bit signed vector elements of the 64-bit operands b and c.
+ * The maximum value of the two elements is stored in the corresponding
+ * element of the destination operand a.
+ * This instruction does not update any STATUS32 flags.
+ */
+int
+arc_gen_VMAX2(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 b_h0 = tcg_temp_new_i64();
+    TCGv_i64 b_h1 = tcg_temp_new_i64();
+
+    TCGv_i64 c_h0 = tcg_temp_new_i64();
+    TCGv_i64 c_h1 = tcg_temp_new_i64();
+
+    /* Instruction code */
+
+    ARC_GEN_VEC_FIRST_OPERAND(operand_32bit, i64, b);
+    ARC_GEN_VEC_SECOND_OPERAND(operand_32bit, i64, c);
+
+    tcg_gen_sextract_i64(b_h0, b, 0, 32);
+    tcg_gen_sextract_i64(b_h1, b, 32, 32);
+
+    tcg_gen_sextract_i64(c_h0, c, 0, 32);
+    tcg_gen_sextract_i64(c_h1, c, 32, 32);
+
+    tcg_gen_smax_i64(b_h0, b_h0, c_h0);
+    tcg_gen_smax_i64(b_h1, b_h1, c_h1);
+
+    /* Assemble final result */
+
+    tcg_gen_extract_i64(a, b_h0, 0, 32);
+    tcg_gen_shli_i64(b_h1, b_h1, 32);
+    tcg_gen_or_i64(a, a, b_h1);
+
+    tcg_temp_free_i64(b_h0);
+    tcg_temp_free_i64(b_h1);
+
+    tcg_temp_free_i64(c_h0);
+    tcg_temp_free_i64(c_h1);
+
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+
 int
 arc_gen_VMPY2H(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 {
