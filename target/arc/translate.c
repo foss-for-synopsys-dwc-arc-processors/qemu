@@ -1252,8 +1252,42 @@ arc_gen_RTIE(DisasCtxt *ctx)
 }
 
 
-/**
- * @brief Basic sleep operation
+/* SLEEP_OP
+ *    Variables: @c
+ *    Functions: gen_helper_halt
+ * --- code ---
+ * {
+ *   if (c register operand)
+ *   {
+ *     FlushPipe()
+ *     DEBUG[ZZ] = 1
+ *     DEBUG[SM] = c[7:5]
+ *     SYS_SLEEP_MODE[2:0] = c[7:5]
+ *     if (c[4] == 1)
+ *     {
+ *       STATUS32.E = c[3:0]
+ *       STATUS32.IE = 1
+ *     }
+ *     WaitForInterrupt()
+ *     DEBUG[ZZ] = 0
+ *     ServiceInterrupt()
+ *   }
+ *   else if (u6 immed operand)
+ *   {
+ *     FlushPipe()
+ *     DEBUG[ZZ] = 1
+ *     DEBUG [SM] = {2'b00,u[5]}
+ *     SYS_SLEEP_MODE[2:0] = {2'b00,u[5]}
+ *     if (u[4] == 1)
+ *     {
+ *       STATUS32.E = u[3:0]
+ *       STATUS32.IE = 1
+ *     }
+ *     WaitForInterrupt()
+ *     DEBUG[ZZ] = 0
+ *     ServiceInterrupt()
+ *   }
+ * }
  */
 static void
 arc_gen_sleep(DisasCtxt *ctx, TCGv a)
@@ -1290,13 +1324,97 @@ arc_gen_sleep(DisasCtxt *ctx, TCGv a)
     tcg_temp_free(npc);
 }
 
+/*
+ * SLEEP
+ *    Variables: @a
+ *    Functions: arc_gen_sleep
+ * --- code ---
+ * {
+ *   if (STATUS32.U == 0)
+ *     {
+ *       SLEEP_OP a // See above
+ *     }
+ *   else
+ *     {
+ *       raiseException (EV_PrivilegeV)
+ *     }
+ * }
+ */
 int
 arc_gen_SLEEP(DisasCtxt *ctx, TCGv a)
 {
+    /* FIXME: Add check for kernel mode. */
     arc_gen_sleep(ctx, a);
     return DISAS_NEXT;
 }
 
+/*
+ * WEVT
+ *    Variables: @c
+ *    Functions: arc_gen_except_no_wait_instructions, arc_gen_sleep
+ * --- code ---
+ * {
+ *   if ((STATUS32.U == 0) || STATUS32.US == 1))
+ *     {
+ *       SLEEP_OP c // See above
+ *     }
+ *   else
+ *     {
+ *       raiseException (EV_PrivilegeV)
+ *     }
+ * }
+ */
+int
+arc_gen_WEVT(DisasCtxt *ctx, TCGv c)
+{
+    arc_gen_except_no_wait_instructions(ctx);
+
+    arc_gen_sleep(ctx, c);
+
+    return DISAS_NEXT;
+}
+
+/*
+ * WLFC
+ *    Variables: @c
+ *    Functions: arc_gen_except_no_wait_instructions, arc_gen_sleep
+ * --- code ---
+ * {
+ *   if ((STATUS32.U == 0) || STATUS32.US == 1))
+ *     {
+ *        if (LF == 1)
+ *          {
+ *            SLEEP_OP c // See above
+ *          }
+ *     }
+ *   else
+ *     {
+ *       raiseException (EV_PrivilegeV)
+ *     }
+ * }
+ */
+int
+arc_gen_WLFC(DisasCtxt *ctx, TCGv c)
+{
+    arc_gen_except_no_wait_instructions(ctx);
+
+    /*
+     * FIXME: When SMP is live, LF being cleared by a different core must
+     * also wakeup WLFC induced sleep
+     */
+    TCGLabel *dont_stop = gen_new_label();
+    TCGv lf_set = tcg_temp_local_new();
+
+    gen_helper_getlf(lf_set, cpu_env);
+    tcg_gen_brcondi_tl(TCG_COND_NE, lf_set, 0x1, dont_stop);
+
+    arc_gen_sleep(ctx, c);
+
+    gen_set_label(dont_stop);
+    tcg_temp_free(lf_set);
+
+    return DISAS_NEXT;
+}
 
 /* Given a CTX, generate the relevant TCG code for the given opcode. */
 static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
