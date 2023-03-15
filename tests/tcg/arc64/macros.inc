@@ -224,6 +224,9 @@ tn_\name:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; STATUS 32 register bits
+  .equ STATUS32_US_BIT , 20         ; Usermode Sleep bit
+
 ; STATUS register and its masks
 .equ REG_STAT,     0x0A   ; STATUS32 register
 .equ REG_IVT_BASE, 0x25   ; Interrupt vector base
