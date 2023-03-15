@@ -324,6 +324,14 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
                         ARC_GEN_OVERFLOW_DETECT_FUNC detect_overflow_i64);
 
 /**
+ * @brief If the requirements for running wait instructions (wait, wevt, wlfc)
+ * arent met, throw EXCP_PRIVILEGEV
+ * These requirements are kernel mode or user mode sleep flag set
+ */
+void
+arc_gen_except_no_wait_instructions(DisasCtxt *ctx);
+
+/**
  * @brief Any required ARC semantic function initialization procedures such as
  * evaluating the cc flag
  */

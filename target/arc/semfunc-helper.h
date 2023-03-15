@@ -292,6 +292,12 @@ void arc_gen_set_register(enum arc_registers reg, TCGv value);
   TCG_GET_STATUS_FIELD_MASKED(R, cpu_pstate, Uf); \
   tcg_gen_setcondi_tl(TCG_COND_EQ, R, R, 0); \
 }
+
+#define getUsermodeSleep(R) { \
+  TCG_GET_STATUS_FIELD_MASKED(R, cpu_pstate, USf); \
+  tcg_gen_setcondi_tl(TCG_COND_NE, R, R, 0); \
+}
+
 /* TODO: This is going to be revisited. */
 #define throwExcpPriviledgeV() \
     arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);

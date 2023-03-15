@@ -623,6 +623,28 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 
 }
 
+void
+arc_gen_except_no_wait_instructions(DisasCtxt *ctx)
+{
+    TCGLabel *done = gen_new_label();
+    TCGv in_kernel_mode = tcg_temp_local_new();
+    TCGv usermode_sleep_enabled = tcg_temp_local_new();
+
+    inKernelMode(in_kernel_mode);
+    getUsermodeSleep(usermode_sleep_enabled);
+
+    /* If either in kernel mode or usermode sleep is toggled, we don't throw */
+    tcg_gen_or_tl(in_kernel_mode, in_kernel_mode, usermode_sleep_enabled);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, in_kernel_mode, 1, done);
+
+    throwExcpPriviledgeV();
+
+    gen_set_label(done);
+
+    tcg_temp_free(usermode_sleep_enabled);
+    tcg_temp_free(in_kernel_mode);
+}
+
 /*
  * VPACK2HL -- CODED BY HAND
  */
