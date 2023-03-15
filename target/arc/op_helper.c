@@ -96,6 +96,12 @@ target_ulong helper_llock(CPUARCState *env, target_ulong addr)
     qemu_mutex_unlock(&entry->mutex);
     return ret;
 }
+
+target_ulong helper_getlf(CPUARCState *env)
+{
+    return (env->arconnect.lpa_lf != NULL && env->arconnect.lpa_lf->lpa_lf & 0x01);
+}
+
 target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong value)
 {
     assert((addr & 0x3) == 0);
