@@ -55,9 +55,12 @@ typedef struct {
     operand_t operands[4];
     uint8_t n_ops;
     uint8_t cc;
+    uint8_t op;
     uint8_t aa;
     uint8_t zz;
 #define zz_as_data_size zz
+    bool aq;
+    bool rl;
     bool d;
     bool f;
     bool di;
