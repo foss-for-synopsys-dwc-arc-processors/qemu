@@ -30,6 +30,11 @@ void switchSP(CPUARCState *);
 void arc_initializeIRQ(ARCCPU *);
 void arc_resetIRQ(ARCCPU *);
 
+/* Interrupt vectors start after exception vectors */
+#define NR_OF_EXCEPTIONS  16
+#define TIMER0_IRQ 16
+#define TIMER1_IRQ 17
+
 #if defined(TARGET_ARC32)
 #define OFFSET_FOR_VECTOR(VECNO) (VECNO << 2)
 #elif defined(TARGET_ARC64)

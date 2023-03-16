@@ -433,7 +433,7 @@ void aux_irq_set(const struct arc_aux_reg_detail *aux_reg_detail,
 
     switch (aux_reg_detail->id) {
     case AUX_ID_irq_select:
-        if (val <= (16 + ((cpu->irq_build >> 8) & 0xff)))
+        if (val <= (NR_OF_EXCEPTIONS + ((cpu->irq_build >> 8) & 0xff)))
             env->irq_select = val;
         else
             qemu_log_mask(LOG_UNIMP,
@@ -446,7 +446,7 @@ void aux_irq_set(const struct arc_aux_reg_detail *aux_reg_detail,
         qemu_mutex_lock_iothread();
         if (val == 0) {
             qemu_irq_lower(env->irq[env->aux_irq_hint]);
-        } else if (val >= 16) {
+        } else if (val >= NR_OF_EXCEPTIONS) {
             qemu_irq_raise(env->irq[val]);
             env->aux_irq_hint = val;
         }
@@ -532,9 +532,9 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     do {
         for (vectno = 0;
              vectno < cpu->cfg.number_of_interrupts; vectno++) {
-            if (env->irq_bank[16 + vectno].priority == priority
-                && env->irq_bank[16 + vectno].enable
-                && env->irq_bank[16 + vectno].pending) {
+            if (env->irq_bank[NR_OF_EXCEPTIONS + vectno].priority == priority
+                && env->irq_bank[NR_OF_EXCEPTIONS + vectno].enable
+                && env->irq_bank[NR_OF_EXCEPTIONS + vectno].pending) {
                 found = true;
                 break;
             }
@@ -550,7 +550,7 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
                   "\n", env->pc);
 
     /* Adjust vector number. */
-    vectno += 16;
+    vectno += NR_OF_EXCEPTIONS;
 
     /* Set the AUX_IRQ_ACT. */
     if ((env->aux_irq_act & 0xffff) == 0) {
@@ -630,17 +630,17 @@ void arc_resetIRQ(ARCCPU *cpu)
     }
 
     for (i = 0; i < (cpu->cfg.number_of_interrupts & 0xff); i++) {
-        env->irq_bank[16 + i].enable = 1;
+        env->irq_bank[NR_OF_EXCEPTIONS + i].enable = 1;
     }
 
     if (cpu->cfg.has_timer_0) {
         /* FIXME! add build default timer0 priority. */
-        env->irq_bank[16].priority = 0;
+        env->irq_bank[TIMER0_IRQ].priority = 0;
     }
 
     if (cpu->cfg.has_timer_1) {
         /* FIXME! add build default timer1 priority. */
-        env->irq_bank[17].priority = 0;
+        env->irq_bank[TIMER1_IRQ].priority = 0;
     }
 
     qemu_log_mask(CPU_LOG_RESET, "[IRQ] Reset the IRQ subsystem.");
@@ -652,6 +652,8 @@ void arc_initializeIRQ(ARCCPU *cpu)
     CPUARCState *env = &cpu->env;
     uint32_t i;
 
+    assert(256 == 16 + cpu->cfg.number_of_interrupts);
+
     if (cpu->cfg.has_interrupts) {
         /* FIXME! add N (NMI) bit. */
         cpu->irq_build = 0x01 | ((cpu->cfg.number_of_interrupts & 0xff) << 8) |
@@ -660,7 +662,7 @@ void arc_initializeIRQ(ARCCPU *cpu)
             (cpu->cfg.firq_option ? (1 << 28) : 0);
 
         for (i = 0; i < (cpu->cfg.number_of_interrupts & 0xff); i++) {
-            env->irq_bank[16 + i].enable = 1;
+            env->irq_bank[NR_OF_EXCEPTIONS + i].enable = 1;
         }
 
         cpu->vecbase_build = (cpu->cfg.intvbase_preset & (~0x3ffff))
