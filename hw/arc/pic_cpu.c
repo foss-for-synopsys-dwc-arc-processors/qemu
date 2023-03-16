@@ -21,6 +21,7 @@
 
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "irq.h"
 #include "hw/hw.h"
 #include "hw/irq.h"
 #include "qemu/log.h"
@@ -42,7 +43,7 @@ static void arc_pic_cpu_handler(void *opaque, int irq, int level)
     assert(cpu->cfg.has_interrupts);
 
     /* Assert if the IRQ is not within the cpu configuration bounds. */
-    assert(irq >= 16 && irq < (cpu->cfg.number_of_interrupts + 15));
+    assert(irq >= NR_OF_EXCEPTIONS && irq < (cpu->cfg.number_of_interrupts + NR_OF_EXCEPTIONS - 1));
 
     irq_bit = 1 << env->irq_bank[irq].priority;
     if (level) {
@@ -61,9 +62,9 @@ static void arc_pic_cpu_handler(void *opaque, int irq, int level)
          * given priority.
          */
         clear = true;
-        for (i = 16; i < cpu->cfg.number_of_interrupts; i++) {
-            if (env->irq_bank[i].pending
-                && env->irq_bank[i].priority == env->irq_bank[irq].priority) {
+        for (i = 0; i < cpu->cfg.number_of_interrupts; i++) {
+            if (env->irq_bank[NR_OF_EXCEPTIONS + i].pending
+                && env->irq_bank[NR_OF_EXCEPTIONS + i].priority == env->irq_bank[irq].priority) {
                 clear = false;
                 break;
             }
@@ -101,10 +102,10 @@ void cpu_arc_pic_init(ARCCPU *cpu)
     qemu_irq *qi;
 
     qi = qemu_allocate_irqs(arc_pic_cpu_handler, cpu,
-                            16 + cpu->cfg.number_of_interrupts);
+                            NR_OF_EXCEPTIONS + cpu->cfg.number_of_interrupts);
 
     for (i = 0; i < cpu->cfg.number_of_interrupts; i++) {
-        env->irq[16 + i] = qi[16 + i];
+        env->irq[NR_OF_EXCEPTIONS + i] = qi[NR_OF_EXCEPTIONS + i];
     }
 }
 
