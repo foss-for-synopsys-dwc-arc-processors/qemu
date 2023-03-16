@@ -168,6 +168,15 @@ load_insninfo_if_valid_v2(uint64_t insn,
             }
 
             if (value == flg_operand->code) {
+
+                if (*flgidx == C_ATOP) {
+                    ret.op = value;
+                } else if(*flgidx == C_AQ) {
+                    ret.aq = true;
+                } else if(*flgidx == C_RL) {
+                    ret.rl = true;
+                }
+
                 if (cl_flags->flag_class & F_CLASS_ZZ) {
                     switch (flg_operand->name[0]) {
                     case 'b':

@@ -219,7 +219,6 @@ load_insninfo_if_valid_v3(uint64_t insn,
         unsigned int value;
 
         /* FIXME! Add check for EXTENSION flags. */
-
         for (flgopridx = cl_flags->flags; *flgopridx; ++flgopridx) {
             const struct arc_flag_operand *flg_operand =
             &arc_flag_operands[*flgopridx];
@@ -247,6 +246,15 @@ load_insninfo_if_valid_v3(uint64_t insn,
             }
 
             if (value == flg_operand->code) {
+
+                if (*flgidx == C_ATOP) {
+                    ret.op = value;
+                } else if(*flgidx == C_AQ) {
+                    ret.aq = true;
+                } else if(*flgidx == C_RL) {
+                    ret.rl = true;
+                }
+
 	            if (!special_flag_p_v3 (opcode->name, flg_operand->name))
                 { }
                 else if (insn_type == dis_dref)
