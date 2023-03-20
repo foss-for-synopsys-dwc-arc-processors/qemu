@@ -397,6 +397,17 @@ void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
 
 #endif
 
+enum ato_op {
+    ATO_ADD  = 0b000,
+    ATO_OR   = 0b001,
+    ATO_AND  = 0b010,
+    ATO_XOR  = 0b011,
+    ATO_MINU = 0b100,
+    ATO_MAXU = 0b101,
+    ATO_MIN  = 0b110,
+    ATO_MAX  = 0b111,
+};
+
 #endif /* SEMFUNC_HELPER_H_ */
 
 

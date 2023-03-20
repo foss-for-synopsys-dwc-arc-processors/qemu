@@ -712,3 +712,64 @@ arc_gen_VPACK2HM(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
   return DISAS_NEXT;
 }
+
+MemOp
+arc_gen_atld_op(DisasCtxt *ctx, TCGv_i32 b, TCGv c)
+{
+    void (*atomic_fn)(TCGv_i32, TCGv, TCGv_i32, TCGArg, MemOp);
+
+    MemOp mop = MO_32 | MO_ALIGN;
+    atomic_fn = NULL;
+
+    switch(ctx->insn.op) {
+    case ATO_ADD:
+        atomic_fn = tcg_gen_atomic_fetch_add_i32;
+        break;
+
+    case ATO_OR:
+        atomic_fn = tcg_gen_atomic_fetch_or_i32;
+        break;
+
+    case ATO_AND:
+        atomic_fn = tcg_gen_atomic_fetch_and_i32;
+        break;
+
+    case ATO_XOR:
+        atomic_fn = tcg_gen_atomic_fetch_xor_i32;
+        break;
+
+    case ATO_MINU:
+        atomic_fn = tcg_gen_atomic_fetch_umin_i32;
+        break;
+
+    case ATO_MAXU:
+        atomic_fn = tcg_gen_atomic_fetch_umax_i32;
+        break;
+
+    case ATO_MIN:
+        atomic_fn = tcg_gen_atomic_fetch_smin_i32;
+        mop |= MO_SIGN;
+        break;
+
+    case ATO_MAX:
+        atomic_fn = tcg_gen_atomic_fetch_smax_i32;
+        mop |= MO_SIGN;
+        break;
+
+    default:
+        assert("Invalid atld operation");
+        break;
+    }
+
+    if (ctx->insn.aq) {
+        tcg_gen_mb(TCG_BAR_SC | TCG_MO_ALL);
+    }
+
+    atomic_fn(b, c, b, ctx->mem_idx, mop);
+
+    if (ctx->insn.rl) {
+        tcg_gen_mb(TCG_BAR_SC | TCG_MO_ALL);
+    }
+
+    return mop;
+}

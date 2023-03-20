@@ -9200,3 +9200,20 @@ arc_gen_MPYDU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+/*
+ * ATLD
+ *    Variables: @b, @c
+ *    Functions: arc_gen_atld_op
+ * --- code ---
+ * {
+ *   arc_gen_atld_op(b, c)
+ * }
+ */
+int
+arc_gen_ATLD(DisasCtxt *ctx, TCGv b, TCGv c)
+{
+    arc_gen_atld_op(ctx, b, c);
+
+    return DISAS_NEXT;
+}

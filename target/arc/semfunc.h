@@ -331,6 +331,30 @@ arc_gen_mpyd_base_i64(DisasCtxt *ctx, TCGv_i64 a, TCGv_i64 b, TCGv_i64 c,
 void
 arc_gen_except_no_wait_instructions(DisasCtxt *ctx);
 
+/*
+ * TCG based ATLD 32 bit operation.
+ * Returns the MemOp parameter deduced from the instruction and used for the
+ * operation.
+ *    Variables: @b, @c
+ * --- code ---
+ * {
+ *   operations = [add, or, and, xor, umin, umax, min, max]
+ *   operation = operations[instruction.op]
+ *
+ *   if (instruction.aq_rl_flag) {
+ *     DMB(ALL_OP_TYPES | FORWARDS_AND_BACKWARDS)
+ *   }
+ *
+ *   operation(b, c)
+ *
+ *   if (instruction.aq_rl_flag) {
+ *     DMB(ALL_OP_TYPES | FORWARDS_AND_BACKWARDS)
+ *   }
+ * }
+ */
+MemOp
+arc_gen_atld_op(DisasCtxt *ctx, TCGv_i32 b, TCGv c);
+
 /**
  * @brief Any required ARC semantic function initialization procedures such as
  * evaluating the cc flag
