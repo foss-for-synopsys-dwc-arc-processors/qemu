@@ -14734,3 +14734,118 @@ arc_gen_MPYDU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+/*
+ * ATLD
+ *    Variables: @b, @c
+ *    Functions: arc_gen_atld_op
+ * --- code ---
+ * {
+ *   b_32 = extract_32_from_64(b)
+ *   op = arc_gen_atld_op(b_32, c)
+ *   if (IsSigned(op)) {
+ *     signed_extract(b, b_32)
+ *   } else {
+ *     unsigned_extract(b, b_32)
+ *   }
+ * }
+ */
+int
+arc_gen_ATLD(DisasCtxt *ctx, TCGv b, TCGv c)
+{
+
+    TCGv_i32 b_32 = tcg_temp_new_i32();
+    tcg_gen_extrl_i64_i32(b_32, b);
+
+    MemOp mop = arc_gen_atld_op(ctx, b_32, c);
+
+    if(mop & MO_SIGN) {
+        tcg_gen_ext_i32_i64(b, b_32);
+    } else {
+        tcg_gen_extu_i32_i64(b, b_32);
+    }
+
+    tcg_temp_free_i32(b_32);
+
+    return DISAS_NEXT;
+}
+
+/*
+ * ATLDL
+ *    Variables: @b, @c
+ * --- code ---
+ * {
+ *   operations = [add, or, and, xor, umin, umax, min, max]
+ *   operation = operations[instruction.op]
+ *
+ *   if (instruction.aq_rl_flag) {
+ *     DMB(ALL_OP_TYPES | FORWARDS_AND_BACKWARDS)
+ *   }
+ *
+ *   operation(b, c)
+ *
+ *   if (instruction.aq_rl_flag) {
+ *     DMB(ALL_OP_TYPES | FORWARDS_AND_BACKWARDS)
+ *   }
+ * }
+ */
+int
+arc_gen_ATLDL(DisasCtxt *ctx, TCGv b, TCGv c)
+{
+    void (*atomic_fn)(TCGv_i64, TCGv, TCGv_i64, TCGArg, MemOp);
+
+    MemOp mop = MO_64 | MO_ALIGN;
+    atomic_fn = NULL;
+
+    switch(ctx->insn.op) {
+    case ATO_ADD:
+        atomic_fn = tcg_gen_atomic_fetch_add_i64;
+        break;
+
+    case ATO_OR:
+        atomic_fn = tcg_gen_atomic_fetch_or_i64;
+        break;
+
+    case ATO_AND:
+        atomic_fn = tcg_gen_atomic_fetch_and_i64;
+        break;
+
+    case ATO_XOR:
+        atomic_fn = tcg_gen_atomic_fetch_xor_i64;
+        break;
+
+    case ATO_MINU:
+        atomic_fn = tcg_gen_atomic_fetch_umin_i64;
+        break;
+
+    case ATO_MAXU:
+        atomic_fn = tcg_gen_atomic_fetch_umax_i64;
+        break;
+
+    case ATO_MIN:
+        atomic_fn = tcg_gen_atomic_fetch_smin_i64;
+        mop |= MO_SIGN;
+        break;
+
+    case ATO_MAX:
+        atomic_fn = tcg_gen_atomic_fetch_smax_i64;
+        mop |= MO_SIGN;
+        break;
+
+    default:
+        assert("Invalid atldl operation");
+        break;
+    }
+
+    if (ctx->insn.aq) {
+        tcg_gen_mb(TCG_BAR_SC | TCG_MO_ALL);
+    }
+
+    atomic_fn(b, c, b, ctx->mem_idx, mop);
+
+    if (ctx->insn.rl) {
+        tcg_gen_mb(TCG_BAR_SC | TCG_MO_ALL);
+    }
+
+    return DISAS_NEXT;
+}
