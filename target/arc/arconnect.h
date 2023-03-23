@@ -28,9 +28,6 @@ struct lpa_lf_entry {
     QemuMutex mutex;
     target_ulong lpa_lf;
     uint64_t read_value;
-#ifdef TARGET_ARC32
-    uint64_t read_value1;
-#endif
 };
 
 struct arc_arcconnect_info {

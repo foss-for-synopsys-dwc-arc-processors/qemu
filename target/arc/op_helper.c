@@ -88,8 +88,9 @@ target_ulong helper_llock(CPUARCState *env, target_ulong addr)
                   (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
     qemu_mutex_lock(&entry->mutex);
     env->arconnect.locked_mutex = &entry->mutex;
-    target_ulong ret = cpu_ldl_data(env, addr);
     env->arconnect.lpa_lf = entry;
+
+    target_ulong ret = cpu_ldl_data_ra(env, addr, GETPC());
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
@@ -115,10 +116,10 @@ target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong valu
     struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
     haddr = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     target_ulong ret = 1;
-    target_ulong rvalue = cpu_ldl_data(env, addr);
+    target_ulong rvalue = cpu_ldl_data_ra(env, addr, GETPC());
     if(entry->lpa_lf == (haddr + 1) && (entry->read_value == rvalue)) {
         ret  = 0;
-        cpu_stl_data(env, addr, value);
+        cpu_stl_data_ra(env, addr, value, GETPC());
         qemu_log_mask(LOG_UNIMP, "SCOND success with value 0x" TARGET_FMT_lx "\n", value);
     }
     else
@@ -144,8 +145,9 @@ target_ulong helper_llockl(CPUARCState *env, target_ulong addr)
                   (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
     qemu_mutex_lock(&entry->mutex);
     env->arconnect.locked_mutex = &entry->mutex;
-    target_ulong ret = cpu_ldq_data(env, addr);
     env->arconnect.lpa_lf = entry;
+
+    target_ulong ret = cpu_ldq_data_ra(env, addr, GETPC());
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
@@ -165,10 +167,10 @@ target_ulong helper_scondl(CPUARCState *env, target_ulong addr, target_ulong val
     qemu_mutex_lock(env->arconnect.locked_mutex);
     target_ulong ret = 1;
     haddr = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
-    target_ulong rvalue = cpu_ldq_data(env, addr);
+    target_ulong rvalue = cpu_ldq_data_ra(env, addr, GETPC());
     if(entry->lpa_lf == (haddr + 1) && (entry->read_value == rvalue)) {
         ret = 0;
-        cpu_stq_data(env, addr, value);
+        cpu_stq_data_ra(env, addr, value, GETPC());
         qemu_log_mask(LOG_UNIMP, "SCONDL success\n");
     }
     entry->lpa_lf &= -2;
@@ -187,15 +189,16 @@ uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
     struct lpa_lf_entry *entry = &lpa_lfs[LPA_LFS_ENTRY_FOR_PA(haddr)];
     qemu_mutex_lock(&entry->mutex);
     env->arconnect.locked_mutex = &entry->mutex;
-    target_ulong read1 = cpu_ldl_data(env, addr);
-    target_ulong read2 = cpu_ldl_data(env, addr+4);
-    uint64_t ret = ((uint64_t ) read1) | (((uint64_t) read2) << 32);
     env->arconnect.lpa_lf = entry;
+
+    uint64_t ret = cpu_ldq_data_ra(env, addr, GETPC());
+
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
-    entry->read_value = read1;
-    entry->read_value1 = read2;
+    entry->read_value = ret;
+
     qemu_mutex_unlock(&entry->mutex);
+
     return ret;
 }
 target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
@@ -208,15 +211,12 @@ target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
     qemu_mutex_lock(env->arconnect.locked_mutex);
     target_ulong ret = 1;
     addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
-    target_ulong rvalue = cpu_ldl_data(env, addr);
-    target_ulong rvalue1 = cpu_ldl_data(env, addr+4);
-    if(entry->lpa_lf == (haddr + 1)
-       && entry->read_value == rvalue
-       && entry->read_value1 == rvalue1
-       ) {
+
+    uint64_t rvalue = cpu_ldq_data_ra(env, addr, GETPC());
+
+    if(entry->lpa_lf == (haddr + 1) && entry->read_value == rvalue) {
         ret = 0;
-        cpu_stl_data(env, addr, (value & 0xffffffff));
-        cpu_stl_data(env, addr+4, (value >> 32));
+        cpu_stq_data_ra(env, addr, value, GETPC());
     }
     entry->lpa_lf &= -2;
     qemu_mutex_unlock(&entry->mutex);
