@@ -447,7 +447,10 @@ static struct TCGCPUOps arc_tcg_ops = {
     .initialize = arc_translate_init,
     .synchronize_from_tb = arc_cpu_synchronize_from_tb,
 
-#ifndef CONFIG_USER_ONLY
+#ifdef CONFIG_USER_ONLY
+    .record_sigsegv = arc_cpu_record_sigsegv,
+    .record_sigbus = arc_cpu_record_sigbus,
+#else
     .tlb_fill = arc_cpu_tlb_fill,
     .cpu_exec_interrupt = arc_cpu_exec_interrupt,
     .do_interrupt = arc_cpu_do_interrupt,
