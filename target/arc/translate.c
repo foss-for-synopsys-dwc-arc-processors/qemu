@@ -106,6 +106,40 @@ static void gen_gotoi_tb(DisasContext *ctx, int n, target_ulong dest)
     }
 }
 
+/*
+ * @brief Check if a QEMU mutex lock and LockFlag could be held, if so unlock
+ * mutex and clear flag
+ */
+static void
+arc_cpu_release_llockscond_locks(ARCCPU *cpu) {
+    struct lpa_lf_entry *entry = cpu->env.arconnect.lpa_lf;
+    QemuMutex *locked_mutex = cpu->env.arconnect.locked_mutex;
+    if (locked_mutex != NULL && entry != NULL) {
+        qemu_mutex_unlock(locked_mutex);
+        entry->lpa_lf = 0;
+    }
+}
+
+void arc_cpu_record_sigsegv(CPUState *cs, vaddr addr,
+                            MMUAccessType access_type,
+                            bool maperr, uintptr_t ra) {
+    /*
+     * An invalid llock/scond memory access can bring us here, so we need to
+     * unlock any available locks to prevent deadlock state
+     */
+    arc_cpu_release_llockscond_locks(ARC_CPU(cs));
+}
+
+void arc_cpu_record_sigbus(CPUState *cs, vaddr addr,
+                            MMUAccessType access_type,
+                            uintptr_t ra) {
+    /*
+     * An invalid llock/scond memory access can bring us here, so we need to
+     * unlock any available locks to prevent deadlock state
+     */
+    arc_cpu_release_llockscond_locks(ARC_CPU(cs));
+}
+
 void arc_translate_init(void)
 {
     int i;

@@ -465,6 +465,22 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
 #define IS_ARCV3(CPU) \
   ((cpu->family & ARC_OPCODE_V3_ALL) != 0)
 
+/*
+ * @brief vCPU is about to raise SIGSEV. Perform required cleanup
+ * At the moment, this just means unlocking llock/scond mutexes and clearing LF
+ */
+void arc_cpu_record_sigsegv(CPUState *cs, vaddr addr,
+                            MMUAccessType access_type,
+                            bool maperr, uintptr_t ra);
+
+/*
+ * @brief vCPU is about to raise SIGBUS. Perform required cleanup
+ * At the moment, this just means unlocking llock/scond mutexes and clearing LF
+ */
+void arc_cpu_record_sigbus(CPUState *cs, vaddr addr,
+                            MMUAccessType access_type,
+                            uintptr_t ra);
+
 void arc_translate_init(void);
 
 void arc_cpu_list(void);
