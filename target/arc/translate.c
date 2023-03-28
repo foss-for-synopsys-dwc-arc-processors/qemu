@@ -48,6 +48,7 @@ TCGv    cpu_bta;
 TCGv    cpu_pc;
 
 TCGv    cpu_r[64];
+TCGv    cpu_fpr[32];
 
 TCGv    cpu_intvec;
 
@@ -170,6 +171,16 @@ void arc_translate_init(void)
                                       offsetof(CPUARCState, r[i]),
                                       strdup(name));
     }
+
+    for (i = 0; i < 32; i++) {
+        char name[16];
+
+        sprintf(name, "fpr[%d]", i);
+        cpu_fpr[i] = tcg_global_mem_new(cpu_env,
+                                        offsetof(CPUARCState, fpr[i]),
+                                        strdup(name));
+    }
+
 
     cpu_exclusive_addr = tcg_global_mem_new(cpu_env,
         offsetof(CPUARCState, exclusive_addr), "exclusive_addr");
@@ -437,6 +448,10 @@ static TCGv arc_decode_operand(const struct arc_opcode *opcode,
     } else {
         operand_t operand = ctx->insn.operands[nop];
 
+        if (operand.type & ARC_OPERAND_FP) {
+            return cpu_fpr[operand.value];
+        }
+
         if (operand.type & ARC_OPERAND_IR) {
             ret = cpu_r[operand.value];
             if (operand.value == 63) {
@@ -454,9 +469,9 @@ static TCGv arc_decode_operand(const struct arc_opcode *opcode,
                 ret = tcg_const_local_tl(limm);
             }
         }
-      }
+    }
 
-  return ret;
+    return ret;
 }
 
 /* See translate.h. */

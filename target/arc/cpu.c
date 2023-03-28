@@ -30,6 +30,7 @@
 #include "hw/arc/cpudevs.h"
 #include "timer.h"
 #include "gdbstub.h"
+#include "fpu.h"
 
 #ifndef CONFIG_USER_ONLY
 static const VMStateDescription vms_arc_cpu = {
@@ -120,6 +121,9 @@ static void arc_cpu_reset(DeviceState *dev)
     /* ARConnect clear */
     arc_arconnect_init(cpu);
 
+    /* FPU init */
+    /* TODO: Make init_fpu parameters based on options. */
+    init_fpu(env, true, true, true);
 
     arc_resetTIMER(cpu);
     arc_resetIRQ(cpu);
@@ -127,6 +131,7 @@ static void arc_cpu_reset(DeviceState *dev)
     arcc->parent_reset(dev);
 
     memset(env->r, 0, sizeof(env->r));
+    memset(env->fpr, 0, sizeof(env->fpr));
     env->lock_lf_var = 0;
 
     /*

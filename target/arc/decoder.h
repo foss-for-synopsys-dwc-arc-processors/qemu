@@ -25,6 +25,10 @@ extern "C" {
 #define MAX_INSN_FLGS	     10
 #endif
 
+#define MAJOR_OPCODE_F32_FP_MEM   0x0d
+#define MAJOR_OPCODE_F32_GEN_OP64 0x0b
+#define MAJOR_OPCODE_F32_FP_OPS   0x1C
+
 extern const char * insn_mnemonic_str[];
 
 /* Mnemonic enum */
