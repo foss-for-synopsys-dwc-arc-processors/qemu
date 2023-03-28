@@ -43,7 +43,9 @@ unsigned int arc_insn_length_v3(uint16_t insn, uint16_t cpu_type)
 
     switch (cpu_type) {
       case ARC_OPCODE_ARC64:
-          if(major_opcode == 0x0b || major_opcode == 0x1c)
+          if (major_opcode == MAJOR_OPCODE_F32_GEN_OP64 ||
+              major_opcode == MAJOR_OPCODE_F32_FP_MEM ||
+              major_opcode == MAJOR_OPCODE_F32_FP_OPS)
             return 4;
           return (major_opcode > 0x7) ? 2 : 4;
           break;
