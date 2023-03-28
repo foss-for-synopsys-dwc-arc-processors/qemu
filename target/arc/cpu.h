@@ -222,10 +222,6 @@ struct CPUArchState {
     target_ulong        r[64];
     uint64_t            fpr[32];      /* assume both F and D extensions. */
 
-    /* floating point auxiliary registers. */
-    uint32_t fp_ctrl;
-    uint32_t fp_status;
-
     ARCStatus stat, stat_l1, stat_er;
 
     struct {
@@ -307,6 +303,14 @@ struct CPUArchState {
     target_ulong exclusive_addr;
     target_ulong exclusive_val;
     target_ulong exclusive_val_hi;
+
+    float_status fp_status;
+
+    /* Packed fp_status value cache */
+    uint32_t fp_status_persistent;
+
+    bool enable_invop_excp;
+    bool enable_divzero_excp;
 };
 
 struct ARCCPUConfig {

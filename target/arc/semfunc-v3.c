@@ -23,9 +23,7 @@
 #include "semfunc.h"
 #include "exec/gen-icount.h"
 #include "tcg/tcg-op-gvec.h"
-
-
-
+#include "fpu.h"
 
 /* FLAG
  *    Variables: @src
@@ -13432,3 +13430,1278 @@ arc_gen_ATLDL(DisasCtxt *ctx, TCGv b, TCGv c)
 
     return DISAS_NEXT;
 }
+
+/* Floating point instructions */
+
+/*
+ * FMVL2D, FMVD2L, FDMOV, FMVI2S, FMVS2I, FSMOV, FHMOV
+ *    Variables: @a, @b
+ *    Functions: getCCFlag
+ * --- code ---
+ * {
+ *   if((getCCFlag () == true))
+ *     {
+ *       a <= b & (( 1 << OP_SIZE) - 1)
+ *     };
+ * }
+ */
+#define FLOAT_MV_DIRECT(NAME, SIZE)                               \
+inline int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b)         \
+{                                                                 \
+    int ret = DISAS_NEXT;                                         \
+    TCGv cc_flag = tcg_temp_new();                                \
+    getCCFlag(cc_flag);                                           \
+    TCGLabel *done_1 = gen_new_label();                           \
+    tcg_gen_brcond_tl(TCG_COND_NE, cc_flag, arc_true, done_1);;   \
+    tcg_gen_andi_tl(a, b, SIZE < 64 ? (1ull << SIZE) - 1 : -1ll); \
+    gen_set_label(done_1);                                        \
+    tcg_temp_free(cc_flag);                                       \
+    return ret;                                                   \
+}
+
+FLOAT_MV_DIRECT(FMVL2D, 64)
+FLOAT_MV_DIRECT(FMVD2L, 64)
+FLOAT_MV_DIRECT(FDMOV, 64)
+
+FLOAT_MV_DIRECT(FMVI2S, 32)
+FLOAT_MV_DIRECT(FMVS2I, 32)
+FLOAT_MV_DIRECT(FSMOV, 32)
+
+FLOAT_MV_DIRECT(FHMOV, 16)
+
+/*
+ * Sets up memory `address` according to AA and ZZ flags, before the
+ * operation takes place.
+ * ZZ can be any of the following: 2: byte, 1: half-word, 0: word
+ */
+static void
+arc_gen_ldst_pre(DisasCtxt *ctx, TCGv address, TCGv src1, TCGv src2, int ZZ)
+{
+    int AA = getAAFlag ();
+    tcg_gen_movi_tl(address, 0);
+    /* No write back || .AW, address = Reg + Offset */
+    if (((AA == 0) || (AA == 1))) {
+        tcg_gen_add_tl(address, src1, src2);
+    }
+
+    /* .AB, address = Reg */
+    if ((AA == 2)) {
+        tcg_gen_mov_tl(address, src1);
+    }
+
+    /* .AS, address = Reg + (offset << ZZ) */
+    if (AA == 3) {
+        if (ZZ == 0) {
+            tcg_gen_shli_tl(address, src2, 2);
+            tcg_gen_add_tl(address, src1, address);
+        }
+
+        if (ZZ == 1 || ZZ == 3) {
+            tcg_gen_shli_tl(address, src2, 3);
+            tcg_gen_add_tl(address, src1, address);
+        }
+
+        if (ZZ == 2) {
+            tcg_gen_shli_tl(address, src2, 1);
+            tcg_gen_add_tl(address, src1, address);
+        }
+    }
+}
+
+/*
+ * Sets up memory address according to AA and ZZ flags, after the
+ * operation takes place
+ */
+static void
+arc_gen_ldst_post(DisasCtxt *ctx, TCGv dest, TCGv src1, TCGv src2)
+{
+    int AA = getAAFlag ();
+    /* .AW || .AB write address back */
+    if (((AA == 1) || (AA == 2))) {
+        tcg_gen_add_tl(dest, src1, src2);
+    }
+}
+
+/*
+ * FLD16
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_get_memory
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   dest <= mem(addr)[0:16]
+ * }
+ */
+int
+arc_gen_FLD16(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 2; /* 16bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_src1 = tcg_temp_local_new();
+    TCGv l_src2 = tcg_temp_local_new();
+    TCGv new_dest = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, src1, src2, ZZ);
+
+    tcg_gen_mov_tl(l_src1, src1);
+    tcg_gen_mov_tl(l_src2, src2);
+
+    getMemory(new_dest, address, ZZ);
+
+    arc_gen_ldst_post(ctx, src1, l_src1, l_src2);
+
+    tcg_gen_mov_tl(dest, new_dest);
+
+    tcg_temp_free(address);
+    tcg_temp_free(l_src1);
+    tcg_temp_free(l_src2);
+    tcg_temp_free(new_dest);
+
+    return ret;
+}
+
+/*
+ * FST16
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_set_memory
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   mem(addr) <= dest[0:16]
+ * }
+ */
+int
+arc_gen_FST16(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 2; /* 32bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_src1 = tcg_temp_local_new();
+    TCGv l_src2 = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, src1, src2, ZZ);
+
+    tcg_gen_mov_tl(l_src1, src1);
+    tcg_gen_mov_tl(l_src2, src2);
+
+    setMemory(address, ZZ, dest);
+
+    arc_gen_ldst_post(ctx, src1, l_src1, l_src2);
+
+    tcg_temp_free(address);
+    tcg_temp_free(l_src1);
+    tcg_temp_free(l_src2);
+
+    return ret;
+}
+
+/*
+ * FLD32
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_get_memory
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   dest <= mem(addr)[0:32]
+ * }
+ */
+int
+arc_gen_FLD32(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 0; /* 32bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_src1 = tcg_temp_local_new();
+    TCGv l_src2 = tcg_temp_local_new();
+    TCGv new_dest = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, src1, src2, ZZ);
+
+    tcg_gen_mov_tl(l_src1, src1);
+    tcg_gen_mov_tl(l_src2, src2);
+
+    getMemory(new_dest, address, ZZ);
+
+    arc_gen_ldst_post(ctx, src1, l_src1, l_src2);
+
+    tcg_gen_mov_tl(dest, new_dest);
+
+    tcg_temp_free(address);
+    tcg_temp_free(l_src1);
+    tcg_temp_free(l_src2);
+    tcg_temp_free(new_dest);
+
+    return ret;
+}
+
+/*
+ * FST32
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_set_memory
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   mem(addr) <= dest[0:32]
+ * }
+ */
+int
+arc_gen_FST32(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 0; /* 32bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_src1 = tcg_temp_local_new();
+    TCGv l_src2 = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, src1, src2, ZZ);
+
+    tcg_gen_mov_tl(l_src1, src1);
+    tcg_gen_mov_tl(l_src2, src2);
+
+    setMemory(address, ZZ, dest);
+
+    arc_gen_ldst_post(ctx, src1, l_src1, l_src2);
+
+    tcg_temp_free(address);
+    tcg_temp_free(l_src1);
+    tcg_temp_free(l_src2);
+
+    return ret;
+}
+
+/*
+ * FLD64
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_get_memory
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   dest <= mem(addr)[0:64]
+ * }
+ */
+int
+arc_gen_FLD64(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 3; /* 64 bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_src1 = tcg_temp_local_new();
+    TCGv l_src2 = tcg_temp_local_new();
+    TCGv new_dest = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, src1, src2, ZZ);
+
+    tcg_gen_mov_tl(l_src1, src1);
+    tcg_gen_mov_tl(l_src2, src2);
+
+    getMemory(new_dest, address, ZZ);
+
+    arc_gen_ldst_post(ctx, src1, l_src1, l_src2);
+
+    tcg_gen_mov_tl(dest, new_dest);
+
+    tcg_temp_free(address);
+    tcg_temp_free(l_src1);
+    tcg_temp_free(l_src2);
+    tcg_temp_free(new_dest);
+
+    return ret;
+}
+
+/*
+ * FST64
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_set_memory
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   mem(addr) <= dest[0:32]
+ * }
+ */
+int
+arc_gen_FST64(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 3; /* 64 bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_src1 = tcg_temp_local_new();
+    TCGv l_src2 = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, src1, src2, ZZ);
+
+    tcg_gen_mov_tl(l_src1, src1);
+    tcg_gen_mov_tl(l_src2, src2);
+
+    setMemory(address, ZZ, dest);
+
+    arc_gen_ldst_post(ctx, src1, l_src1, l_src2);
+
+    tcg_temp_free(address);
+    tcg_temp_free(l_src1);
+    tcg_temp_free(l_src2);
+
+    return ret;
+}
+
+/*
+ * FLDD64
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_get_memory, nextFPURegWithNull
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   dest <= mem(addr)[0:64]
+ *   dest2 = nextFPUReg(dest)
+ *   dest2 <= mem(addr + 8)[0:64]
+ * }
+ */
+int
+arc_gen_FLDD64(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 3; /* 64 bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_src1 = tcg_temp_local_new();
+    TCGv l_src2 = tcg_temp_local_new();
+    TCGv new_dest = tcg_temp_local_new();
+    TCGv new_dest_hi = tcg_temp_local_new();
+    TCGv address_high = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, src1, src2, ZZ);
+
+    tcg_gen_mov_tl(l_src1, src1);
+    tcg_gen_mov_tl(l_src2, src2);
+
+    getMemory(new_dest, address, ZZ);
+    tcg_gen_addi_tl(address_high, address, 8);
+    getMemory(new_dest_hi, address_high, ZZ);
+
+    arc_gen_ldst_post(ctx, src1, l_src1, l_src2);
+
+    tcg_gen_mov_tl(dest, new_dest);
+    tcg_gen_mov_tl(nextFPURegWithNull(ctx, dest), new_dest_hi);
+
+    tcg_temp_free(address_high);
+    tcg_temp_free(address);
+    tcg_temp_free(l_src1);
+    tcg_temp_free(l_src2);
+    tcg_temp_free(new_dest);
+    tcg_temp_free(new_dest_hi);
+
+    return ret;
+}
+
+/*
+ * FSTD64
+ *    Variables: @src1, @src2, @dest
+ *    Functions: arc_gen_set_memory, nextFPURegWithNull
+ * --- code ---
+ * {
+ *   addr = shift_scale(src1, src2)
+ *   mem(addr) <= dest[0:64]
+ *   dest2 = nextFPUReg(dest)
+ *   mem(addr + 8) <= dest2[0:64]
+ * }
+ */
+int
+arc_gen_FSTD64(DisasCtxt *ctx, TCGv data_reg, TCGv dest, TCGv offset)
+{
+    int ret = DISAS_NEXT;
+    int ZZ = 3; /* 64 bit */
+    TCGv address = tcg_temp_local_new();
+    TCGv l_dest = tcg_temp_local_new();
+    TCGv l_offset = tcg_temp_local_new();
+    TCGv address_high = tcg_temp_local_new();
+
+    arc_gen_ldst_pre(ctx, address, dest, offset, ZZ);
+
+    tcg_gen_mov_tl(l_dest, dest);
+    tcg_gen_mov_tl(l_offset, offset);
+
+    setMemory(address, ZZ, data_reg);
+    tcg_gen_addi_tl(address_high, address, 8);
+    setMemory(address_high, ZZ, nextFPURegWithNull(ctx, data_reg));
+
+    arc_gen_ldst_post(ctx, dest, l_dest, l_offset);
+
+    tcg_temp_free(address_high);
+    tcg_temp_free(address);
+    tcg_temp_free(l_dest);
+    tcg_temp_free(l_offset);
+
+    return ret;
+}
+
+/*
+ * Operations: ADD/SUB
+ * FDMADD  FDMSUB  : Double-precision Multiply, Operation
+ * FDNMADD FDNMSUB : Negated Double-precision Multiply, Operation
+ * FSMADD  FSMSUB  : Single-precision Multiply, Operation
+ * FSNMADD FSNMSUB : Negated Single-precision Multiply, Operation
+ * FHMADD  FHMSUB  : Half-precision Multiply, Operation
+ * FHNMADD FHNMSUB : Negated Half-precision Multiply, Operation
+ *    Variables: @a, @b, @c, @d
+ *    Functions: gen_helper_fdmadd gen_helper_fdmsub gen_helper_fdnmadd
+ *      gen_helper_fdnmsub gen_helper_fsmadd gen_helper_fsmsub
+ *      gen_helper_fsnmadd gen_helper_fsnmsub gen_helper_fhmadd
+ *      gen_helper_fhmsub gen_helper_fhnmadd gen_helper_fhnmsub
+ * --- code ---
+ * {
+ *   a <= helper(b, c, d)
+ * }
+ */
+#define FLOAT_INSTRUCTION4(NAME, HELPER)                        \
+inline int                                                      \
+arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d)  \
+{                                                               \
+    int ret = DISAS_NEXT;                                       \
+    gen_helper_##HELPER(a, cpu_env, b, c, d);                   \
+    return ret;                                                 \
+}
+
+FLOAT_INSTRUCTION4(FDMADD, fdmadd)
+FLOAT_INSTRUCTION4(FDMSUB, fdmsub)
+FLOAT_INSTRUCTION4(FDNMADD, fdnmadd)
+FLOAT_INSTRUCTION4(FDNMSUB, fdnmsub)
+
+FLOAT_INSTRUCTION4(FSMADD, fsmadd)
+FLOAT_INSTRUCTION4(FSMSUB, fsmsub)
+FLOAT_INSTRUCTION4(FSNMADD, fsnmadd)
+FLOAT_INSTRUCTION4(FSNMSUB, fsnmsub)
+
+FLOAT_INSTRUCTION4(FHMADD, fhmadd)
+FLOAT_INSTRUCTION4(FHMSUB, fhmsub)
+FLOAT_INSTRUCTION4(FHNMADD, fhnmadd)
+FLOAT_INSTRUCTION4(FHNMSUB, fhnmsub)
+
+/*
+ * Operations: ADD/SUB/MUL/DIV/MIN/MAX
+ * FDADD FDSUB FDMUL FDDIV FDMIN FDMAX Double-precision Operation
+ * FSADD FSSUB FSMUL FSDIV FSMIN FSMAX Single-precision Operation
+ * FHADD FHSUB FHMUL FHDIV FHMIN FHMAX Half-precision Operation
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_fdadd gen_helper_fdsub gen_helper_fdmul
+ *       gen_helper_fddiv gen_helper_fdmin gen_helper_fdmax gen_helper_fsadd
+ *       gen_helper_fssub gen_helper_fsmul gen_helper_fsdiv gen_helper_fsmin
+ *       gen_helper_fsmax gen_helper_fhadd gen_helper_fhsub gen_helper_fhmul
+ *       gen_helper_fhdiv gen_helper_fhmin gen_helper_fhmax
+ * --- code ---
+ * {
+ *   a <= helper(b, c)
+ * }
+ */
+
+
+
+#define FLOAT_INSTRUCTION3(NAME, HELPER)                \
+int                                                     \
+arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)  \
+{                                                       \
+    int ret = DISAS_NEXT;                               \
+    gen_helper_##HELPER(a, cpu_env, b, c);              \
+    return ret;                                         \
+}
+
+FLOAT_INSTRUCTION3(FDADD, fdadd)
+FLOAT_INSTRUCTION3(FDSUB, fdsub)
+FLOAT_INSTRUCTION3(FDMUL, fdmul)
+FLOAT_INSTRUCTION3(FDDIV, fddiv)
+FLOAT_INSTRUCTION3(FDMIN, fdmin)
+FLOAT_INSTRUCTION3(FDMAX, fdmax)
+
+FLOAT_INSTRUCTION3(FSADD, fsadd)
+FLOAT_INSTRUCTION3(FSSUB, fssub)
+FLOAT_INSTRUCTION3(FSMUL, fsmul)
+FLOAT_INSTRUCTION3(FSDIV, fsdiv)
+FLOAT_INSTRUCTION3(FSMIN, fsmin)
+FLOAT_INSTRUCTION3(FSMAX, fsmax)
+
+FLOAT_INSTRUCTION3(FHADD, fhadd)
+FLOAT_INSTRUCTION3(FHSUB, fhsub)
+FLOAT_INSTRUCTION3(FHMUL, fhmul)
+FLOAT_INSTRUCTION3(FHDIV, fhdiv)
+FLOAT_INSTRUCTION3(FHMIN, fhmin)
+FLOAT_INSTRUCTION3(FHMAX, fhmax)
+
+/*
+ * FDCMP  Double-Precision comparison
+ * FDCMPF Double-Precision comparison - IEEE 754 flag generation
+ * FSCMP  Single-Precision comparison
+ * FSCMPF Single-Precision comparison - IEEE 754 flag generation
+ * FHCMP  Half-Precision comparison
+ * FHCMPF Half-Precision comparison - IEEE 754 flag generation
+ *    Variables: @b, @c
+ *    Functions: gen_helper_fdcmp gen_helper_fdcmpf gen_helper_fscmp
+ *       gen_helper_fscmpf gen_helper_fhcmp gen_helper_fhcmpf
+ * --- code ---
+ * {
+ *   helper(b, c)
+ * }
+ */
+#define FLOAT_INSTRUCTION2(NAME, HELPER)        \
+inline int                                      \
+arc_gen_##NAME(DisasCtxt *ctx, TCGv b, TCGv c)  \
+{                                               \
+    int ret = DISAS_NEXT;                       \
+    gen_helper_##HELPER(cpu_env, b, c);         \
+    return ret;                                 \
+}
+
+FLOAT_INSTRUCTION2(FDCMP, fdcmp)
+FLOAT_INSTRUCTION2(FDCMPF, fdcmpf)
+FLOAT_INSTRUCTION2(FSCMP, fscmp)
+FLOAT_INSTRUCTION2(FSCMPF, fscmpf)
+FLOAT_INSTRUCTION2(FHCMP, fhcmp)
+FLOAT_INSTRUCTION2(FHCMPF, fhcmpf)
+
+/*
+ * FCVT32_64
+ * FINT2D, FUINT2D, FS2L, FS2L_RZ, FS2UL, FS2UL_RZ, FS2D
+ * Convert between 32-bit data formats to 64-bit data formats
+ *
+ * FCVT64_32
+ * FD2INT, FD2UINT, FL2S, FUL2S, FD2S, FD2INT_RZ, FD2UINT_RZ
+ * Convert between 64-bit data formats to 32-bit data formats
+ *
+ * FCVT64
+ * Convert between two 64-bit data formats
+ * FD2L, FD2UL, FL2D, FUL2D, FD2L_RZ, FD2UL_RZ
+ *
+ * FCVT32
+ * Convert between two 32-bit data formats
+ * FS2INT, FS2UINT, FS2INT_RZ, FS2UINT_RZ, FINT2S, FUINT2S,
+ * FS2H_RZ, FH2S, FS2H
+ *
+ * FDSQRT, FSSQRT, FHSQRT, FDRND, FDRND_RZ, FSRND, FSRND_RZ
+ *
+ *    Variables: @a, @b
+ *    Functions: gen_helper_fint2d gen_helper_fuint2d gen_helper_fs2l
+ *       gen_helper_fs2l_rz gen_helper_fs2ul gen_helper_fs2ul_rz
+ *       gen_helper_fs2d gen_helper_fd2int gen_helper_fd2uint gen_helper_fl2s
+ *       gen_helper_ful2s gen_helper_fd2s gen_helper_fd2int_rz
+ *       gen_helper_fd2uint_rz gen_helper_fd2l gen_helper_fd2ul gen_helper_fl2d
+ *       gen_helper_ful2d gen_helper_fd2l_rz gen_helper_fd2ul_rz
+ *       gen_helper_fs2int gen_helper_fs2uint gen_helper_fs2int_rz
+ *       gen_helper_fs2uint_rz gen_helper_fint2s gen_helper_fuint2s
+ *       gen_helper_fs2h_rz gen_helper_fh2s gen_helper_fs2h gen_helper_fdsqrt
+ *       gen_helper_fssqrt gen_helper_fhsqrt gen_helper_fdrnd
+ *       gen_helper_fdrnd_rz gen_helper_fsrnd gen_helper_fsrnd_rz
+ * --- code ---
+ * {
+ *   a <= helper(b)
+ * }
+ */
+#define FLOAT_INSTRUCTION2_WRET(NAME, HELPER)   \
+inline int                                      \
+arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b)  \
+{                                               \
+    int ret = DISAS_NEXT;                       \
+    gen_helper_##HELPER(a, cpu_env, b);         \
+    return ret;                                 \
+}
+
+FLOAT_INSTRUCTION2_WRET(FINT2D, fint2d)
+FLOAT_INSTRUCTION2_WRET(FUINT2D, fuint2d)
+FLOAT_INSTRUCTION2_WRET(FS2L,     fs2l)
+FLOAT_INSTRUCTION2_WRET(FS2L_RZ,  fs2l_rz)
+FLOAT_INSTRUCTION2_WRET(FS2UL,    fs2ul)
+FLOAT_INSTRUCTION2_WRET(FS2UL_RZ, fs2ul_rz)
+FLOAT_INSTRUCTION2_WRET(FS2D, fs2d)
+
+FLOAT_INSTRUCTION2_WRET(FD2INT, fd2int)
+FLOAT_INSTRUCTION2_WRET(FD2UINT, fd2uint)
+FLOAT_INSTRUCTION2_WRET(FL2S,     fl2s)
+FLOAT_INSTRUCTION2_WRET(FUL2S,    ful2s)
+FLOAT_INSTRUCTION2_WRET(FD2S, fd2s)
+FLOAT_INSTRUCTION2_WRET(FD2INT_RZ, fd2int_rz)
+FLOAT_INSTRUCTION2_WRET(FD2UINT_RZ, fd2uint_rz)
+
+FLOAT_INSTRUCTION2_WRET(FD2L, fd2l)
+FLOAT_INSTRUCTION2_WRET(FD2UL, fd2ul)
+FLOAT_INSTRUCTION2_WRET(FL2D, fl2d)
+FLOAT_INSTRUCTION2_WRET(FUL2D, ful2d)
+FLOAT_INSTRUCTION2_WRET(FD2L_RZ, fd2l_rz)
+FLOAT_INSTRUCTION2_WRET(FD2UL_RZ, fd2ul_rz)
+
+
+
+FLOAT_INSTRUCTION2_WRET(FS2INT,     fs2int)
+FLOAT_INSTRUCTION2_WRET(FS2UINT,    fs2uint)
+FLOAT_INSTRUCTION2_WRET(FS2INT_RZ,  fs2int_rz)
+FLOAT_INSTRUCTION2_WRET(FS2UINT_RZ, fs2uint_rz)
+FLOAT_INSTRUCTION2_WRET(FINT2S,     fint2s)
+FLOAT_INSTRUCTION2_WRET(FUINT2S,    fuint2s)
+
+FLOAT_INSTRUCTION2_WRET(FS2H_RZ, fs2h_rz)
+FLOAT_INSTRUCTION2_WRET(FH2S, fh2s)
+FLOAT_INSTRUCTION2_WRET(FS2H, fs2h)
+
+
+FLOAT_INSTRUCTION2_WRET(FDSQRT, fdsqrt)
+FLOAT_INSTRUCTION2_WRET(FSSQRT, fssqrt)
+FLOAT_INSTRUCTION2_WRET(FHSQRT, fhsqrt)
+
+
+FLOAT_INSTRUCTION2_WRET(FDRND, fdrnd)
+FLOAT_INSTRUCTION2_WRET(FDRND_RZ, fdrnd_rz)
+FLOAT_INSTRUCTION2_WRET(FSRND, fsrnd)
+FLOAT_INSTRUCTION2_WRET(FSRND_RZ, fsrnd_rz)
+
+/*
+ * FDSGNJ FSSGNJ FHSGNJ
+ *    Variables: @a, @b, @c
+ * --- code ---
+ * {
+ *   a.{s, e, m} <= { c.s, b.e, b.m }
+ * }
+ */
+#define SGNJ(NAME, SIZE)                                          \
+int arc_gen_##NAME##SGNJ(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)  \
+{                                                                 \
+    int ret = DISAS_NEXT;                                         \
+    TCGv l_b = tcg_temp_new();                                    \
+    TCGv l_c = tcg_temp_new();                                    \
+                                                                  \
+    tcg_gen_andi_tl(l_c, c, (1ull << (SIZE - 1)));                \
+    tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE - 1)));               \
+                                                                  \
+    tcg_gen_or_tl(a, l_b, l_c);                                   \
+                                                                  \
+    tcg_temp_free(l_b);                                           \
+    tcg_temp_free(l_c);                                           \
+                                                                  \
+    return ret;                                                   \
+}
+SGNJ(FD, 64)
+SGNJ(FS, 32)
+SGNJ(FH, 16)
+
+/*
+ * FDSGNJN FSSGNJN FHSGNJN
+ *    Variables: @a, @b, @c
+ * --- code ---
+ * {
+ *   a.{s, e, m} <= { not(c.s), b.e, b.m }
+ * }
+ */
+#define SGNJN(NAME, SIZE)                                          \
+int arc_gen_##NAME##SGNJN(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)  \
+{                                                                  \
+    int ret = DISAS_NEXT;                                          \
+    TCGv l_b = tcg_temp_new();                                     \
+    TCGv l_c = tcg_temp_new();                                     \
+                                                                   \
+    tcg_gen_andi_tl(l_c, c,   (1ull << (SIZE - 1)));               \
+    tcg_gen_xori_tl(l_c, l_c, (1ull << (SIZE - 1)));               \
+                                                                   \
+    tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE - 1)));                \
+                                                                   \
+    tcg_gen_or_tl(a, l_b, l_c);                                    \
+                                                                   \
+    tcg_temp_free(l_b);                                            \
+    tcg_temp_free(l_c);                                            \
+                                                                   \
+    return ret;                                                    \
+}
+SGNJN(FD, 64)
+SGNJN(FS, 32)
+SGNJN(FH, 16)
+
+/*
+ * FDSGNJX FSSGNJX FHSGNJX
+ *    Variables: @a, @b, @c
+ * --- code ---
+ * {
+ *   a.{s, e, m} <= { xor(b.s, c.s), b.e, b.m}
+ * }
+ */
+#define SGNJX(NAME, SIZE)                                          \
+int arc_gen_##NAME##SGNJX(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)  \
+{                                                                  \
+    int ret = DISAS_NEXT;                                          \
+    TCGv l_b = tcg_temp_new();                                     \
+    TCGv l_c = tcg_temp_new();                                     \
+                                                                   \
+    tcg_gen_andi_tl(l_b, b, (1ull << (SIZE - 1)));                 \
+    tcg_gen_andi_tl(l_c, c, (1ull << (SIZE - 1)));                 \
+    tcg_gen_xor_tl(l_c, l_b, l_c);                                 \
+                                                                   \
+    tcg_gen_andi_tl(l_b, b, ~(1ull << (SIZE - 1)));                \
+                                                                   \
+    tcg_gen_or_tl(a, l_b, l_c);                                    \
+                                                                   \
+    tcg_temp_free(l_b);                                            \
+    tcg_temp_free(l_c);                                            \
+                                                                   \
+    return ret;                                                    \
+}
+SGNJX(FD, 64)
+SGNJX(FS, 32)
+SGNJX(FH, 16)
+
+/*
+ * VFHINS VFSINS VFDINS
+ * Insert half/single/double precision elements into vector at a literal
+ * index or variable index
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfins
+ * --- code ---
+ * {
+ *  if(b < mid_index)
+ *    {
+ *      a <= gen_helper_vfins(a, b, c)
+ *    }
+ *  else
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      index = b - mid_index
+ *      a2 <= gen_helper_vfins(a2, index, c)
+ *    }
+ * }
+ */
+#define VFINS(TYPE, SIZE)                                         \
+int arc_gen_VF##TYPE##INS(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{                                                                 \
+    int ret = DISAS_NEXT;                                         \
+    int mid_index = (sizeof(target_ulong) * 8) / SIZE;            \
+                                                                  \
+    TCGLabel *do_next_reg = gen_new_label();                      \
+    TCGLabel *did_first_reg = gen_new_label();                    \
+                                                                  \
+    tcg_gen_brcondi_tl(TCG_COND_GE, b, mid_index, do_next_reg);   \
+                                                                  \
+    TCGv size = tcg_const_tl(SIZE);                               \
+    gen_helper_vfins(a, cpu_env, a, b, c, size);                  \
+    tcg_temp_free(size);                                          \
+                                                                  \
+    tcg_gen_br(did_first_reg);                                    \
+    gen_set_label(do_next_reg);                                   \
+                                                                  \
+    TCGv index = tcg_temp_new();                                  \
+    tcg_gen_subi_tl(index, b, mid_index);                         \
+                                                                  \
+    TCGv reg = nextFPURegWithNull(ctx, a);                        \
+    TCGv size1 = tcg_const_tl(SIZE);                              \
+                                                                  \
+    gen_helper_vfins(reg, cpu_env, reg, index, c, size1);         \
+                                                                  \
+    tcg_temp_free(index);                                         \
+    tcg_temp_free(size1);                                         \
+                                                                  \
+    gen_set_label(did_first_reg);                                 \
+                                                                  \
+    return ret;                                                   \
+}
+VFINS(H, 16)
+VFINS(S, 32)
+VFINS(D, 64)
+
+/*
+ * VFHEXT VFSEXT VFDEXT
+ * Extract half/single/double precision element from vector at a literal index
+ * or variable index
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfext
+ * --- code ---
+ * {
+ *  if(c < mid_index)
+ *    {
+ *      a <= gen_helper_vfext(a, b, c)
+ *    }
+ *  else
+ *    {
+ *      b2 = nextFPUReg(b)
+ *      index = c - mid_index
+ *      a <= gen_helper_vfext(b2, index)
+ *    }
+ * }
+ */
+#define VFEXT(TYPE, SIZE)                                         \
+int arc_gen_VF##TYPE##EXT(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{                                                                 \
+    int ret = DISAS_NEXT;                                         \
+    int mid_index = (sizeof(target_ulong) * 8) / SIZE;            \
+                                                                  \
+    TCGLabel *do_next_reg = gen_new_label();                      \
+    TCGLabel *did_first_reg = gen_new_label();                    \
+                                                                  \
+    tcg_gen_brcondi_tl(TCG_COND_GE, c, mid_index, do_next_reg);   \
+                                                                  \
+    TCGv size = tcg_const_tl(SIZE);                               \
+    gen_helper_vfext(a, cpu_env, b, c, size);                     \
+    tcg_temp_free(size);                                          \
+                                                                  \
+    tcg_gen_br(did_first_reg);                                    \
+    gen_set_label(do_next_reg);                                   \
+                                                                  \
+    TCGv index = tcg_temp_new();                                  \
+    tcg_gen_subi_tl(index, c, mid_index);                         \
+                                                                  \
+    TCGv reg = nextFPUReg(ctx, b);                                \
+    TCGv size1 = tcg_const_tl(SIZE);                              \
+                                                                  \
+    gen_helper_vfext(a, cpu_env, reg, index, size1);              \
+                                                                  \
+    tcg_temp_free(index);                                         \
+    tcg_temp_free(size1);                                         \
+                                                                  \
+    gen_set_label(did_first_reg);                                 \
+                                                                  \
+    return ret;                                                   \
+}
+VFEXT(H, 16)
+VFEXT(S, 32)
+VFEXT(D, 64)
+
+
+/*
+ * VFHREP VFSREP VFDREP
+ * Replicate half/single/double precision element from vector at a literal index
+ * or variable index
+ *    Variables: @a, @b
+ *    Functions: gen_helper_vfrep
+ * --- code ---
+ * {
+ *  a <= gen_helper_vfrep(b)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      a2 <= gen_helper_vfrep(b)
+ *    }
+ * }
+ */
+#define VFREP(TYPE, SIZE)                                 \
+int arc_gen_VF##TYPE##REP(DisasCtxt *ctx, TCGv a, TCGv b) \
+{                                                         \
+    int ret = DISAS_NEXT;                                 \
+                                                          \
+    TCGv size = tcg_const_tl(SIZE);                       \
+    gen_helper_vfrep(a, cpu_env, b, size);                \
+                                                          \
+    if (vfp_width > 64) {                                 \
+        TCGv na = nextFPURegWithNull(ctx, a);             \
+        gen_helper_vfrep(na, cpu_env, b, size);           \
+    }                                                     \
+                                                          \
+    tcg_temp_free(size);                                  \
+                                                          \
+    return ret;                                           \
+}
+VFREP(H, 16)
+VFREP(S, 32)
+VFREP(D, 64)
+
+/*
+ * VFHMOV VFSMOV VFDMOV
+ * Move contents from all the half/single/double precision elements in the
+ * source vector to the destination vector
+ *    Variables: @a, @b
+ * --- code ---
+ * {
+ *  a <= b
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      a2 <= b2
+ *    }
+ * }
+ */
+int arc_gen_VFMOV(DisasCtxt *ctx, TCGv a, TCGv b)
+{
+    int ret = DISAS_NEXT;
+
+    /* For the next current register */
+    tcg_gen_mov_tl(a, b);
+
+    if (vfp_width > 64) {
+        TCGv na = nextFPURegWithNull(ctx, a);
+        TCGv nb = nextFPUReg(ctx, b);
+        tcg_gen_mov_tl(na, nb);
+    }
+    return ret;
+}
+
+/*
+ * VFHSQRT VFSSQRT VFDSQRT
+ * Half/Single/Double precision floating point square root for all elements in a
+ * vector
+ *    Variables: @a, @b
+ *    Functions: gen_helper_vfhsqrt gen_helper_vfssqrt gen_helper_vfdsqrt
+ * --- code ---
+ * {
+ *  a <= helper(b)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      a2 <= helper(b2)
+ *    }
+ * }
+ */
+#define VEC_FLOAT2(NAME, HELPERFN)                 \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b) \
+{                                                  \
+    int ret = DISAS_NEXT;                          \
+                                                   \
+    gen_helper_##HELPERFN(a, cpu_env, b);          \
+                                                   \
+    if (vfp_width > 64) {                          \
+        TCGv na = nextFPURegWithNull(ctx, a);      \
+        TCGv nb = nextFPUReg(ctx, b);              \
+        gen_helper_##HELPERFN(na, cpu_env, nb);    \
+    }                                              \
+    return ret;                                    \
+}
+
+VEC_FLOAT2(VFHSQRT, vfhsqrt)
+VEC_FLOAT2(VFSSQRT, vfssqrt)
+VEC_FLOAT2(VFDSQRT, vfdsqrt)
+
+/*
+ * Operations: ADD/SUB/MUL/DIV/ADDSUB/SUBADD
+ * VFHMUL VFHDIV VFHADD VFHSUB VFHADDSUB VFHSUBADD
+ * VFSMUL VFSDIV VFSADD VFSSUB VFSADDSUB VFSSUBADD
+ * VFDMUL VFDDIV VFDADD VFDSUB VFDADDSUB VFDSUBADD
+ * Half/Single/Double precision floating point operation for all elements in a
+ * vector
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfhsqrt gen_helper_vfssqrt gen_helper_vfdsqrt
+ * --- code ---
+ * {
+ *  a <= helper(b, c)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      c2 = nextFPUReg(c)
+ *      a2 <= helper(b2, c2)
+ *    }
+ * }
+ */
+#define VEC_FLOAT3(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{                                                          \
+    int ret = DISAS_NEXT;                                  \
+                                                           \
+    gen_helper_##HELPERFN(a, cpu_env, b, c);               \
+                                                           \
+    if (vfp_width > 64) {                                  \
+        TCGv na = nextFPURegWithNull(ctx, a);              \
+        TCGv nb = nextFPUReg(ctx, b);                      \
+        TCGv nc = nextFPUReg(ctx, c);                      \
+        gen_helper_##HELPERFN(na, cpu_env, nb, nc);        \
+    }                                                      \
+    return ret;                                            \
+}
+
+VEC_FLOAT3(VFHMUL, vfhmul)
+VEC_FLOAT3(VFSMUL, vfsmul)
+VEC_FLOAT3(VFDMUL, vfdmul)
+
+VEC_FLOAT3(VFHDIV, vfhdiv)
+VEC_FLOAT3(VFSDIV, vfsdiv)
+VEC_FLOAT3(VFDDIV, vfddiv)
+
+VEC_FLOAT3(VFHADD, vfhadd)
+VEC_FLOAT3(VFSADD, vfsadd)
+VEC_FLOAT3(VFDADD, vfdadd)
+
+VEC_FLOAT3(VFHSUB, vfhsub)
+VEC_FLOAT3(VFSSUB, vfssub)
+VEC_FLOAT3(VFDSUB, vfdsub)
+
+VEC_FLOAT3(VFHADDSUB, vfhaddsub)
+VEC_FLOAT3(VFSADDSUB, vfsaddsub)
+VEC_FLOAT3(VFDADDSUB, vfdaddsub)
+
+VEC_FLOAT3(VFHSUBADD, vfhsubadd)
+VEC_FLOAT3(VFSSUBADD, vfssubadd)
+VEC_FLOAT3(VFDSUBADD, vfdsubadd)
+
+/*
+ * Operations: ADD/SUB/MUL/DIV
+ * VFHMULS VFHDIVS VFHADDS VFHSUBS
+ * VFSMULS VFSDIVS VFSADDS VFSSUBS
+ * VFDMULS VFDDIVS VFDADDS VFDSUBS
+ * Half/Single/Double precision floating point operation for all elements in a
+ * vector
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfhsqrt gen_helper_vfssqrt gen_helper_vfdsqrt
+ * --- code ---
+ * {
+ *  a <= helper(b, c)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      a2 <= helper(b2, c)
+ *    }
+ * }
+ */
+#define VEC_FLOAT3_SCALARC(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c) \
+{                                                          \
+    int ret = DISAS_NEXT;                                  \
+                                                           \
+    gen_helper_##HELPERFN(a, cpu_env, b, c);               \
+                                                           \
+    if (vfp_width > 64) {                                  \
+        TCGv na = nextFPURegWithNull(ctx, a);              \
+        TCGv nb = nextFPUReg(ctx, b);                      \
+        gen_helper_##HELPERFN(na, cpu_env, nb, c);         \
+    }                                                      \
+    return ret;                                            \
+}
+
+VEC_FLOAT3_SCALARC(VFHMULS, vfhmuls)
+VEC_FLOAT3_SCALARC(VFSMULS, vfsmuls)
+VEC_FLOAT3_SCALARC(VFDMULS, vfdmuls)
+
+VEC_FLOAT3_SCALARC(VFHDIVS, vfhdivs)
+VEC_FLOAT3_SCALARC(VFSDIVS, vfsdivs)
+VEC_FLOAT3_SCALARC(VFDDIVS, vfddivs)
+
+VEC_FLOAT3_SCALARC(VFHADDS, vfhadds)
+VEC_FLOAT3_SCALARC(VFSADDS, vfsadds)
+VEC_FLOAT3_SCALARC(VFDADDS, vfdadds)
+
+VEC_FLOAT3_SCALARC(VFHSUBS, vfhsubs)
+VEC_FLOAT3_SCALARC(VFSSUBS, vfssubs)
+VEC_FLOAT3_SCALARC(VFDSUBS, vfdsubs)
+
+/*
+ * Operations: ADD/SUB/MADD/MSUB
+ * VFHMADD VFHMSUB VFHNMADD VFHNMSUB
+ * VFSMADD VFSMSUB VFSNMADD VFSNMSUB
+ * VFDMADD VFDMSUB VFDNMADD VFDNMSUB
+ * Half/Single/Double precision floating point operation for all elements in a
+ * vector
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfhsqrt gen_helper_vfssqrt gen_helper_vfdsqrt
+ * --- code ---
+ * {
+ *  a <= helper(b, c, d)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      c2 = nextFPUReg(c)
+ *      d2 = nextFPUReg(d)
+ *      a2 <= helper(b2, c2, d2)
+ *    }
+ * }
+ */
+#define VEC_FLOAT4(NAME, HELPERFN)                                 \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
+{                                                                  \
+    int ret = DISAS_NEXT;                                          \
+                                                                   \
+    gen_helper_##HELPERFN(a, cpu_env, b, c, d);                    \
+                                                                   \
+    if (vfp_width > 64) {                                          \
+        TCGv na = nextFPURegWithNull(ctx, a);                      \
+        TCGv nb = nextFPUReg(ctx, b);                              \
+        TCGv nc = nextFPUReg(ctx, c);                              \
+        TCGv nd = nextFPUReg(ctx, d);                              \
+        gen_helper_##HELPERFN(na, cpu_env, nb, nc, nd);            \
+    }                                                              \
+    return ret;                                                    \
+}
+
+VEC_FLOAT4(VFHMADD, vfhmadd)
+VEC_FLOAT4(VFSMADD, vfsmadd)
+VEC_FLOAT4(VFDMADD, vfdmadd)
+
+VEC_FLOAT4(VFHMSUB, vfhmsub)
+VEC_FLOAT4(VFSMSUB, vfsmsub)
+VEC_FLOAT4(VFDMSUB, vfdmsub)
+
+VEC_FLOAT4(VFHNMADD, vfhnmadd)
+VEC_FLOAT4(VFSNMADD, vfsnmadd)
+VEC_FLOAT4(VFDNMADD, vfdnmadd)
+
+VEC_FLOAT4(VFHNMSUB, vfhnmsub)
+VEC_FLOAT4(VFSNMSUB, vfsnmsub)
+VEC_FLOAT4(VFDNMSUB, vfdnmsub)
+
+/*
+ * Operations: MADDS/MSUBS/NMADDS/NMSUBS
+ * VFHMADDS VFHMSUBS VFHNMADDS VFHNMSUBS
+ * VFSMADDS VFSMSUBS VFSNMADDS VFSNMSUBS
+ * VFDMADDS VFDMSUBS VFDNMADDS VFDNMSUBS
+ * Half/Single/Double precision floating point operation for all elements in a
+ * vector
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfhsqrt gen_helper_vfssqrt gen_helper_vfdsqrt
+ * --- code ---
+ * {
+ *  a <= helper(b, c, d)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      c2 = nextFPUReg(c)
+ *      a2 <= helper(b2, c2, d)
+ *    }
+ * }
+ */
+#define VEC_FLOAT4_SCALARD(NAME, HELPERFN) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c, TCGv d) \
+{                                                                  \
+    int ret = DISAS_NEXT;                                          \
+                                                                   \
+    gen_helper_##HELPERFN(a, cpu_env, b, c, d);                    \
+                                                                   \
+    if (vfp_width > 64) {                                          \
+        TCGv na = nextFPURegWithNull(ctx, a);                      \
+        TCGv nb = nextFPUReg(ctx, b);                              \
+        TCGv nc = nextFPUReg(ctx, c);                              \
+        gen_helper_##HELPERFN(na, cpu_env, nb, nc, d);             \
+    }                                                              \
+    return ret;                                                    \
+}
+
+VEC_FLOAT4_SCALARD(VFHMADDS, vfhmadds)
+VEC_FLOAT4_SCALARD(VFSMADDS, vfsmadds)
+VEC_FLOAT4_SCALARD(VFDMADDS, vfdmadds)
+
+VEC_FLOAT4_SCALARD(VFHMSUBS, vfhmsubs)
+VEC_FLOAT4_SCALARD(VFSMSUBS, vfsmsubs)
+VEC_FLOAT4_SCALARD(VFDMSUBS, vfdmsubs)
+
+VEC_FLOAT4_SCALARD(VFHNMADDS, vfhnmadds)
+VEC_FLOAT4_SCALARD(VFSNMADDS, vfsnmadds)
+VEC_FLOAT4_SCALARD(VFDNMADDS, vfdnmadds)
+
+VEC_FLOAT4_SCALARD(VFHNMSUBS, vfhnmsubs)
+VEC_FLOAT4_SCALARD(VFSNMSUBS, vfsnmsubs)
+VEC_FLOAT4_SCALARD(VFDNMSUBS, vfdnmsubs)
+
+/*
+ * VFHEXCH VFSEXCH VFDEXCH
+ * Half/Single/Double precision floating point vector exchange permutation
+ * operation for all elements in a vector
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfhsqrt gen_helper_vfssqrt gen_helper_vfdsqrt
+ * --- code ---
+ * {
+ *  a <= helper(b, c, d)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      tmp <= gen_helper_vector_shuffle(0, b2, b, 0, 0)
+ *      a2 <=  gen_helper_vector_shuffle(1, b2, b, 0, 0)
+ *       a <= tmp
+ *    }
+ *   else
+ *    {
+ *      a <=  gen_helper_vector_shuffle(0, 0, b, 0, 0)
+ *    }
+ * }
+ */
+#define VEC_SHUFFLE2_INSN(NAME, TYPE)                                          \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b)                             \
+{                                                                              \
+    int ret = DISAS_NEXT;                                                      \
+    TCGv zero = tcg_const_tl(0);                                               \
+    TCGv one = tcg_const_tl(1);                                                \
+    TCGv type = tcg_const_tl(TYPE);                                            \
+    if (vfp_width > 64) {                                                      \
+        TCGv tmp = tcg_temp_new();                                             \
+        TCGv na = nextFPURegWithNull(ctx, a);                                  \
+        TCGv nb = nextFPUReg(ctx, b);                                          \
+        gen_helper_vector_shuffle(tmp,  cpu_env, type, zero,                   \
+                                  nb, b, zero, zero);                          \
+        gen_helper_vector_shuffle(na, cpu_env, type, one,  nb, b, zero, zero); \
+        tcg_gen_mov_tl(a, tmp);                                                \
+        tcg_temp_free(tmp);                                                    \
+    } else {                                                                   \
+        gen_helper_vector_shuffle(a,  cpu_env, type, zero,                     \
+                                  zero, b, zero, zero);                        \
+    }                                                                          \
+    tcg_temp_free(zero);                                                       \
+    tcg_temp_free(one);                                                        \
+    tcg_temp_free(type);                                                       \
+    return ret;                                                                \
+}
+
+VEC_SHUFFLE2_INSN(VFHEXCH, HEXCH)
+VEC_SHUFFLE2_INSN(VFSEXCH, SEXCH)
+VEC_SHUFFLE2_INSN(VFDEXCH, DEXCH)
+
+/*
+ * VFHUNPKL VFHUNPKM VFSUNPKL VFSUNPKM VFDUNPKL VFDUNPKM
+ *   Vector unpack (inverse shuffle source register elements into the
+ *   destination register, and store the Least/Most-significant half result)
+ * VFHPACKL VFHPACKM VFSPACKL VFSPACKM VFDPACKL VFDPACKM
+ *   Vector pack (shuffle source register elements into the destination
+ *   register, and store the Least/Most-significant half result)
+ * VFHBFLYL VFHBFLYM VFSBFLYL VFSBFLYM VFDBFLYL VFDBFLYM
+ *   Vector pack (shuffle source register elements into the destination
+ *   register, and store the Least/Most-significant half result)
+ *    Variables: @a, @b, @c
+ *    Functions: gen_helper_vfhsqrt gen_helper_vfssqrt gen_helper_vfdsqrt
+ * --- code ---
+ * {
+ *  a <= helper(b, c, d)
+ *  if(vfp_width > 64)
+ *    {
+ *      a2 = nextFPUReg(a)
+ *      b2 = nextFPUReg(b)
+ *      c2 = nextFPUReg(c)
+ *      tmp <= gen_helper_vector_shuffle(0, b2, b, c2, c)
+ *      a2 <=  gen_helper_vector_shuffle(1, b2, b, c2, c)
+ *       a <= tmp
+ *    }
+ *   else
+ *    {
+ *      tmp <= gen_helper_vector_shuffle(0, 0, b, 0, c)
+ *    }
+ * }
+ */
+#define VEC_SHUFFLE3_INSN(NAME, TYPE) \
+int arc_gen_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)                    \
+{                                                                             \
+    int ret = DISAS_NEXT;                                                     \
+    TCGv zero = tcg_const_tl(0);                                              \
+    TCGv one = tcg_const_tl(1);                                               \
+    TCGv type = tcg_const_tl(TYPE);                                           \
+    if (vfp_width > 64) {                                                     \
+        TCGv tmp = tcg_temp_new();                                            \
+        TCGv na = nextFPURegWithNull(ctx, a);                                 \
+        TCGv nb = nextFPUReg(ctx, b);                                         \
+        TCGv nc = nextFPUReg(ctx, c);                                         \
+        gen_helper_vector_shuffle(tmp,  cpu_env, type, zero, nb, b, nc, c);   \
+        gen_helper_vector_shuffle(na, cpu_env, type, one,  nb, b, nc, c);     \
+        tcg_gen_mov_tl(a, tmp);                                               \
+        tcg_temp_free(tmp);                                                   \
+    } else {                                                                  \
+        gen_helper_vector_shuffle(a,  cpu_env, type, zero, zero, b, zero, c); \
+    }                                                                         \
+    tcg_temp_free(zero);                                                      \
+    tcg_temp_free(one);                                                       \
+    tcg_temp_free(type);                                                      \
+    return ret;                                                               \
+}
+
+VEC_SHUFFLE3_INSN(VFHUNPKL, HUNPKL)
+VEC_SHUFFLE3_INSN(VFHUNPKM, HUNPKM)
+VEC_SHUFFLE3_INSN(VFSUNPKL, SUNPKL)
+VEC_SHUFFLE3_INSN(VFSUNPKM, SUNPKM)
+VEC_SHUFFLE3_INSN(VFDUNPKL, DUNPKL)
+VEC_SHUFFLE3_INSN(VFDUNPKM, DUNPKM)
+VEC_SHUFFLE3_INSN(VFHPACKL, HPACKL)
+VEC_SHUFFLE3_INSN(VFHPACKM, HPACKM)
+VEC_SHUFFLE3_INSN(VFSPACKL, SPACKL)
+VEC_SHUFFLE3_INSN(VFSPACKM, SPACKM)
+VEC_SHUFFLE3_INSN(VFDPACKL, DPACKL)
+VEC_SHUFFLE3_INSN(VFDPACKM, DPACKM)
+VEC_SHUFFLE3_INSN(VFHBFLYL, HBFLYL)
+VEC_SHUFFLE3_INSN(VFHBFLYM, HBFLYM)
+VEC_SHUFFLE3_INSN(VFSBFLYL, SBFLYL)
+VEC_SHUFFLE3_INSN(VFSBFLYM, SBFLYM)
+VEC_SHUFFLE3_INSN(VFDBFLYL, DBFLYL)
+VEC_SHUFFLE3_INSN(VFDBFLYM, DBFLYM)
