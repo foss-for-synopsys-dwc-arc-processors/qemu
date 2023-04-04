@@ -48,7 +48,9 @@ arc_softmmu_ss.add(files(
   'decoder-v3.c',
   'decoder-v2.c',
   'semfunc-weak.c',
-  'fpu-helper.c',
+  'fpu.c',
+  'fpu-helper-v3.c',
+  'fpu-helper-v2.c',
 ))
 
 target_arch += {'arc': arc_softmmu_ss}

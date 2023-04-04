@@ -148,6 +148,10 @@ arc_general_regs_get(const struct arc_aux_reg_detail *aux_reg_detail,
         reg = cpu->barrel_build;
         break;
 
+    case AUX_ID_fpu_build:
+        reg = cpu->fpu_build_config;
+        break;
+
     case AUX_ID_isa_config:
         reg = cpu->isa_config;
         break;

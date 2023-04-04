@@ -123,7 +123,7 @@ static void arc_cpu_reset(DeviceState *dev)
 
     /* FPU init */
     /* TODO: Make init_fpu parameters based on options. */
-    init_fpu(env, true, true, true);
+    init_fpu(cpu, true, true, true);
 
     arc_resetTIMER(cpu);
     arc_resetIRQ(cpu);
