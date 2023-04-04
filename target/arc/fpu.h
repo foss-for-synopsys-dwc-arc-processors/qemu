@@ -41,7 +41,6 @@
 #define FPU_STATUS_DZ       1   /* Divide By Zero sticky flag */
 #define FPU_STATUS_IV       0   /* Invalid Operation sticky flag */
 
-
 enum arc_float_rounding_modes {
     arc_round_to_zero = 0,
     arc_round_nearest_even = 1,
@@ -49,10 +48,14 @@ enum arc_float_rounding_modes {
     arc_round_down = 3
 };
 
+extern uint8_t fpr_width;
 extern uint8_t vfp_width;
 
+/* Check if the current fpu status requires an exception to be raised */
+void check_fpu_raise_exception(CPUARCState *env);
+
 /* Initialize FPU initial values and flags */
-void init_fpu(CPUARCState *env, bool fp_hp, bool fp_dp, bool fp_wide);
+void init_fpu(ARCCPU *cpu, bool fp_hp, bool fp_dp, bool fp_wide);
 
 /*
  * Amount of elements in a vector is the configured vector width divided by the

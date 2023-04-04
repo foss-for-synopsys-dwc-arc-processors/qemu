@@ -456,3 +456,4 @@ AUX_REG_SETTER(arc_fpu_ctrl_set)
 
 AUX_REG (fpu_status, arc_fpu_status_get, arc_fpu_status_set)
 AUX_REG (fpu_ctrl,   arc_fpu_ctrl_get,   arc_fpu_ctrl_set)
+AUX_REG (fpu_build,  arc_general_regs_get,  NULL)

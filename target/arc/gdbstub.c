@@ -661,23 +661,7 @@ gdb_v3_fpu_read(CPUARCState *env, GByteArray *mem_buf, int regnum)
     case 0 ... 31:
         return gdb_get_reg64(mem_buf, env->fpr[regnum]);
     case V3_FPU_BUILD: {
-        /*
-         * TODO FPU: when fpu module is implemented, this logic should
-         * move there and here we should just call the fpu_getter.
-         */
-        uint32_t reg_bld = 0;
-        if (cpu->cfg.has_fpu) {
-            reg_bld = (4 << 0)  |   /* version: ARCv3 floating point */
-                      (1 << 8)  |   /* hp: half precision */
-                      (1 << 9)  |   /* sp: single precision */
-                      (1 << 10) |   /* dp: double precision */
-                      (1 << 11) |   /* ds: divide and square root */
-                      (1 << 12) |   /* vf: vector floating point */
-                      (1 << 13) |   /* wv: wide vector */
-                      (5 << 16) |   /* fp_regs: 32 */
-                      (0 << 24);    /* dd: no demand driven floating point */
-        }
-        return gdb_get_reg32(mem_buf, reg_bld);
+        return gdb_get_reg32(mem_buf, cpu->fpu_build_config);
     }
     case V3_FPU_CTRL:
         return gdb_get_reg32(mem_buf,

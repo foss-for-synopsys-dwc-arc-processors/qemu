@@ -381,6 +381,7 @@ struct ArchCPU {
     uint32_t norm_build;    /* Normalize instruction configuration register. */
     uint32_t barrel_build;  /* Barrel shifter configuration register. */
     uint32_t isa_config;    /* Instruction Set Configuration Register. */
+    uint32_t fpu_build_config;    /* FPU build register */
 
     uint8_t core_id;        /* Core id holder. */
 
