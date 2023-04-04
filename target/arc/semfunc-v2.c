@@ -47,22 +47,25 @@
 #define ARC_GEN_DST_NOT_PAIR(REGISTER) \
     tcg_gen_extrl_i64_i32(REGISTER, r64_##REGISTER);
 
+#define VEC_SIGNED_PARAMS true, tcg_gen_sextract_i64, \
+                                arc_gen_add_signed_overflow_i64
+
+#define VEC_UNSIGNED_PARAMS false, tcg_gen_extract_i64, \
+                                   arc_gen_add_unsigned_overflow_i64
+
 /**
  * @brief Generate the function call for signed/unsigned instructions
  */
 #define ARC_GEN_BASE32_64_SIGNED(OPERATION) \
-OPERATION(ctx, r64_a, r64_b, r64_c, acc, true, \
-          tcg_gen_sextract_i64, \
-          arc_gen_add_signed_overflow_i64)
+OPERATION(ctx, r64_a, r64_b, r64_c, acc, VEC_SIGNED_PARAMS)
 
 #define ARC_GEN_BASE32_64_UNSIGNED(OPERATION) \
-OPERATION(ctx, r64_a, r64_b, r64_c , acc, false, \
-          tcg_gen_extract_i64, arc_gen_add_unsigned_overflow_i64)
+OPERATION(ctx, r64_a, r64_b, r64_c , acc, VEC_UNSIGNED_PARAMS)
 
 /**
  * @brief Generate a function to be used by 32 bit versions to interface with
  * their 64 bit counterparts.
- * It is assumed the accumulator is always a pair register
+ * It is assumed the accumulator is always a pair register and always updated
  * @param NAME The name of the function
  * @param A_REG_INFO dest is PAIR or NOT_PAIR
  * @param B_REG_INFO first operand is PAIR or NOT_PAIR
@@ -90,6 +93,46 @@ arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)          \
     tcg_temp_free_i64(r64_b);                                              \
     tcg_temp_free_i64(r64_c);                                              \
 }
+
+/*
+ * @brief Generate a function to be used by 32 bit fpu instructions to interface
+ * with the appropriate a = op(b, c) helpers
+ * @param NAME The name of the function
+ * @param A_REG_INFO dest is PAIR or NOT_PAIR
+ * @param B_REG_INFO first operand is PAIR or NOT_PAIR
+ * @param C_REG_INFO second operand is PAIR or NOT_PAIR
+ * @param OPERATION The operation to perform
+ */
+#define ARC_GEN_32BIT_FLOAT_INTERFACE3(NAME, A_REG_INFO, B_REG_INFO,       \
+                                       C_REG_INFO, HELPER)                 \
+static inline void                                                         \
+arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)          \
+{                                                                          \
+    TCGv_i64 r64_a = tcg_temp_new_i64();                                   \
+    TCGv_i64 r64_b = tcg_temp_new_i64();                                   \
+    TCGv_i64 r64_c = tcg_temp_new_i64();                                   \
+    ARC_GEN_SRC_ ## B_REG_INFO ## _UNSIGNED(b);                            \
+    ARC_GEN_SRC_ ## C_REG_INFO ## _UNSIGNED(c);                            \
+    HELPER(r64_a, cpu_env, r64_b, r64_c);                                  \
+    ARC_GEN_DST_##A_REG_INFO(a);                                           \
+    tcg_temp_free_i64(r64_a);                                              \
+    tcg_temp_free_i64(r64_b);                                              \
+    tcg_temp_free_i64(r64_c);                                              \
+}
+
+#define ARC_GEN_32BIT_FLOAT_INTERFACE2(NAME, A_REG_INFO, B_REG_INFO, HELPER) \
+static inline void                                                           \
+arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b)                    \
+{                                                                            \
+    TCGv_i64 r64_a = tcg_temp_new_i64();                                     \
+    TCGv_i64 r64_b = tcg_temp_new_i64();                                     \
+    ARC_GEN_SRC_ ## B_REG_INFO ## _UNSIGNED(b);                              \
+    HELPER(r64_a, cpu_env, r64_b);                                           \
+    ARC_GEN_DST_##A_REG_INFO(a);                                             \
+    tcg_temp_free_i64(r64_a);                                                \
+    tcg_temp_free_i64(r64_b);                                                \
+}
+
 /*
  * FLAG
  *    Variables: @src
@@ -8467,6 +8510,408 @@ int
 arc_gen_ATLD(DisasCtxt *ctx, TCGv b, TCGv c)
 {
     arc_gen_atld_op(ctx, b, c);
+    return DISAS_NEXT;
+}
+
+/* Floating point instructions */
+
+int
+arc_gen_FCVT32(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    gen_helper_fcvt32(a, cpu_env, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_FCVT32_64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_a = tcg_temp_new_i64();
+
+    gen_helper_fcvt32_64(r64_a, cpu_env, b, c);
+    tcg_gen_extr_i64_i32(a, nextRegWithNull(a), r64_a);
+
+    tcg_temp_free_i64(r64_a);
+
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_FCVT64(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_a = tcg_temp_new_i64();
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+
+    arc_gen_next_register_i32_i64(ctx, r64_b, b);
+    gen_helper_fcvt64(r64_a, cpu_env, r64_b, c);
+    tcg_gen_extr_i64_i32(a, nextRegWithNull(a), r64_a);
+
+    tcg_temp_free_i64(r64_a);
+    tcg_temp_free_i64(r64_b);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_FCVT64_32(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+
+    arc_gen_next_register_i32_i64(ctx, r64_b, b);
+    gen_helper_fcvt64_32(a, cpu_env, r64_b, c);
+
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FSADD, NOT_PAIR, NOT_PAIR, NOT_PAIR,
+                               gen_helper_fsadd);
+
+int arc_gen_FSADD(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FSADD(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FDADD, PAIR, PAIR, PAIR, gen_helper_fdadd);
+
+int arc_gen_FDADD(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FDADD(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FSSUB, NOT_PAIR, NOT_PAIR, NOT_PAIR, \
+                               gen_helper_fssub);
+
+int arc_gen_FSSUB(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FSSUB(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FDSUB, PAIR, PAIR, PAIR, gen_helper_fdsub);
+
+int arc_gen_FDSUB(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FDSUB(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FSDIV, NOT_PAIR, NOT_PAIR, NOT_PAIR, \
+                               gen_helper_fsdiv);
+
+int arc_gen_FSDIV(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FSDIV(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FDDIV, PAIR, PAIR, PAIR, gen_helper_fddiv);
+
+int arc_gen_FDDIV(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FDDIV(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FSMUL, NOT_PAIR, NOT_PAIR, NOT_PAIR, \
+                               gen_helper_fsmul);
+
+int arc_gen_FSMUL(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FSMUL(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+ARC_GEN_32BIT_FLOAT_INTERFACE3(FDMUL, PAIR, PAIR, PAIR, gen_helper_fdmul);
+
+int arc_gen_FDMUL(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FDMUL(ctx, a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+
+ARC_GEN_32BIT_FLOAT_INTERFACE2(FSSQRT, NOT_PAIR, NOT_PAIR, gen_helper_fssqrt);
+
+int arc_gen_FSSQRT(DisasCtxt *ctx, TCGv a, TCGv b)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FSSQRT(ctx, a, b);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+ARC_GEN_32BIT_FLOAT_INTERFACE2(FDSQRT, PAIR, PAIR, gen_helper_fdsqrt);
+
+int arc_gen_FDSQRT(DisasCtxt *ctx, TCGv a, TCGv b)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    arc_autogen_base32_FDSQRT(ctx, a, b);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+
+
+int arc_gen_FSMADDv2(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_a = tcg_temp_new_i64();
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+    TCGv_i64 acc = tcg_temp_new_i64();
+
+    tcg_gen_extu_i32_i64(r64_b, b);
+    tcg_gen_extu_i32_i64(r64_c, c);
+    tcg_gen_extu_i32_i64(acc, cpu_acclo);
+
+    gen_helper_fsmadd(r64_a, cpu_env, r64_b, r64_c, acc);
+
+    tcg_gen_extrl_i64_i32(a, r64_a);
+
+    tcg_temp_free_i64(r64_a);
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+    tcg_temp_free_i64(acc);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int arc_gen_FDMADDv2(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_a = tcg_temp_new_i64();
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+    TCGv_i64 acc = tcg_temp_new_i64();
+
+    arc_gen_next_register_i32_i64(ctx, r64_b, b);
+    arc_gen_next_register_i32_i64(ctx, r64_c, c);
+    tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
+
+    gen_helper_fdmadd(r64_a, cpu_env, r64_b, r64_c, acc);
+
+    tcg_gen_extr_i64_i32(a, nextRegWithNull(a), r64_a);
+
+    tcg_temp_free_i64(r64_a);
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+    tcg_temp_free_i64(acc);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int arc_gen_FSMSUBv2(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_a = tcg_temp_new_i64();
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+    TCGv_i64 acc = tcg_temp_new_i64();
+
+    tcg_gen_extu_i32_i64(r64_b, b);
+    tcg_gen_extu_i32_i64(r64_c, c);
+    tcg_gen_extu_i32_i64(acc, cpu_acclo);
+
+    gen_helper_fsmsub(r64_a, cpu_env, r64_b, r64_c, acc);
+
+    tcg_gen_extrl_i64_i32(a, r64_a);
+
+    tcg_temp_free_i64(r64_a);
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+    tcg_temp_free_i64(acc);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int arc_gen_FDMSUBv2(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_a = tcg_temp_new_i64();
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+    TCGv_i64 acc = tcg_temp_new_i64();
+
+    arc_gen_next_register_i32_i64(ctx, r64_b, b);
+    arc_gen_next_register_i32_i64(ctx, r64_c, c);
+    tcg_gen_concat_i32_i64(acc, cpu_acclo, cpu_acchi);
+
+    gen_helper_fdmsub(r64_a, cpu_env, r64_b, r64_c, acc);
+
+    tcg_gen_extr_i64_i32(a, nextRegWithNull(a), r64_a);
+
+    tcg_temp_free_i64(r64_a);
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+    tcg_temp_free_i64(acc);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_FSCMP(DisasCtxt *ctx, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+
+    tcg_gen_extu_i32_i64(r64_b, b);
+    tcg_gen_extu_i32_i64(r64_c, c);
+
+    gen_helper_fscmp(cpu_env, r64_b, r64_c);
+
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_FSCMPF(DisasCtxt *ctx, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+
+    tcg_gen_extu_i32_i64(r64_b, b);
+    tcg_gen_extu_i32_i64(r64_c, c);
+
+    gen_helper_fscmpf(cpu_env, r64_b, r64_c);
+
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_FDCMP(DisasCtxt *ctx, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+
+    arc_gen_next_register_i32_i64(ctx, r64_b, b);
+    arc_gen_next_register_i32_i64(ctx, r64_c, c);
+
+    gen_helper_fdcmp(cpu_env, r64_b, r64_c);
+
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+int
+arc_gen_FDCMPF(DisasCtxt *ctx, TCGv b, TCGv c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    TCGv_i64 r64_b = tcg_temp_new_i64();
+    TCGv_i64 r64_c = tcg_temp_new_i64();
+
+    arc_gen_next_register_i32_i64(ctx, r64_b, b);
+    arc_gen_next_register_i32_i64(ctx, r64_c, c);
+
+    gen_helper_fdcmpf(cpu_env, r64_b, r64_c);
+
+    tcg_temp_free_i64(r64_b);
+    tcg_temp_free_i64(r64_c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
 
     return DISAS_NEXT;
 }

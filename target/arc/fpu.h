@@ -42,6 +42,27 @@
 #define FPU_STATUS_IV       0   /* Invalid Operation sticky flag */
 
 
+/*
+ * _RZ instructions perform operations with a rounding mode different from the
+ * what is currently set. As such it is necessary to set and reset rounding mode
+ */
+#define ARC_HELPER_RZ_PROLOGUE()                                        \
+    do{                                                                 \
+        saved_flush_zero = get_flush_to_zero(&env->fp_status);          \
+        saved_rounding_mode = get_float_rounding_mode(&env->fp_status); \
+                                                                        \
+        set_flush_to_zero(true, &env->fp_status);                       \
+        set_float_rounding_mode(float_round_to_zero, &env->fp_status);  \
+    } while(0);
+
+
+#define ARC_HELPER_RZ_EPILOGUE()                                       \
+    do{                                                                \
+        set_flush_to_zero(saved_flush_zero, &env->fp_status);          \
+        set_float_rounding_mode(saved_rounding_mode, &env->fp_status); \
+    } while(0);
+
+
 enum arc_float_rounding_modes {
     arc_round_to_zero = 0,
     arc_round_nearest_even = 1,
@@ -49,7 +70,16 @@ enum arc_float_rounding_modes {
     arc_round_down = 3
 };
 
+extern uint8_t fpr_width;
 extern uint8_t vfp_width;
+/* TODO: Maybe is not needed */
+extern uint8_t fpr_per_vector_operand;
+extern uint8_t vfp_max_length;
+
+/**
+ * @brief Check if the current fpu status requires an exception to be raised
+ */
+void check_fpu_raise_exception(CPUARCState *env);
 
 /* Initialize FPU initial values and flags */
 void init_fpu(CPUARCState *env, bool fp_hp, bool fp_dp, bool fp_wide);
