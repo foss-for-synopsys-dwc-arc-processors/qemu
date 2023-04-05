@@ -5854,66 +5854,6 @@
 /* mpyd<.f><.cc> ZA,LIMM,LIMMdup 0010111011011000x1111111100xxxxx */
 { "mpyd", 0x2ed87f80, 0xffff7fe0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, MPY8E, { ZA, LIMM, LIMMdup }, { C_F, C_CC } }
 
-/* mpydf<.f> RA_CHK,RB,RC 00110xxx00010010xxxxxxxxxxxxxxxx */
-{ "mpydf", 0x30120000, 0xf8ff0000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RA_CHK, RB, RC }, { C_F } }
-
-/* mpydf<.f> ZA,RB,RC 00110xxx00010010xxxxxxxxxx111110 */
-{ "mpydf", 0x3012003e, 0xf8ff003f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, RB, RC }, { C_F } }
-
-/* mpydf<.f><.cc> RB_CHK,RBdup,RC 00110xxx11010010xxxxxxxxxx0xxxxx */
-{ "mpydf", 0x30d20000, 0xf8ff0020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RB_CHK, RBdup, RC }, { C_F, C_CC } }
-
-/* mpydf<.f> RA_CHK,RB,UIMM6_20 00110xxx01010010xxxxxxxxxxxxxxxx */
-{ "mpydf", 0x30520000, 0xf8ff0000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RA_CHK, RB, UIMM6_20 }, { C_F } }
-
-/* mpydf<.f> ZA,RB,UIMM6_20 00110xxx01010010xxxxxxxxxx111110 */
-{ "mpydf", 0x3052003e, 0xf8ff003f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, RB, UIMM6_20 }, { C_F } }
-
-/* mpydf<.f><.cc> RB_CHK,RBdup,UIMM6_20 00110xxx11010010xxxxxxxxxx1xxxxx */
-{ "mpydf", 0x30d20020, 0xf8ff0020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RB_CHK, RBdup, UIMM6_20 }, { C_F, C_CC } }
-
-/* mpydf<.f> RB_CHK,RBdup,SIMM12_20 00110xxx10010010xxxxxxxxxxxxxxxx */
-{ "mpydf", 0x30920000, 0xf8ff0000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RB_CHK, RBdup, SIMM12_20 }, { C_F } }
-
-/* mpydf<.f> RA_CHK,LIMM,RC 0011011000010010x111xxxxxxxxxxxx */
-{ "mpydf", 0x36127000, 0xffff7000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RA_CHK, LIMM, RC }, { C_F } }
-
-/* mpydf<.f> RA_CHK,RB,LIMM 00110xxx00010010xxxx111110xxxxxx */
-{ "mpydf", 0x30120f80, 0xf8ff0fc0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RA_CHK, RB, LIMM }, { C_F } }
-
-/* mpydf<.f> ZA,LIMM,RC 0011011000010010x111xxxxxx111110 */
-{ "mpydf", 0x3612703e, 0xffff703f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, LIMM, RC }, { C_F } }
-
-/* mpydf<.f> ZA,RB,LIMM 00110xxx00010010xxxx111110111110 */
-{ "mpydf", 0x30120fbe, 0xf8ff0fff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, RB, LIMM }, { C_F } }
-
-/* mpydf<.f><.cc> RB_CHK,RBdup,LIMM 00110xxx11010010xxxx1111100xxxxx */
-{ "mpydf", 0x30d20f80, 0xf8ff0fe0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RB_CHK, RBdup, LIMM }, { C_F, C_CC } }
-
-/* mpydf<.f><.cc> ZA,LIMM,RC 0011011011010010x111xxxxxx0xxxxx */
-{ "mpydf", 0x36d27000, 0xffff7020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, LIMM, RC }, { C_F, C_CC } }
-
-/* mpydf<.f> RA_CHK,LIMM,UIMM6_20 0011011001010010x111xxxxxxxxxxxx */
-{ "mpydf", 0x36527000, 0xffff7000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RA_CHK, LIMM, UIMM6_20 }, { C_F } }
-
-/* mpydf<.f> ZA,LIMM,UIMM6_20 0011011001010010x111xxxxxx111110 */
-{ "mpydf", 0x3652703e, 0xffff703f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, LIMM, UIMM6_20 }, { C_F } }
-
-/* mpydf<.f><.cc> ZA,LIMM,UIMM6_20 0011011011010010x111xxxxxx1xxxxx */
-{ "mpydf", 0x36d27020, 0xffff7020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, LIMM, UIMM6_20 }, { C_F, C_CC } }
-
-/* mpydf<.f> ZA,LIMM,SIMM12_20 0011011010010010x111xxxxxxxxxxxx */
-{ "mpydf", 0x36927000, 0xffff7000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, LIMM, SIMM12_20 }, { C_F } }
-
-/* mpydf<.f> RA_CHK,LIMM,LIMMdup 0011011000010010x111111110xxxxxx */
-{ "mpydf", 0x36127f80, 0xffff7fc0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { RA_CHK, LIMM, LIMMdup }, { C_F } }
-
-/* mpydf<.f> ZA,LIMM,LIMMdup 0011011000010010x111111110111110 */
-{ "mpydf", 0x36127fbe, 0xffff7fff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, LIMM, LIMMdup }, { C_F } }
-
-/* mpydf<.f><.cc> ZA,LIMM,LIMMdup 0011011011010010x1111111100xxxxx */
-{ "mpydf", 0x36d27f80, 0xffff7fe0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, NONE, { ZA, LIMM, LIMMdup }, { C_F, C_CC } }
-
 /* mpydu<.f> RA_CHK,RB,RC 00101xxx00011001xxxxxxxxxxxxxxxx */
 { "mpydu", 0x28190000, 0xf8ff0000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MPY, MPY8E, { RA_CHK, RB, RC }, { C_F } }
 
