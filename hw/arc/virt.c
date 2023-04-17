@@ -25,6 +25,7 @@
 #include "hw/arc/cpudevs.h"
 #include "hw/pci-host/gpex.h"
 #include "hw/sysbus.h"
+#include "hw/arc/virt.h"
 
 #define VIRT_RAM_BASE      0x80000000
 #define VIRT_IO_BASE       0xf0000000
@@ -186,8 +187,25 @@ static void virt_machine_init(MachineClass *mc)
     mc->default_ram_size = 2 * GiB;
 }
 
-DEFINE_MACHINE("virt", virt_machine_init)
+static void virt_machine_init_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
 
+    virt_machine_init(mc);
+}
+
+static const TypeInfo virt_machine_init_typeinfo = {
+    .name = MACHINE_TYPE_NAME("virt"),
+    .parent = TYPE_ARC_VIRT_MACHINE,
+    .class_init = virt_machine_init_class_init,
+};
+
+static void virt_machine_init_register_types(void)
+{
+    type_register_static(&virt_machine_init_typeinfo);
+}
+
+type_init(virt_machine_init_register_types);
 
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
 /* vim: set ts=4 sw=4 et: */
