@@ -3,6 +3,7 @@ arc_ss.add(files(
   'arc_sim.c',
   'pic_cpu.c',
   'boot.c',
+  'arc_virt.c',
 ))
 arc_ss.add(when: 'CONFIG_ARC_VIRT', if_true: files('virt.c'))
 
