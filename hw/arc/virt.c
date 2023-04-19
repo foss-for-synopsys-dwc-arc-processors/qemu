@@ -27,7 +27,6 @@
 #include "hw/sysbus.h"
 #include "hw/arc/virt.h"
 
-#define VIRT_RAM_BASE      0x80000000
 #define VIRT_IO_BASE       0xf0000000
 #define VIRT_IO_SIZE       0x10000000
 
@@ -110,6 +109,7 @@ static void create_pcie(ARCCPU *cpu)
 
 static void virt_init(MachineState *machine)
 {
+    ARCVirtMachineState *vms = ARC_VIRT_MACHINE(machine);
     static struct arc_boot_info boot_info;
     unsigned int smp_cpus = machine->smp.cpus;
     MemoryRegion *system_memory = get_system_memory();
@@ -119,7 +119,7 @@ static void virt_init(MachineState *machine)
     ARCCPU *cpu = NULL;
     int n;
 
-    boot_info.ram_start = VIRT_RAM_BASE;
+    boot_info.ram_start = vms->ram_start;
     boot_info.ram_size = machine->ram_size;
     boot_info.kernel_filename = machine->kernel_filename;
     boot_info.kernel_cmdline = machine->kernel_cmdline;
@@ -146,9 +146,9 @@ static void virt_init(MachineState *machine)
 
     /* Init system DDR */
     system_ram = g_new(MemoryRegion, 1);
-    memory_region_init_ram(system_ram, NULL, "arc.ram", machine->ram_size,
+    memory_region_init_ram(system_ram, NULL, "arc.ram", boot_info.ram_size,
                            &error_fatal);
-    memory_region_add_subregion(system_memory, VIRT_RAM_BASE, system_ram);
+    memory_region_add_subregion(system_memory, boot_info.ram_start, system_ram);
 
     system_ram0 = g_new(MemoryRegion, 1);
     memory_region_init_ram(system_ram0, NULL, "arc.ram0", 0x1000000,

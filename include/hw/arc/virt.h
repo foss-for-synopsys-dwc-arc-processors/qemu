@@ -38,6 +38,7 @@ struct ARCVirtMachineClass {
  */
 struct ARCVirtMachineState {
     MachineState parent;
+    uint64_t ram_start;
 };
 
 /* Define the type name for the parent virtual machine */
