@@ -27,6 +27,7 @@
  * their name, parent structure, name inside parent structure, and default value
  */
 static Property arc_virt_properties[] = {
+    DEFINE_PROP_UINT64("ram-start", ARCVirtMachineState, ram_start, VIRT_RAM_BASE),
     DEFINE_PROP_END_OF_LIST(),
 };
 

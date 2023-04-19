@@ -24,6 +24,8 @@
 #include "qom/object.h"
 #include "hw/qdev-properties.h"
 
+#define VIRT_RAM_BASE      0x80000000
+
 /* Parent virtual machine class data */
 struct ARCVirtMachineClass {
     MachineClass parent;
@@ -38,6 +40,7 @@ struct ARCVirtMachineClass {
  */
 struct ARCVirtMachineState {
     MachineState parent;
+    uint64_t ram_start;
 };
 
 /* Define the type name for the parent virtual machine */
