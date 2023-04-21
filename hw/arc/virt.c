@@ -135,6 +135,7 @@ static void virt_init(MachineState *machine)
             fprintf(stderr, "Unable to find CPU definition!\n");
             exit(1);
         }
+        cpu->core_id = n;
 
        /* Initialize internal devices. */
         cpu_arc_pic_init(cpu);
@@ -162,14 +163,14 @@ static void virt_init(MachineState *machine)
 
     for (n = 0; n < VIRT_UART_NUMBER; n++) {
         serial_mm_init(system_io, VIRT_UART_OFFSET + VIRT_UART_SIZE * n, 2,
-                       cpu->env.irq[VIRT_UART_IRQ + n], 115200, serial_hd(n),
+                       ARC_CPU(first_cpu)->env.irq[VIRT_UART_IRQ + n], 115200, serial_hd(n),
                        DEVICE_NATIVE_ENDIAN);
     }
 
     for (n = 0; n < VIRT_VIRTIO_NUMBER; n++) {
         sysbus_create_simple("virtio-mmio",
                              VIRT_VIRTIO_BASE + VIRT_VIRTIO_SIZE * n,
-                             cpu->env.irq[VIRT_VIRTIO_IRQ + n]);
+                             ARC_CPU(first_cpu)->env.irq[VIRT_VIRTIO_IRQ + n]);
     }
 
     create_pcie(cpu);
@@ -181,7 +182,7 @@ static void virt_machine_init(MachineClass *mc)
 {
     mc->desc = "ARC Virtual Machine";
     mc->init = virt_init;
-    mc->max_cpus = 1;
+    mc->max_cpus = 64;
     mc->is_default = true;
     mc->default_ram_size = 2 * GiB;
 }
