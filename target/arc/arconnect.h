@@ -24,6 +24,23 @@
 #include "cpu-qom.h"
 #include "exec/cpu-defs.h"
 
+#define ICI_IRQ 19
+#define MCIP_IRQ 19
+#define EXT_IRQ 24
+
+#define MAX_IDU_CIRQS 128
+#define MAX_CORES     32
+
+#define IDU_DEST_MASK (0x0f) /* TODO: Make it general for diffenet number of smp cores. */
+#define IDU_MODE_MASK (0x13) /* TODO: Make it general for diffenet number of smp cores. */
+
+#define IDU_MODE_ENUM_MASK (0x3)
+enum idu_mode_enum {
+  ROUND_ROBIN = 0x0,
+  FIRST_ACKNOWLEDGE = 0x1,
+  ALL_DESTINATION = 0x2
+};
+
 struct lpa_lf_entry {
     QemuMutex mutex;
     target_ulong lpa_lf;
@@ -32,6 +49,18 @@ struct lpa_lf_entry {
 
 struct arc_arcconnect_info {
     uint64_t intrpt_status;
+    uint32_t wdata;
+
+    /* IDU */
+    bool idu_enabled;
+    struct {
+	bool mask;
+	bool dest;
+	bool mode;
+	uint8_t counter;
+	bool first_knowl_requested;
+    } idu_data[MAX_IDU_CIRQS];
+    uint64_t gfrc_snapshots[MAX_CORES];
 
     struct lpa_lf_entry *lpa_lf;
     QemuMutex *locked_mutex;
