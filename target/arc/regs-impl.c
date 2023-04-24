@@ -56,7 +56,9 @@ static target_ulong get_identity(CPUARCState *env)
 
     }
 
-    /* TODO: in SMP, arcnum depends on the cpu instance. */
+    /* In SMP, arcnum depends on the cpu instance. */
+    arcnum = cpu->core_id;
+
     res = ((chipid & 0xFFFF) << 16) | ((arcnum & 0xFF) << 8) | (arcver & 0xFF);
     return res;
 }
