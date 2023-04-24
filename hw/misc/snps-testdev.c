@@ -21,6 +21,7 @@
 #include "qemu/osdep.h"
 #include "hw/pci/pci.h"
 #include "hw/qdev-properties.h"
+#include "hw/sysbus.h"
 #include "qemu/event_notifier.h"
 #include "qemu/module.h"
 #include "sysemu/kvm.h"
@@ -46,6 +47,17 @@ typedef struct SnpsTestState {
     uint16_t n_bars;
 } SnpsTestState;
 
+typedef struct SnpsTestPlatState {
+    PCIDevice parent_obj;
+    SnpsTestBar bars[SNPS_MAX_BARS];
+    MemoryRegion mmio[SNPS_MAX_BARS];
+    uint64_t membar_size;
+    uint16_t vendor_id;
+    uint16_t device_id;
+    uint64_t bar_size;
+    uint16_t n_bars;
+} SnpsTestPlatState;
+
 static Property snps_test_properties[] = {
     DEFINE_PROP_SIZE("membar", SnpsTestState, membar_size, 0),
     DEFINE_PROP_UINT16("vendor-id", SnpsTestState, vendor_id, 0x16c3),
@@ -56,7 +68,9 @@ static Property snps_test_properties[] = {
 };
 
 #define TYPE_SNPS_TEST      "snps-test"
+#define TYPE_SNPS_PLAT_TEST "snps-plat-test"
 OBJECT_DECLARE_SIMPLE_TYPE(SnpsTestState, SNPS_TEST)
+OBJECT_DECLARE_SIMPLE_TYPE(SnpsTestPlatState, SNPS_PLAT_TEST)
 
 static void
 snps_test_reset(SnpsTestState *d)
@@ -122,6 +136,19 @@ static void snps_test_realize(PCIDevice *pci_dev, Error **errp)
     }
 }
 
+static void snps_test_plat_realize(DeviceState *dev, Error **errp)
+{
+    SnpsTestPlatState *d = SNPS_PLAT_TEST(dev);
+    int i;
+
+    for (i = 0; i < d->n_bars; i++) {
+        d->bars[i].d = d;
+        memory_region_init_io(&d->mmio[i], OBJECT(d), &snps_test_mmio_ops,
+                              &d->bars[i], "snps-test-mmio", d->bar_size);
+	sysbus_init_mmio(SYS_BUS_DEVICE(d), &d->mmio[i]);
+    }
+}
+
 static void
 snps_test_uninit(PCIDevice *dev)
 {
@@ -152,6 +179,16 @@ static void snps_test_class_init(ObjectClass *klass, void *data)
     device_class_set_props(dc, snps_test_properties);
 }
 
+static void snps_test_class_plat_init(ObjectClass *klass, void *data)
+{
+    DeviceClass *dc = DEVICE_CLASS(klass);
+
+    dc->realize = snps_test_plat_realize;
+    dc->desc = "Synopsys Test Device";
+    set_bit(DEVICE_CATEGORY_MISC, dc->categories);
+    device_class_set_props(dc, snps_test_properties);
+}
+
 static const TypeInfo snps_test_info = {
     .name           = TYPE_SNPS_TEST,
     .parent         = TYPE_PCI_DEVICE,
@@ -163,8 +200,16 @@ static const TypeInfo snps_test_info = {
     },
 };
 
+static const TypeInfo snps_test_plat_info = {
+    .name           = TYPE_SNPS_PLAT_TEST,
+    .parent         = TYPE_SYS_BUS_DEVICE,
+    .instance_size  = sizeof(SnpsTestState),
+    .class_init     = snps_test_class_plat_init,
+};
+
 static void snps_test_register_types(void)
 {
     type_register_static(&snps_test_info);
+    type_register_static(&snps_test_plat_info);
 }
 type_init(snps_test_register_types)
