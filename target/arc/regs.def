@@ -443,6 +443,7 @@ AUX_REG (mmu_mem_attr_lo, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 AUX_REG (mmu_mem_attr_hi, arc_mmuv6_aux_get, arc_mmuv6_aux_set)
 
 AUX_REG (mcip_bcr, arconnect_regs_get, arconnect_regs_set)
+AUX_REG (mcip_idu_bcr, arconnect_regs_get, arconnect_regs_set)
 AUX_REG (mcip_cmd, arconnect_regs_get, arconnect_regs_set)
 AUX_REG (mcip_wdata, arconnect_regs_get, arconnect_regs_set)
 AUX_REG (mcip_readback, arconnect_regs_get, NULL)
