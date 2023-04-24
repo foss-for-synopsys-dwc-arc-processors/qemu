@@ -18,6 +18,7 @@
  * http://www.gnu.org/licenses/lgpl-2.1.html
  */
 #include "qemu/osdep.h"
+#include "qemu/main-loop.h"
 #include "qemu/log.h"
 #include "qemu/error-report.h"
 #include "target/arc/regs.h"
@@ -25,9 +26,9 @@
 #include "target/arc/arconnect.h"
 #include "hw/irq.h"
 
-#define ICI_IRQ 19
-
 struct lpa_lf_entry lpa_lfs[LPA_LFS_SIZE];
+static QemuMutex idu_mutex;
+static uint64_t first_acknowledge_status[MAX_IDU_CIRQS];
 
 enum arconnect_commands {
     CMD_CHECK_CORE_ID = 0x0,
@@ -105,6 +106,11 @@ void arc_arconnect_init(ARCCPU *cpu)
         lpa_lfs[i].lpa_lf = 0;
         qemu_mutex_init(&lpa_lfs[i].mutex);
     }
+
+    cpu->env.arconnect.idu_enabled = false;
+    memset(cpu->env.arconnect.idu_data, 0, sizeof(cpu->env.arconnect.idu_data));
+    memset(first_acknowledge_status, 0, sizeof(first_acknowledge_status));
+    qemu_mutex_init(&idu_mutex);
 }
 
 /* TODO: Find a better way to get cpu for core. */
@@ -149,7 +155,6 @@ static uint64_t arcon_status_read(CPUARCState *env, uint8_t core_id)
 
 
 #define CMD_COREID(V) ((V >> 8) & 0xff)
-#define MCIP_IRQ 19
 
 static void arconnect_intercore_intr_unit_cmd(CPUARCState *env, enum arconnect_commands cmd, uint16_t param)
 {
@@ -162,7 +167,7 @@ static void arconnect_intercore_intr_unit_cmd(CPUARCState *env, enum arconnect_c
           if(((param & 0x80) == 0) && ((param & 0x1f) != cpu->core_id)) {
             uint8_t core_id = param & 0x1f;
             arcon_status_set(env, core_id, cpu->core_id);
-            qemu_set_irq(get_cpu_for_core(core_id)->env.irq[MCIP_IRQ], 1);
+            qemu_irq_raise(get_cpu_for_core(core_id)->env.irq[MCIP_IRQ]);
           }
             //uint8_t core_id = CMD_COREID(cmd);
             //CPUState *cs;
@@ -175,6 +180,7 @@ static void arconnect_intercore_intr_unit_cmd(CPUARCState *env, enum arconnect_c
         {
             uint8_t core_id = param & 0x1f;
             arcon_status_clr(env, cpu->core_id, core_id);
+	    qemu_irq_lower(env->irq[MCIP_IRQ]);
         }
         break;
     case CMD_INTRPT_READ_STATUS:
@@ -198,6 +204,109 @@ static void arconnect_intercore_intr_unit_cmd(CPUARCState *env, enum arconnect_c
 
 #define ARCON_COMMAND(V) (V & 0xff)
 #define ARCON_PARAM(V) ((V >> 8) & 0xffff)
+
+static void arc_cirq_raise(CPUARCState *env, uint16_t cirq)
+{
+    unsigned int max_cpus = 4; /* TODO: make this variable */
+    enum idu_mode_enum mode = env->arconnect.idu_data[cirq].mode;
+    uint8_t core_id = 0;
+    bool is_first_acknoledge = false;
+    bool dest = false;
+    switch(mode) {
+    case ROUND_ROBIN:
+	/* Round robin */
+	uint8_t counter = env->arconnect.idu_data[cirq].counter;
+	do {
+	    core_id = (counter + cirq) % max_cpus;
+	    counter++;
+	} while(((env->arconnect.idu_data[cirq].dest >> core_id) & 0x1) == 0);
+	qemu_irq_raise(get_cpu_for_core(core_id)->env.irq[EXT_IRQ + cirq]);
+	return;
+	break;
+    case FIRST_ACKNOWLEDGE:
+	is_first_acknoledge = true;
+	dest = env->arconnect.idu_data[cirq].dest;
+	qemu_mutex_lock(&idu_mutex);
+	for(core_id = 0; dest != 0 && is_first_acknoledge; core_id++) {
+	    if((dest & 0x1) != 0) {
+		get_cpu_for_core(core_id)->env.arconnect.idu_data[cirq].first_knowl_requested = true;
+	    }
+	    dest >>= 1;
+	}
+	qemu_mutex_unlock(&idu_mutex);
+	// fall through
+    case ALL_DESTINATION:
+	int dest = env->arconnect.idu_data[cirq].dest;
+	core_id = 0;
+	for(core_id = 0; dest != 0; core_id++) {
+	    if((dest & 0x1) != 0) {
+	        qemu_irq_raise(get_cpu_for_core(core_id)->env.irq[EXT_IRQ + cirq]);
+	    }
+	    dest >>= 1;
+	}
+	break;
+    default:
+	assert(0);
+	break;
+    }
+}
+
+static void clear_first_acknowledge(CPUARCState *env, uint16_t cirq)
+{
+    int dest = env->arconnect.idu_data[cirq].dest;
+    qemu_mutex_lock(&idu_mutex);
+    env->readback = env->arconnect.idu_data[cirq].first_knowl_requested;
+    for(int core_id = 0; dest != 0; core_id++) {
+        if((dest & 0x1) != 0) {
+	    get_cpu_for_core(core_id)->env.arconnect.idu_data[cirq].first_knowl_requested = false;
+        }
+        dest >>= 1;
+    }
+    qemu_mutex_unlock(&idu_mutex);
+}
+
+static void arconnect_idu_cmd(CPUARCState *env, enum arconnect_commands cmd, uint16_t param)
+{
+    switch(cmd) {
+    case CMD_IDU_SET_MASK:
+	env->arconnect.idu_data[param].mask = env->arconnect.wdata;
+	break;
+    case CMD_IDU_READ_MASK:
+	env->readback = env->arconnect.idu_data[param].mask;
+	break;
+    case CMD_IDU_SET_DEST:
+	env->arconnect.idu_data[param].dest = env->arconnect.wdata & IDU_DEST_MASK;
+	break;
+    case CMD_IDU_READ_DEST:
+	env->readback = env->arconnect.idu_data[param].dest & IDU_DEST_MASK;
+	break;
+    case CMD_IDU_SET_MODE:
+	env->arconnect.idu_data[param].mode = env->arconnect.wdata;
+	break;
+    case CMD_IDU_READ_MODE:
+	env->readback = env->arconnect.idu_data[param].mode;
+	break;
+    case CMD_IDU_ENABLE:
+	env->arconnect.idu_enabled = true;
+	break;
+    case CMD_IDU_DISABLE:
+	env->arconnect.idu_enabled = false;
+	memset(env->arconnect.idu_data, 0, sizeof(env->arconnect.idu_data));
+	memset(first_acknowledge_status, 0, sizeof(first_acknowledge_status));
+	break;
+    case CMD_IDU_GEN_CIRQ:
+	arc_cirq_raise(env, param);
+	break;
+    case CMD_IDU_ACK_CIRQ:
+	qemu_irq_lower(env->irq[EXT_IRQ + param]);
+	break;
+    case CMD_IDU_CHECK_FIRST:
+	clear_first_acknowledge(env, param);
+	break;
+    default:
+	assert(0);
+    }
+}
 
 static void arconnect_command_process(CPUARCState *env, uint32_t data)
 {
@@ -227,11 +336,8 @@ static void arconnect_command_process(CPUARCState *env, uint32_t data)
     case CMD_IDU_ENABLE:
     case CMD_IDU_DISABLE:
     case CMD_IDU_SET_MASK:
-        /* TODO: Implement */
-        break;
-
     default:
-        assert(0);
+	arconnect_idu_cmd(env, cmd, param);
         break;
     };
 }
@@ -264,12 +370,18 @@ arconnect_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
                    target_ulong val, void *data)
 {
     CPUARCState *env = (CPUARCState *) data;
+    bool unlocked = !qemu_mutex_iothread_locked();
+
+    if (unlocked) {
+        qemu_mutex_lock_iothread();
+    }
+
     switch(aux_reg_detail->id) {
     case AUX_ID_mcip_cmd:
         arconnect_command_process(env, val);
         break;
     case AUX_ID_mcip_wdata:
-        /* TODO: To implement */
+        env->arconnect.wdata = val;
         break;
     case AUX_ID_mcip_readback:
         assert(0); /* TODO: raise exception */
@@ -278,5 +390,9 @@ arconnect_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
     default:
         assert(0);
         break;
+    }
+
+    if (unlocked) {
+        qemu_mutex_unlock_iothread();
     }
 }
