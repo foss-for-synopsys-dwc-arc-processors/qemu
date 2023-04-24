@@ -355,6 +355,8 @@ arconnect_regs_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
     case AUX_ID_mcip_bcr:
         return 0x00800000 /* IDU */
                | 0x00040000;
+    case AUX_ID_mcip_idu_bcr:
+	return 0x300;
     case AUX_ID_mcip_cmd:
         assert(0); /* TODO: raise exception */
         break;
