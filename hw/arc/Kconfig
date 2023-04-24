@@ -5,5 +5,10 @@ config ARC_VIRT
     select PCI_EXPRESS_GENERIC_BRIDGE
     select PCI_DEVICES
 
+config ARC_HSDK
+    bool
+    select SERIAL
+    select SNPS_TESTDEV
+
 config ARC
     bool
