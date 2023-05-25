@@ -66,13 +66,13 @@ enum arc_fcvt64_32 {
     ARC_FCVT64_32_FD2S       = 0b000100
 };
 
-uint32_t
-helper_fcvt32(CPUARCState *env, uint32_t src, uint32_t operation) {
+uint32_t helper_fcvt32(CPUARCState *env, uint32_t src, uint32_t operation) {
     uint32_t ret = 0;
     FloatRoundMode saved_rounding_mode;
     bool saved_flush_zero;
 
-    switch(operation) {
+    switch (operation) {
+
     case ARC_FCVT32_FS2INT:
         ret = float32_to_int32(src, &env->fp_status);
     break;
@@ -108,6 +108,7 @@ helper_fcvt32(CPUARCState *env, uint32_t src, uint32_t operation) {
     case ARC_FCVT32_FS2H:
         assert("Half-precision (FS2H) not implemented for arcv2!" == 0);
     break;
+
     default:
         assert("FCVT32 operation not supported!" == 0);
     }
@@ -117,13 +118,12 @@ helper_fcvt32(CPUARCState *env, uint32_t src, uint32_t operation) {
     return ret;
 }
 
-uint64_t
-helper_fcvt32_64(CPUARCState *env, uint32_t src, uint32_t operation) {
+uint64_t helper_fcvt32_64(CPUARCState *env, uint32_t src, uint32_t operation) {
     uint64_t ret = 0;
     FloatRoundMode saved_rounding_mode;
     bool saved_flush_zero;
 
-    switch(operation) {
+    switch (operation) {
 
     case ARC_FCVT32_64_FS2L:
         ret = float32_to_int64(src, &env->fp_status);
@@ -157,7 +157,6 @@ helper_fcvt32_64(CPUARCState *env, uint32_t src, uint32_t operation) {
         ret = float32_to_float64(src, &env->fp_status);
     break;
 
-
     default:
         assert("FCVT32_64 operation not supported!" == 0);
     }
@@ -167,33 +166,37 @@ helper_fcvt32_64(CPUARCState *env, uint32_t src, uint32_t operation) {
     return ret;
 }
 
-uint64_t
-helper_fcvt64(CPUARCState *env, uint64_t src, uint32_t operation) {
+uint64_t helper_fcvt64(CPUARCState *env, uint64_t src, uint32_t operation) {
     uint64_t ret = 0;
     FloatRoundMode saved_rounding_mode;
     bool saved_flush_zero;
 
-    switch(operation) {
+    switch (operation) {
 
     case ARC_FCVT64_FD2L:
         ret = float64_to_int64(src, &env->fp_status);
     break;
+
     case ARC_FCVT64_FD2L_RZ:
         ARC_HELPER_RZ_PROLOGUE()
         ret = float64_to_int64_round_to_zero(src, &env->fp_status);
         ARC_HELPER_RZ_EPILOGUE()
     break;
+
     case ARC_FCVT64_FL2D:
         ret = int64_to_float64(src, &env->fp_status);
     break;
+
     case ARC_FCVT64_FD2UL:
         ret = float64_to_uint64(src, &env->fp_status);
     break;
+
     case ARC_FCVT64_FD2UL_RZ:
         ARC_HELPER_RZ_PROLOGUE()
         ret = float64_to_uint64_round_to_zero(src, &env->fp_status);
         ARC_HELPER_RZ_EPILOGUE()
     break;
+
     case ARC_FCVT64_FUL2D:
         ret = uint64_to_float64(src, &env->fp_status);
     break;
@@ -207,36 +210,41 @@ helper_fcvt64(CPUARCState *env, uint64_t src, uint32_t operation) {
     return ret;
 }
 
-uint32_t
-helper_fcvt64_32(CPUARCState *env, uint64_t src, uint32_t operation) {
+uint32_t helper_fcvt64_32(CPUARCState *env, uint64_t src, uint32_t operation) {
     uint32_t ret = 0;
     FloatRoundMode saved_rounding_mode;
     bool saved_flush_zero;
 
-    switch(operation) {
+    switch (operation) {
 
     case ARC_FCVT64_32_FD2INT:
         ret = float64_to_int32(src, &env->fp_status);
     break;
+
     case ARC_FCVT64_32_FD2INT_RZ:
         ARC_HELPER_RZ_PROLOGUE()
         ret = float64_to_int32_round_to_zero(src, &env->fp_status);
         ARC_HELPER_RZ_EPILOGUE()
     break;
+
     case ARC_FCVT64_32_FD2UINT:
         ret = float64_to_uint32(src, &env->fp_status);
     break;
+
     case ARC_FCVT64_32_FD2UINT_RZ:
         ARC_HELPER_RZ_PROLOGUE()
         ret = float64_to_uint32_round_to_zero(src, &env->fp_status);
         ARC_HELPER_RZ_EPILOGUE()
     break;
+
     case ARC_FCVT64_32_FL2S:
         ret = int64_to_float32(src, &env->fp_status);
     break;
+
     case ARC_FCVT64_32_FUL2S:
         ret = uint64_to_float32(src, &env->fp_status);
     break;
+
     case ARC_FCVT64_32_FD2S:
         ret = float64_to_float32(src, &env->fp_status);
     break;

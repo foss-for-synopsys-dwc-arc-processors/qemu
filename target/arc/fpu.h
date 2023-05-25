@@ -43,8 +43,8 @@
 
 
 /*
- * _RZ instructions perform operations with a rounding mode different from the
- * what is currently set. As such it is necessary to set and reset rounding mode
+ * _RZ instructions perform operations with a rounding mode different from
+ * what is currently set. As such it is necessary to save, set and reset it
  */
 #define ARC_HELPER_RZ_PROLOGUE()                                        \
     do{                                                                 \
@@ -72,13 +72,8 @@ enum arc_float_rounding_modes {
 
 extern uint8_t fpr_width;
 extern uint8_t vfp_width;
-/* TODO: Maybe is not needed */
-extern uint8_t fpr_per_vector_operand;
-extern uint8_t vfp_max_length;
 
-/**
- * @brief Check if the current fpu status requires an exception to be raised
- */
+/* Check if the current fpu status requires an exception to be raised */
 void check_fpu_raise_exception(CPUARCState *env);
 
 /* Initialize FPU initial values and flags */

@@ -1,7 +1,7 @@
 /*
  * QEMU ARC CPU
  *
- * Copyright (c) 2021 Synopsys Inc.
+ * Copyright (c) 2023 Synopsys Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
