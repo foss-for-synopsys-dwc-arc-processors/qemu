@@ -43,7 +43,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
     const char  *name;
 
     struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
-    if(entry != NULL) {
+    if (entry != NULL) {
         qemu_mutex_unlock(&(entry->mutex));
         entry->lpa_lf = 0;
     }
@@ -55,8 +55,12 @@ void arc_cpu_do_interrupt(CPUState *cs)
      * handling code. Instead it returns immediately after setting PC to the
      * address passed as exception parameter.
      */
-    if (cs->exception_index == EXCP_LPEND_REACHED
-        || cs->exception_index == EXCP_FAKE) {
+    if (cs->exception_index == EXCP_LPEND_REACHED) {
+        /*
+         * TODO: this whole thing looks wrong, putting assert to make sure for
+         * removal.
+         */
+        g_assert_not_reached();
         env->pc = env->param;
         CPU_PCL(env) = env->pc & 0xfffffffe;
         return;
@@ -67,7 +71,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
      * semihosting enabled.
      */
     if (cs->exception_index == EXCP_SWI
-        && semihosting_enabled()){
+        && semihosting_enabled()) {
         qemu_log_mask(CPU_LOG_INT, "Entering semihosting\n");
         do_arc_semihosting(env);
         /* Return to the next instruction. */
@@ -219,6 +223,8 @@ void arc_cpu_do_interrupt(CPUState *cs)
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
     SET_STATUS_BIT(env->stat, SCf, 0);
+    /* Clear delay information before translating the handler. */
+    env->stat.pstate &= ~BRANCH_DELAY;
 
     /* 15. The PC is set with the appropriate exception vector. */
     switch(get_mmu_version(env)) {

@@ -21,7 +21,6 @@
 
 #include "qemu/osdep.h"
 #include "target/arc/regs.h"
-//#include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "qemu/log.h"

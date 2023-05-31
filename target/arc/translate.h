@@ -38,8 +38,9 @@
 #include "exec/translator.h"
 
 /* signaling the end of translation block */
-#define DISAS_UPDATE        DISAS_TARGET_0
-#define DISAS_BRANCH_IN_DELAYSLOT DISAS_TARGET_1
+#define DISAS_UPDATE    DISAS_TARGET_0
+/* The (branch) instruction is handled with inserting the tcg_gen_tb_*() */
+#define DISAS_HANDLED DISAS_TARGET_1
 
 typedef struct DisasContext {
     DisasContextBase base;
@@ -66,9 +67,7 @@ typedef struct DisasContext {
     uint16_t buffer[2];
     uint8_t  mem_idx;
 
-    TCGv     tmp_reg;
-    TCGLabel *label;
-
+    bool in_delay_slot;   /* current TB is in a delay slot. */
 } DisasContext;
 
 
@@ -85,10 +84,7 @@ typedef struct DisasContext {
 #define cpu_pcl    (cpu_r[63])
 #define cpu_limm   (cpu_r[62])
 
-extern TCGv     cpu_S1f;
-extern TCGv     cpu_S2f;
-extern TCGv     cpu_CSf;
-
+/* Runtime information, internal to QEMU. */
 extern TCGv     cpu_pstate;
 extern TCGv     cpu_Vf;
 extern TCGv     cpu_Cf;
@@ -112,8 +108,6 @@ extern TCGv     cpu_lps;
 extern TCGv     cpu_lpe;
 #endif
 
-extern TCGv     cpu_npc;
-
 extern TCGv     cpu_bta;
 
 extern TCGv     cpu_r[64];
@@ -122,13 +116,27 @@ extern TCGv     cpu_intvec;
 
 extern TCGv     cpu_lock_lf_var;
 
-extern TCGv     cpu_exception_delay_slot_address;
-
 
 /* TODO: Remove DisasCtxt.  */
 typedef struct DisasContext DisasCtxt;
 
-void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest);
+
+/* Update program counters, namely PC and PCL (TCGv edition). */
+static inline void update_pcs(const TCGv addr)
+{
+    tcg_gen_mov_tl(cpu_pc, addr);
+    tcg_gen_andi_tl(cpu_pcl, cpu_pc, ~((target_ulong) 3));
+}
+
+/* Update program counters, namely PC and PCL (immediate edition). */
+static inline void updatei_pcs(const target_ulong addr)
+{
+    tcg_gen_movi_tl(cpu_pc, addr);
+    tcg_gen_movi_tl(cpu_pcl, addr & (~((target_ulong) 3)));
+}
+
+void gen_goto_tb(const DisasContext *ctx, TCGv dest);
+void gen_gotoi_tb(DisasContext *ctx, int slot, target_ulong dest);
 
 void decode_opc(CPUARCState *env, DisasContext *ctx);
 

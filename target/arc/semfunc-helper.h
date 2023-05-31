@@ -89,6 +89,18 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 
 #define getFFlag(R) ((int) ctx->insn.f)
 
+/* semfunc-helper.c */
+void gen_branchi(DisasCtxt *ctx, target_ulong target, unsigned *slot);
+void gen_branch(DisasCtxt *ctx, TCGv target);
+
+static inline void update_delay_flag(DisasContext *ctx)
+{
+    if (ctx->insn.d) {
+        tcg_gen_ori_tl(cpu_pstate, cpu_pstate, BRANCH_DELAY);
+    }
+}
+
+
 void to_implement(const DisasCtxt *ctx);
 void to_implement_wo_abort(const DisasCtxt *ctx);
 
@@ -110,13 +122,6 @@ void arc_gen_no_further_loads_pending(const DisasCtxt *ctx, TCGv ret);
 #define NoFurtherLoadsPending(R)    arc_gen_no_further_loads_pending(ctx, R)
 void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define setDebugLD(A)   arc_gen_set_debug(ctx, A)
-#define executeDelaySlot(bta, take_branch) \
-    ctx->env->in_delayslot_instruction = false; \
-    ctx->env->next_insn_is_delayslot = true; \
-    TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, DEf, take_branch); \
-    TCG_SET_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
-
-#define shouldExecuteDelaySlot()    (ctx->insn.d != 0)
 
 #define getNFlag(R)     cpu_Nf
 #define setNFlag(ELEM)  tcg_gen_shri_tl(cpu_Nf, ELEM, (TARGET_LONG_BITS - 1))
@@ -144,28 +149,17 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
     tcg_temp_free(_tmp); \
 }
 
-#define nextInsnAddressAfterDelaySlot(R) \
-  { \
-    ARCCPU *cpu = env_archcpu(ctx->env); \
-    uint16_t delayslot_buffer[2]; \
-    uint8_t delayslot_length; \
-    ctx->env->pc = ctx->cpc; \
-    delayslot_buffer[0] = cpu_lduw_code(ctx->env, ctx->npc); \
-    delayslot_length = arc_insn_length(delayslot_buffer[0], cpu->family); \
-    tcg_gen_movi_tl(R, ctx->npc + delayslot_length); \
-  }
-
 #define nextInsnAddress(R)  tcg_gen_movi_tl(R, ctx->npc)
 #define getPCL(R)           tcg_gen_movi_tl(R, ctx->pcl)
 
-#define setPC(NEW_PC)                                   \
-    do {                                                \
-        if(ctx->insn.d == 0) {                          \
-            gen_goto_tb(ctx, 1, NEW_PC);                    \
+#define setPC(NEW_PC)                                       \
+    do {                                                    \
+        if (ctx->insn.d == 0) {                             \
+            gen_goto_tb(ctx, NEW_PC);                       \
             ret = ret == DISAS_NEXT ? DISAS_NORETURN : ret; \
-        } else {                                        \
-            tcg_gen_mov_tl(cpu_bta, NEW_PC);            \
-        }                                               \
+        } else {                                            \
+            tcg_gen_mov_tl(cpu_bta, NEW_PC);                \
+        }                                                   \
     } while (0)
 
 #define setBLINK(BLINK_ADDR) \
@@ -265,7 +259,7 @@ void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
         TCGLabel *done = gen_new_label();                         \
         tcg_gen_shri_tl(jump_to_blink, U7, 6);                    \
         tcg_gen_brcondi_tl(TCG_COND_EQ, jump_to_blink, 0, done);  \
-        gen_goto_tb(ctx, 1, cpu_pc);                              \
+        gen_goto_tb(ctx, cpu_pc);                                 \
         ret = DISAS_NORETURN;                                     \
         gen_set_label(done);                                      \
         tcg_temp_free(jump_to_blink);                             \
@@ -367,7 +361,6 @@ void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
 
 #ifdef TARGET_ARC64
 
-//#define se32to64(A, B) gen_helper_se32to64(A, B)
 #define se32to64(A, B) tcg_gen_ext32s_tl(A, B)
 
 #define ARC64_ADDRESS_ADD(A, B, C) { \

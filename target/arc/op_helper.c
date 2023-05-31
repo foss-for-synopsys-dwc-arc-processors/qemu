@@ -387,10 +387,6 @@ void helper_zol_verify(CPUARCState *env, target_ulong npc)
         }
     }
 }
-void helper_fake_exception(CPUARCState *env, target_ulong pc)
-{
-    helper_raise_exception(env, (target_ulong) EXCP_FAKE, 0, pc);
-}
 
 target_ulong helper_get_status32(CPUARCState *env)
 {
@@ -400,17 +396,6 @@ target_ulong helper_get_status32(CPUARCState *env)
 void helper_set_status32(CPUARCState *env, target_ulong value)
 {
     set_status32(env, value);
-}
-
-void helper_set_status32_bit(CPUARCState *env, target_ulong bit,
-                             target_ulong value)
-{
-    target_ulong bit_mask = (1 << bit);
-    /* Verify i changing bit is in pstate. Assert otherwise. */
-    assert((bit_mask & PSTATE_MASK) == 0);
-
-    env->stat.pstate &= ~bit_mask;
-    env->stat.pstate |= (value << bit);
 }
 
 static inline target_ulong
@@ -553,6 +538,26 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
 
     default:
         break;
+    }
+}
+
+void
+arc_branch_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
+                    target_ulong val, void *data)
+{
+    CPUARCState *env = (CPUARCState *) data;
+    val = (val >> 1) << 1;      /* Clear the LSB. */
+
+    switch (aux_reg_detail->id) {
+
+    case AUX_ID_bta:
+        env->bta = val;
+        break;
+    case AUX_ID_erbta:
+        env->erbta = val;
+        break;
+    default:
+        g_assert_not_reached();
     }
 }
 

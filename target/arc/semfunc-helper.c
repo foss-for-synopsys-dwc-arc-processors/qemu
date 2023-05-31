@@ -125,6 +125,74 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
     tcg_temp_free(nC);
 }
 
+/*
+ * This functions is only used when dealing with branch instructions.
+ * It's called to emit TCGs at the point that it's decided that the
+ * branch _is_ taken. Therefore, the PC is going to change. In the absence
+ * of a delay slot, the PC is changed immediately. Whereas in the other
+ * case, the change of PC is delayed by setting the BTA (Branch Target
+ * Address) register and the "DE" flag of "status32".
+ *
+ * if (ctx->insn.d)      // has a delay slot
+ * {
+ *     status32.de = 1
+ *     reg_bta = target
+ * } else {               // without any delay slot
+ *     cpu_pc = target
+ *     [ chain tb to "target" address ]
+ * }
+ *
+ * There is no use of gen_gotoi_tb() to fall through to a delay slot.
+ * The caller can put it at the most appropriate place among the emitted
+ * TCG instructions. Consider DBNZ as an example:
+ *
+ *                              slot=0
+ *                          if (--counter)
+ *                                {
+ *  ------------------------gen_branchi()-----------------------
+ *                          /           \
+ *  gen_gotoi(target, slot++)            status32.de = 1
+ *                                       BTA = target
+ *  -------------------------End of call------------------------
+ * }                               }
+ *                       gen_gotoi(next_pc, slot)
+ *                       ^^^^^^^^^
+ * this will "goto" the next linear insn, which either may be the delay
+ * slot of dbnz or the fall-thru instruction for cases that the counter
+ * has reached 0.
+ */
+void
+gen_branchi(DisasCtxt *ctx, target_ulong target, unsigned *slot)
+{
+    assert(ctx->insn.class == BRANCH ||
+           ctx->insn.class == BRCC   ||
+           ctx->insn.class == BBIT0  ||
+           ctx->insn.class == BBIT1);
+
+    *slot = 0;
+    if (ctx->insn.d) {
+        tcg_gen_ori_tl(cpu_pstate, cpu_pstate, STATUS32_DE);
+        tcg_gen_movi_tl(cpu_bta, target);
+    } else {
+        gen_gotoi_tb(ctx, *slot, target);
+        *slot += 1;
+    }
+}
+
+/* The TCGv version of gen_branchi(). */
+void
+gen_branch(DisasCtxt *ctx, TCGv target)
+{
+    assert(ctx->insn.class == JUMP);
+
+    if (ctx->insn.d) {
+        tcg_gen_ori_tl(cpu_pstate, cpu_pstate, STATUS32_DE);
+        tcg_gen_mov_tl(cpu_bta, target);
+    } else {
+        gen_goto_tb(ctx, target);
+    }
+}
+
 #define MEMIDX (ctx->mem_idx)
 
 #ifdef TARGET_ARC32

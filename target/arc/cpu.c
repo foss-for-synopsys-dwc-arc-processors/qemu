@@ -110,9 +110,6 @@ static void arc_cpu_reset(DeviceState *dev)
         log_cpu_state(s, 0);
     }
 
-    env->in_delayslot_instruction = false;
-    env->next_insn_is_delayslot = false;
-
 #ifndef CONFIG_USER_ONLY
     /* Initialize mmu/reset it. */
     arc_mmu_init(env);

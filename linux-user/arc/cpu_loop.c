@@ -47,7 +47,6 @@ void cpu_loop(CPUARCState *env)
         switch (trapnr) {
 
         case EXCP_LPEND_REACHED:
-        case EXCP_FAKE:
             env->pc = env->param;
             CPU_PCL(env) = env->pc & (~1);
             break;

@@ -66,6 +66,9 @@ typedef struct CPUArchState CPUARCState;
 /* The DE flag in status32 register. */
 #define STATUS32_DE            (1 << 6)
 
+/* Indicate if a branching instruction with a delay slot is met. */
+#define BRANCH_DELAY     (1 << 21)
+
 enum exception_code_list {
     EXCP_NO_EXCEPTION = -1,
     EXCP_RESET = 0,
@@ -83,8 +86,7 @@ enum exception_code_list {
     EXCP_DCERROR,
     EXCP_MISALIGNED,
     EXCP_IRQ,
-    EXCP_LPEND_REACHED = 9000,
-    EXCP_FAKE
+    EXCP_LPEND_REACHED = 9000
 };
 
 #define EXCP_IMMU_FAULT EXCP_TLB_MISS_I
@@ -129,7 +131,6 @@ FIELD(STATUS32, ESf, 15, 1)
 FIELD(STATUS32, RBf, 16, 3)
 FIELD(STATUS32, ADf, 19, 1)
 FIELD(STATUS32, USf, 20, 1)
-FIELD(STATUS32, PREVIOUS_IS_DELAYSLOTf, 30, 1)
 FIELD(STATUS32, IEf, 31, 1)
 
 /* Flags with their own fields */
@@ -153,8 +154,7 @@ FIELD(STATUS32, Zf,  11, 1)
     | FIELD_MASK(STATUS32, IEf) \
     | FIELD_MASK(STATUS32, RBf) \
     | FIELD_MASK(STATUS32, Ef) \
-    | FIELD_MASK(STATUS32, USf) \
-    | FIELD_MASK(STATUS32, PREVIOUS_IS_DELAYSLOTf))
+    | FIELD_MASK(STATUS32, USf))
 
 /* TODO: Replace those all over the code. */
 #define GET_STATUS_BIT(STAT, FIELD) ((target_ulong) FIELD_EX32(STAT.pstate, STATUS32, FIELD))
@@ -298,9 +298,6 @@ struct CPUArchState {
 
     const struct arc_boot_info *boot_info;
 
-    bool in_delayslot_instruction;
-    bool next_insn_is_delayslot;
-
 #ifdef CONFIG_USER_ONLY
     target_ulong tls_backup;
 #endif
@@ -405,11 +402,10 @@ static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
 {
     *pc = env->pc;
     *cs_base = 0;
-#ifndef CONFIG_USER_ONLY
-    *pflags = cpu_mmu_index(env, 0);
-#else
-    /* This is just to avoid a warning. MMU is not used in linux-user. */
     *pflags = 0;
+
+#ifndef CONFIG_USER_ONLY
+    *pflags |= cpu_mmu_index(env, 0);
 #endif
 }
 
