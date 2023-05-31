@@ -278,23 +278,11 @@ static bool read_and_decode_context(DisasContext *ctx,
     }
 
 
-    //qemu_log_mask(LOG_UNIMP, "-- 0x%016lx --\n", insn);
-    //qemu_log_mask(LOG_UNIMP, "Tree Decoded format at 0x" TARGET_FMT_lx " (0x" TARGET_FMT_lx ") - %d - %s\n",
-    //              ctx->cpc, insn, opcode_id, opcode_name_str[opcode_id]);
-
     /*
      * Now, we have read the entire opcode, decode it and place the
      * relevant info into opcode and ctx->insn.
      */
-
-
-    //opcode_id = OPCODE_INVALID;
     *opcode_p = arc_find_format(&ctx->insn, insn, length, cpu->family);
-
-    //if(opcode_id != OPCODE_INVALID)
-    //  qemu_log_mask(LOG_UNIMP, "Linear decoder format at 0x" TARGET_FMT_lx " (0x%08lx) - %d - %s\n",
-    //                ctx->cpc, insn, opcode_id, opcode_name_str[opcode_id]);
-
 
     if (*opcode_p == NULL) {
         return false;
@@ -310,7 +298,7 @@ static bool read_and_decode_context(DisasContext *ctx,
         ctx->insn.limm = ARRANGE_ENDIAN(true,
                                         cpu_ldl_code(ctx->env,
                                         ctx->cpc + length));
-        length += 4; 
+        length += 4;
 #elif defined(TARGET_ARC64)
     if (ctx->insn.unsigned_limm_p) {
         ctx->insn.limm = ARRANGE_ENDIAN(true,
@@ -330,12 +318,12 @@ static bool read_and_decode_context(DisasContext *ctx,
     }
 
 #if defined(TARGET_ARC32)
-    if(ctx->insn.limm_split_16_p) {
+    if (ctx->insn.limm_split_16_p) {
         ctx->insn.limm &= 0x0000ffff;
         ctx->insn.limm |= (ctx->insn.limm << 16);
     }
 #elif defined(TARGET_ARC64)
-    if(ctx->insn.limm_split_16_p) {
+    if (ctx->insn.limm_split_16_p) {
         ctx->insn.limm &= 0x0000ffff;
         ctx->insn.limm |= (ctx->insn.limm << 16);
         ctx->insn.limm |= (ctx->insn.limm << 32);
@@ -380,31 +368,6 @@ const char number_of_ops_semfunc[MAP_LAST + 1] = {
     2
 };
 
-#if 0
-static void arc_list_unimplemented_mnemonics(void)
-{
-    int i;
-    bool implemented[MNEMONIC_SIZE];
-    memset(implemented, 0, sizeof(implemented));
-
-#define SEMANTIC_FUNCTION(...)
-#define CONSTANT(...)
-#define MAPPING(INSN_NAME, NAME, ...)         \
-    implemented[MNEMONIC_##INSN_NAME] = true;
-#include "target/arc/semfunc-mapping.def"
-
-#undef MAPPING
-#undef CONSTANT
-#undef SEMANTIC_FUNCTION
-    for(i = 0; i < MNEMONIC_SIZE; i++) {
-        if(implemented[i] == 0) {
-            qemu_log_mask(LOG_UNIMP,
-                  "Instruction %s is not mapped\n",
-                  insn_mnemonic_str[i]);
-        }
-    }
-}
-#endif
 
 static enum arc_opcode_map arc_map_opcode(const struct arc_opcode *opcode)
 {
@@ -1535,7 +1498,7 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
         return;
     }
 
-    if(env->next_insn_is_delayslot == true) {
+    if (env->next_insn_is_delayslot == true) {
         env->in_delayslot_instruction = true;
         env->next_insn_is_delayslot = false;
     }
@@ -1552,7 +1515,7 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
      * DEf is only set when the branch is taken. This is always
      * set.
      */
-    if(env->in_delayslot_instruction == true
+    if (env->in_delayslot_instruction == true
        || GET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf)) {
         TCGv temp_DEf = tcg_temp_local_new();
         ctx->base.is_jmp = DISAS_NORETURN;
@@ -1572,18 +1535,12 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 
     }
 
-    if(env->next_insn_is_delayslot == true) {
-      SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 1);
+    if (env->next_insn_is_delayslot == true) {
+        SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 1);
     }
 
 
-/* #define ZOL_RUNTIME_SIMULATION */
-#ifdef ZOL_RUNTIME_SIMULATION
-    TCGv npc = tcg_const_local_tl(ctx->npc);
-    gen_helper_zol_verify(cpu_env, npc);
-    tcg_temp_free(npc);
-#else
-    if(1 && env->lpe == ctx->npc) {
+    if (env->lpe == ctx->npc) {
 
         DisasJumpType ret = ctx->base.is_jmp;
 
@@ -1604,7 +1561,6 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 
         tcg_temp_free(lps);
     }
-#endif
 }
 
 static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
