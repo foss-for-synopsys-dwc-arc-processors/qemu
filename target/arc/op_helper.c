@@ -387,10 +387,6 @@ void helper_zol_verify(CPUARCState *env, target_ulong npc)
         }
     }
 }
-void helper_fake_exception(CPUARCState *env, target_ulong pc)
-{
-    helper_raise_exception(env, (target_ulong) EXCP_FAKE, 0, pc);
-}
 
 target_ulong helper_get_status32(CPUARCState *env)
 {

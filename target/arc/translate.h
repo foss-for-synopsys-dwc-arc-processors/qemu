@@ -122,8 +122,6 @@ extern TCGv     cpu_intvec;
 
 extern TCGv     cpu_lock_lf_var;
 
-extern TCGv     cpu_exception_delay_slot_address;
-
 
 /* TODO: Remove DisasCtxt.  */
 typedef struct DisasContext DisasCtxt;
