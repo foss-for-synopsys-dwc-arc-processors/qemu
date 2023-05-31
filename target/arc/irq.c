@@ -55,7 +55,7 @@ uint32_t pack_status32(ARCStatus *status_r)
 {
     uint32_t res = 0x0;
 
-    res |= status_r->pstate & PSTATE_MASK;
+    res |= status_r->pstate & (PSTATE_MASK | BRANCH_DELAY);
     res = FIELD_DP32(res, STATUS32, Zf,  status_r->Zf);
     res = FIELD_DP32(res, STATUS32, Nf,  status_r->Nf);
     res = FIELD_DP32(res, STATUS32, Cf,  status_r->Cf);
@@ -67,7 +67,7 @@ uint32_t pack_status32(ARCStatus *status_r)
 /* Reverse of the above function. */
 void unpack_status32(ARCStatus *status_r, uint32_t value)
 {
-    status_r->pstate = value;
+    status_r->pstate = value & (PSTATE_MASK | BRANCH_DELAY);
     status_r->Zf  = FIELD_EX32(value, STATUS32, Zf);
     status_r->Nf  = FIELD_EX32(value, STATUS32, Nf);
     status_r->Cf  = FIELD_EX32(value, STATUS32, Cf);
@@ -211,7 +211,6 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
     CPUARCState *env = &cpu->env;
 
     assert(GET_STATUS_BIT(env->stat, DEf) == 0);
-    assert(env->in_delayslot_instruction == 0);
 
     /* Reset RTC state machine -> AUX_RTC_CTRL &= 0x3fffffff */
     qemu_log_mask(CPU_LOG_INT,
@@ -238,8 +237,6 @@ static void arc_enter_firq(ARCCPU *cpu, uint32_t vector)
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
     SET_STATUS_BIT(env->stat, DEf, 0);
-    SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 0);
-    env->in_delayslot_instruction = 0;
     env->lock_lf_var = 0;
 
     /* Set .RB to 1 if additional register banks are specified. */
@@ -268,7 +265,6 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
     CPUARCState *env = &cpu->env;
 
     assert(GET_STATUS_BIT(env->stat, DEf) == 0);
-    assert(env->in_delayslot_instruction == 0);
 
     /* Reset RTC state machine -> AUX_RTC_CTRL &= 0x3fffffff */
     qemu_log_mask(CPU_LOG_INT, "[IRQ] enter irq:%d U:" TARGET_FMT_ld
@@ -344,7 +340,6 @@ static void arc_enter_irq(ARCCPU *cpu, uint32_t vector)
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
     SET_STATUS_BIT(env->stat, DEf, 0);
-    SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 0);
     SET_STATUS_BIT(env->stat, Uf, 0);
     env->lock_lf_var = 0;
 }
@@ -513,8 +508,6 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
         || GET_STATUS_BIT(env->stat, IEf) == 0
         /* We are not in an exception. */
         || GET_STATUS_BIT(env->stat, AEf)
-        /* In a delay slot of branch */
-        || env->in_delayslot_instruction
         || GET_STATUS_BIT(env->stat, DEf)
         || (!(interrupt_request & CPU_INTERRUPT_HARD))) {
         return false;

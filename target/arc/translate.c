@@ -27,10 +27,6 @@
 
 
 /* Globals */
-TCGv    cpu_S1f;
-TCGv    cpu_S2f;
-TCGv    cpu_CSf;
-
 TCGv    cpu_pstate;
 TCGv    cpu_Vf;
 TCGv    cpu_Cf;
@@ -50,18 +46,12 @@ TCGv    cpu_efa;
 TCGv    cpu_bta;
 
 TCGv    cpu_pc;
-/* replaced by AUX_REG array */
-TCGv    cpu_lps;
-TCGv    cpu_lpe;
 
 TCGv    cpu_r[64];
 
 TCGv    cpu_intvec;
 
 TCGv    cpu_lock_lf_var;
-
-/* NOTE: Pseudo register required for comparison with lp_end */
-TCGv    cpu_npc;
 
 /* LLOCK and SCOND support values */
 TCGv cpu_exclusive_addr;
@@ -77,11 +67,10 @@ TCGv cpu_exclusive_val_hi;
 #define ARRANGE_ENDIAN(endianess, buf)                  \
     ((endianess) ? ror32(buf, 16) : bswap32(buf))
 
-void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest)
+void gen_goto_tb(const DisasContext *ctx, TCGv dest)
 {
-    tcg_gen_mov_tl(cpu_pc, dest);
-    tcg_gen_andi_tl(cpu_pcl, dest, ~((target_ulong) 3));
-    /* TODO: is this really needed !!! */
+    update_pcs(dest);
+    /* TODO: Is this really needed!?! */
     if (ctx->base.singlestep_enabled) {
         gen_helper_debug(cpu_env);
     } else {
@@ -89,19 +78,19 @@ void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest)
     }
 }
 
-static void gen_gotoi_tb(DisasContext *ctx, int n, target_ulong dest)
+void gen_gotoi_tb(DisasContext *ctx, int slot, target_ulong dest)
 {
     if (translator_use_goto_tb(&ctx->base, dest)) {
-        tcg_gen_goto_tb(n);
-        tcg_gen_movi_tl(cpu_pc, dest);
-        tcg_gen_movi_tl(cpu_pcl, dest & (~((target_ulong) 3)));
-        tcg_gen_exit_tb(ctx->base.tb, n);
+        tcg_gen_goto_tb(slot);
+        updatei_pcs(dest);
+        tcg_gen_exit_tb(ctx->base.tb, slot);
     } else {
-        tcg_gen_movi_tl(cpu_pc, dest);
-        tcg_gen_movi_tl(cpu_pcl, dest & (~((target_ulong) 3)));
+        updatei_pcs(dest);
+        /* TODO: Is this really needed!?! */
         if (ctx->base.singlestep_enabled) {
             gen_helper_debug(cpu_env);
         }
+        /* note: cris uses tcg_gen_lookup_and_goto_ptr() */
         tcg_gen_exit_tb(NULL, 0);
     }
 }
@@ -143,61 +132,44 @@ void arc_cpu_record_sigbus(CPUState *cs, vaddr addr,
 void arc_translate_init(void)
 {
     int i;
-#define ARC_REG_OFFS(x) offsetof(CPUARCState, x)
-
-#define NEW_ARC_REG(TCGV, FIELD) \
-        { &TCGV, offsetof(CPUARCState, FIELD), #FIELD },
 
     static const struct { TCGv *ptr; int off; const char *name; } r32[] = {
-        NEW_ARC_REG(cpu_S1f, macmod.S1)
-        NEW_ARC_REG(cpu_S2f, macmod.S2)
-        NEW_ARC_REG(cpu_CSf, macmod.CS)
+        { &cpu_pstate, offsetof(CPUARCState, stat.pstate), "stat.pstate" },
+        { &cpu_Zf    , offsetof(CPUARCState, stat.Zf)    , "stat.Zf"     },
+        { &cpu_Nf    , offsetof(CPUARCState, stat.Nf)    , "stat.Nf"     },
+        { &cpu_Cf    , offsetof(CPUARCState, stat.Cf)    , "stat.Cf"     },
+        { &cpu_Vf    , offsetof(CPUARCState, stat.Vf)    , "stat.Vf"     },
 
-        NEW_ARC_REG(cpu_pstate, stat.pstate)
-        NEW_ARC_REG(cpu_Zf, stat.Zf)
-        NEW_ARC_REG(cpu_Nf, stat.Nf)
-        NEW_ARC_REG(cpu_Cf, stat.Cf)
-        NEW_ARC_REG(cpu_Vf, stat.Vf)
+        { &cpu_er_pstate, offsetof(CPUARCState, stat_er.pstate),
+          "stat_er.pstate" },
+        { &cpu_er_Zf, offsetof(CPUARCState, stat_er.Zf), "stat_er.Zf" },
+        { &cpu_er_Nf, offsetof(CPUARCState, stat_er.Nf), "stat_er.Nf" },
+        { &cpu_er_Cf, offsetof(CPUARCState, stat_er.Cf), "stat_er.Cf" },
+        { &cpu_er_Vf, offsetof(CPUARCState, stat_er.Vf), "stat_er.Vf" },
 
-        NEW_ARC_REG(cpu_er_pstate, stat_er.pstate)
-        NEW_ARC_REG(cpu_er_Zf, stat_er.Zf)
-        NEW_ARC_REG(cpu_er_Nf, stat_er.Nf)
-        NEW_ARC_REG(cpu_er_Cf, stat_er.Cf)
-        NEW_ARC_REG(cpu_er_Vf, stat_er.Vf)
+        { &cpu_eret , offsetof(CPUARCState, eret) , "eret"  },
+        { &cpu_erbta, offsetof(CPUARCState, erbta), "erbta" },
+        { &cpu_efa  , offsetof(CPUARCState, efa)  , "efa"   },
+        { &cpu_bta  , offsetof(CPUARCState, bta)  , "bta"   },
+        { &cpu_pc , offsetof(CPUARCState, pc) , "pc" },
 
-        NEW_ARC_REG(cpu_eret, eret)
-        NEW_ARC_REG(cpu_erbta, erbta)
-        NEW_ARC_REG(cpu_efa, efa)
-        NEW_ARC_REG(cpu_bta, bta)
-#if defined(TARGET_ARC32)
-        NEW_ARC_REG(cpu_lps, lps)
-        NEW_ARC_REG(cpu_lpe, lpe)
-#endif
-        NEW_ARC_REG(cpu_pc , pc)
-        NEW_ARC_REG(cpu_npc, npc)
+        { &cpu_intvec, offsetof(CPUARCState, intvec), "intvec" },
 
-        NEW_ARC_REG(cpu_intvec, intvec)
-
-        NEW_ARC_REG(cpu_lock_lf_var, lock_lf_var)
+        { &cpu_lock_lf_var, offsetof(CPUARCState, lock_lf_var), "lock_lf_var" }
     };
-
 
     for (i = 0; i < ARRAY_SIZE(r32); ++i) {
         *r32[i].ptr = tcg_global_mem_new(cpu_env, r32[i].off, r32[i].name);
     }
-
 
     for (i = 0; i < 64; i++) {
         char name[16];
 
         sprintf(name, "r[%d]", i);
         cpu_r[i] = tcg_global_mem_new(cpu_env,
-                                      ARC_REG_OFFS(r[i]),
+                                      offsetof(CPUARCState, r[i]),
                                       strdup(name));
     }
-
-#undef ARC_REG_OFFS
-#undef NEW_ARC_REG
 
     cpu_exclusive_addr = tcg_global_mem_new(cpu_env,
         offsetof(CPUARCState, exclusive_addr), "exclusive_addr");
@@ -211,17 +183,15 @@ static void arc_tr_init_disas_context(DisasContextBase *dcbase,
                                       CPUState *cs)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
+    const CPUARCState *env = cs->env_ptr;
 
     dc->base.is_jmp = DISAS_NEXT;
     dc->mem_idx = dc->base.tb->flags & 1;
+    dc->in_delay_slot = !!(env->stat.pstate & BRANCH_DELAY);
 }
+
 static void arc_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
 {
-    /* place holder for now */
-    /* TODO: Make sure you really need to guard it. */
-    //DisasContext *dc = container_of(dcbase, DisasContext, base);
-    //dc->possible_delayslot_instruction = dc->env->stat.DEf;
-
 }
 
 static void arc_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
@@ -278,23 +248,11 @@ static bool read_and_decode_context(DisasContext *ctx,
     }
 
 
-    //qemu_log_mask(LOG_UNIMP, "-- 0x%016lx --\n", insn);
-    //qemu_log_mask(LOG_UNIMP, "Tree Decoded format at 0x" TARGET_FMT_lx " (0x" TARGET_FMT_lx ") - %d - %s\n",
-    //              ctx->cpc, insn, opcode_id, opcode_name_str[opcode_id]);
-
     /*
      * Now, we have read the entire opcode, decode it and place the
      * relevant info into opcode and ctx->insn.
      */
-
-
-    //opcode_id = OPCODE_INVALID;
     *opcode_p = arc_find_format(&ctx->insn, insn, length, cpu->family);
-
-    //if(opcode_id != OPCODE_INVALID)
-    //  qemu_log_mask(LOG_UNIMP, "Linear decoder format at 0x" TARGET_FMT_lx " (0x%08lx) - %d - %s\n",
-    //                ctx->cpc, insn, opcode_id, opcode_name_str[opcode_id]);
-
 
     if (*opcode_p == NULL) {
         return false;
@@ -310,7 +268,7 @@ static bool read_and_decode_context(DisasContext *ctx,
         ctx->insn.limm = ARRANGE_ENDIAN(true,
                                         cpu_ldl_code(ctx->env,
                                         ctx->cpc + length));
-        length += 4; 
+        length += 4;
 #elif defined(TARGET_ARC64)
     if (ctx->insn.unsigned_limm_p) {
         ctx->insn.limm = ARRANGE_ENDIAN(true,
@@ -330,12 +288,12 @@ static bool read_and_decode_context(DisasContext *ctx,
     }
 
 #if defined(TARGET_ARC32)
-    if(ctx->insn.limm_split_16_p) {
+    if (ctx->insn.limm_split_16_p) {
         ctx->insn.limm &= 0x0000ffff;
         ctx->insn.limm |= (ctx->insn.limm << 16);
     }
 #elif defined(TARGET_ARC64)
-    if(ctx->insn.limm_split_16_p) {
+    if (ctx->insn.limm_split_16_p) {
         ctx->insn.limm &= 0x0000ffff;
         ctx->insn.limm |= (ctx->insn.limm << 16);
         ctx->insn.limm |= (ctx->insn.limm << 32);
@@ -380,31 +338,6 @@ const char number_of_ops_semfunc[MAP_LAST + 1] = {
     2
 };
 
-#if 0
-static void arc_list_unimplemented_mnemonics(void)
-{
-    int i;
-    bool implemented[MNEMONIC_SIZE];
-    memset(implemented, 0, sizeof(implemented));
-
-#define SEMANTIC_FUNCTION(...)
-#define CONSTANT(...)
-#define MAPPING(INSN_NAME, NAME, ...)         \
-    implemented[MNEMONIC_##INSN_NAME] = true;
-#include "target/arc/semfunc-mapping.def"
-
-#undef MAPPING
-#undef CONSTANT
-#undef SEMANTIC_FUNCTION
-    for(i = 0; i < MNEMONIC_SIZE; i++) {
-        if(implemented[i] == 0) {
-            qemu_log_mask(LOG_UNIMP,
-                  "Instruction %s is not mapped\n",
-                  insn_mnemonic_str[i]);
-        }
-    }
-}
-#endif
 
 static enum arc_opcode_map arc_map_opcode(const struct arc_opcode *opcode)
 {
@@ -538,7 +471,7 @@ void arc_gen_excp(const DisasCtxt *ctx,
 
     tcg_gen_movi_tl(cpu_pc, ctx->cpc);
     tcg_gen_movi_tl(cpu_eret, ctx->cpc);
-    tcg_gen_movi_tl(cpu_erbta, ctx->npc);
+    tcg_gen_mov_tl(cpu_erbta, cpu_bta);
 
     gen_helper_raise_exception(cpu_env, tcg_index, tcg_cause, tcg_param);
 
@@ -573,7 +506,7 @@ static bool check_enter_leave_nr_regs(const DisasCtxt *ctx,
         TCGv tcg_param = tcg_const_tl(0);
 
         tcg_gen_movi_tl(cpu_eret, ctx->cpc);
-        tcg_gen_movi_tl(cpu_erbta, ctx->npc);
+        tcg_gen_mov_tl(cpu_erbta, cpu_bta);
 
         gen_helper_raise_exception(cpu_env, tcg_index, tcg_cause, tcg_param);
 
@@ -591,7 +524,7 @@ static bool check_enter_leave_nr_regs(const DisasCtxt *ctx,
  */
 static bool check_delay_or_execution_slot(const DisasCtxt *ctx)
 {
-    if (ctx->env->in_delayslot_instruction) {
+    if (ctx->env->stat.pstate & STATUS32_DE) {
         TCGv tcg_index = tcg_const_tl(EXCP_INST_ERROR);
         TCGv tcg_cause = tcg_const_tl(0x1);
         TCGv tcg_param = tcg_const_tl(0x0);
@@ -800,7 +733,7 @@ int arc_gen_LEAVE(DisasContext *ctx)
 
     /* now that we are done, should we jump to blink? */
     if (jump_to_blink) {
-        gen_goto_tb(ctx, 1, cpu_blink);
+        gen_goto_tb(ctx, cpu_blink);
         ret = DISAS_NORETURN;
     }
 
@@ -1525,6 +1458,34 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
     return ret;
 }
 
+/*
+ * Delayed jump for delay slot instruction. The branch takes place
+ * only if the status32.DE flag is set. The target of the branch
+ * must have already been saved in BTA (Branch Target Address).
+ */
+static void gen_delayed_jump(DisasContext * ctx)
+{
+    TCGv zero = tcg_const_local_tl(0);
+    TCGv de = tcg_temp_new();
+    TCGv npc = tcg_const_local_tl(ctx->npc);
+    TCGv target = tcg_temp_new();
+
+    tcg_gen_andi_tl(de, cpu_pstate, STATUS32_DE);
+    /* target = (de TCG_COND_NE zero) ? cpu_bta : npc */
+    tcg_gen_movcond_tl(TCG_COND_NE, target, de, zero, cpu_bta, npc);
+    /* status32.DE = 0 */
+    tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_DE);
+
+    gen_goto_tb(ctx, target);
+
+    tcg_temp_free(target);
+    tcg_temp_free(npc);
+    tcg_temp_free(de);
+    tcg_temp_free(zero);
+
+    ctx->base.is_jmp = DISAS_HANDLED;
+}
+
 void decode_opc(CPUARCState *env, DisasContext *ctx)
 {
     ctx->env = env;
@@ -1535,58 +1496,16 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
         return;
     }
 
-    if(env->next_insn_is_delayslot == true) {
-        env->in_delayslot_instruction = true;
-        env->next_insn_is_delayslot = false;
-    }
-
-
     ctx->base.is_jmp = arc_decode(ctx, opcode);
 
-    /*
-     * Either decoder knows that this is a delayslot
-     * or it is a return from exception and at decode time
-     * DEf flag is set as a delayslot.
-     * The PREVIOUS_IS_DELAYSLOTf flag is used for to mark delayslot
-     * instructions even when the branch is not taken.
-     * DEf is only set when the branch is taken. This is always
-     * set.
-     */
-    if(env->in_delayslot_instruction == true
-       || GET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf)) {
-        TCGv temp_DEf = tcg_temp_local_new();
-        ctx->base.is_jmp = DISAS_NORETURN;
-
-        TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
-
-        /* Post execution delayslot logic. */
-        TCGLabel *DEf_not_set_label1 = gen_new_label();
-        TCG_GET_STATUS_FIELD_MASKED(temp_DEf, cpu_pstate, DEf);
-        tcg_gen_brcondi_tl(TCG_COND_EQ, temp_DEf, 0, DEf_not_set_label1);
-        TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, DEf);
-        gen_goto_tb(ctx, 1, cpu_bta);
-        gen_set_label(DEf_not_set_label1);
-
-        tcg_temp_free(temp_DEf);
-        env->in_delayslot_instruction = false;
-
+    /* Was the instruction in a delay slot? */
+    if (ctx->in_delay_slot) {
+        /* Clear the bit, so next instructions won't see it set. */
+        tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~BRANCH_DELAY);
+        gen_delayed_jump(ctx);
     }
 
-    if(env->next_insn_is_delayslot == true) {
-      SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 1);
-    }
-
-
-/* #define ZOL_RUNTIME_SIMULATION */
-#ifdef ZOL_RUNTIME_SIMULATION
-    TCGv npc = tcg_const_local_tl(ctx->npc);
-    gen_helper_zol_verify(cpu_env, npc);
-    tcg_temp_free(npc);
-#else
-    if(1 && env->lpe == ctx->npc) {
-
-        DisasJumpType ret = ctx->base.is_jmp;
-
+    if (env->lpe == ctx->npc) {
         TCGLabel *zol_end = gen_new_label();
         TCGLabel *zol_else = gen_new_label();
         TCGv lps = tcg_temp_local_new();
@@ -1597,14 +1516,15 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
         gen_set_label(zol_else);
           tcg_gen_subi_tl(cpu_lpc, cpu_lpc, 1);
           tcg_gen_movi_tl(lps, env->lps);
-          setPC(lps);
+          /* Set PC */
+          assert(!ctx->insn.d);
+          gen_goto_tb(ctx, lps);
         gen_set_label(zol_end);
 
         ctx->base.is_jmp = DISAS_NORETURN;
 
         tcg_temp_free(lps);
     }
-#endif
 }
 
 static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
@@ -1612,16 +1532,13 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUARCState *env = cpu->env_ptr;
 
-
     /* TODO (issue #62): these must be removed */
     dc->zero = tcg_const_local_tl(0);
     dc->one  = tcg_const_local_tl(1);
 
     dc->cpc = dc->base.pc_next;
     decode_opc(env, dc);
-
     dc->base.pc_next = dc->npc;
-    tcg_gen_movi_tl(cpu_npc, dc->npc);
 
     if (dc->base.is_jmp == DISAS_NORETURN) {
         gen_gotoi_tb(dc, 0, dc->npc);
@@ -1655,7 +1572,7 @@ static void arc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     case DISAS_UPDATE:
         gen_gotoi_tb(dc, 0, dc->base.pc_next);
         break;
-    case DISAS_BRANCH_IN_DELAYSLOT:
+    case DISAS_HANDLED:
     case DISAS_NORETURN:
         break;
     default:

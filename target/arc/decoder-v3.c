@@ -122,20 +122,13 @@ load_insninfo_if_valid_v3(uint64_t insn,
 {
     const uint8_t *opidx;
     const uint8_t *flgidx;
+    uint32_t noperands = 0;
     bool has_limm_signed = false;
     bool has_limm_unsigned = false;
     insn_t ret;
 
     *invalid = false;
-    uint32_t noperands = 0;
-
-    has_limm_signed = false;
-    has_limm_unsigned = false;
-    noperands = 0;
     memset(&ret, 0, sizeof (insn_t));
-
-    has_limm_signed = false;
-    has_limm_unsigned = false;
 
     /* Possible candidate, check the operands. */
     for (opidx = opcode->operands; *opidx; ++opidx) {
@@ -532,8 +525,17 @@ static void print_operands_v3(const struct arc_opcode *opcode,
 
         need_comma = TRUE;
 
-        /* Get the decoded */
-        value = pinsn->operands[i++].value;
+        /* Get the decoded value. */
+        if (pinsn->operands[i].type & ARC_OPERAND_LIMM) {
+            value = pinsn->limm;
+            /* So far, this only happens for "bl_s limm34" */
+            if (pinsn->operands[i].type & ARC_OPERAND_ALIGNED32) {
+                value <<= 2;
+            }
+        } else {
+            value = pinsn->operands[i].value;
+        }
+        i++;
 
         if ((operand->flags & ARC_OPERAND_IGNORE) &&
             (operand->flags & ARC_OPERAND_IR) &&
