@@ -89,6 +89,21 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 
 #define getFFlag(R) ((int) ctx->insn.f)
 
+/*
+ * During the decoding phase, the default return value for branch
+ * instructions is DISAS_NORETURN, as they are supposedly the last
+ * instructions of a TB. However, if a delay slot is present, the
+ * decoder is asked to continue by DISAS_NEXT.
+ */
+static inline int disas_ret_for_branch(const insn_t insn)
+{
+    return (insn.d ? DISAS_NEXT : DISAS_NORETURN);
+}
+
+
+/* semfunc-helper.c */
+void gen_prep_to_branch(const DisasCtxt *ctx, TCGv target);
+
 void to_implement(const DisasCtxt *ctx);
 void to_implement_wo_abort(const DisasCtxt *ctx);
 
@@ -158,14 +173,14 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define nextInsnAddress(R)  tcg_gen_movi_tl(R, ctx->npc)
 #define getPCL(R)           tcg_gen_movi_tl(R, ctx->pcl)
 
-#define setPC(NEW_PC)                                   \
-    do {                                                \
-        if(ctx->insn.d == 0) {                          \
-            gen_goto_tb(ctx, 1, NEW_PC);                    \
+#define setPC(NEW_PC)                                       \
+    do {                                                    \
+        if (ctx->insn.d == 0) {                             \
+            gen_goto_tb(ctx, NEW_PC);                       \
             ret = ret == DISAS_NEXT ? DISAS_NORETURN : ret; \
-        } else {                                        \
-            tcg_gen_mov_tl(cpu_bta, NEW_PC);            \
-        }                                               \
+        } else {                                            \
+            tcg_gen_mov_tl(cpu_bta, NEW_PC);                \
+        }                                                   \
     } while (0)
 
 #define setBLINK(BLINK_ADDR) \
@@ -265,7 +280,7 @@ void arc_gen_get_bit(TCGv ret, TCGv a, TCGv pos);
         TCGLabel *done = gen_new_label();                         \
         tcg_gen_shri_tl(jump_to_blink, U7, 6);                    \
         tcg_gen_brcondi_tl(TCG_COND_EQ, jump_to_blink, 0, done);  \
-        gen_goto_tb(ctx, 1, cpu_pc);                              \
+        gen_goto_tb(ctx, cpu_pc);                                 \
         ret = DISAS_NORETURN;                                     \
         gen_set_label(done);                                      \
         tcg_temp_free(jump_to_blink);                             \

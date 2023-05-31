@@ -85,10 +85,6 @@ typedef struct DisasContext {
 #define cpu_pcl    (cpu_r[63])
 #define cpu_limm   (cpu_r[62])
 
-extern TCGv     cpu_S1f;
-extern TCGv     cpu_S2f;
-extern TCGv     cpu_CSf;
-
 extern TCGv     cpu_pstate;
 extern TCGv     cpu_Vf;
 extern TCGv     cpu_Cf;
@@ -112,8 +108,6 @@ extern TCGv     cpu_lps;
 extern TCGv     cpu_lpe;
 #endif
 
-extern TCGv     cpu_npc;
-
 extern TCGv     cpu_bta;
 
 extern TCGv     cpu_r[64];
@@ -126,7 +120,7 @@ extern TCGv     cpu_lock_lf_var;
 /* TODO: Remove DisasCtxt.  */
 typedef struct DisasContext DisasCtxt;
 
-void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest);
+void gen_goto_tb(const DisasContext *ctx, TCGv dest);
 
 void decode_opc(CPUARCState *env, DisasContext *ctx);
 

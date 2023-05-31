@@ -5562,404 +5562,139 @@ arc_gen_BI(DisasCtxt *ctx, TCGv c)
 
 /*
  * BIH
- *    Variables: @c
- *    Functions: setPC, getPCL
  * --- code ---
- * {
- *   setPC ((nextInsnAddress () + (@c << 1)));
- * }
+ * target = ctx->npc + (c << 1);
  */
-
 int
 arc_gen_BIH(DisasCtxt *ctx, TCGv c)
 {
-    int ret = DISAS_NEXT;
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    tcg_gen_shli_tl(temp_4, c, 1);
-    nextInsnAddress(temp_3);
-    tcg_gen_mov_tl(temp_2, temp_3);
-    tcg_gen_add_tl(temp_1, temp_2, temp_4);
-    setPC(temp_1);
-    tcg_temp_free(temp_4);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(temp_2);
-    tcg_temp_free(temp_1);
+    TCGv target = tcg_temp_local_new();
+    TCGv addendum = tcg_temp_local_new();
 
-    return ret;
+    tcg_gen_movi_tl(target, ctx->npc);
+    tcg_gen_shli_tl(addendum, c, 1);
+    tcg_gen_add_tl(target, target, addendum);
+    gen_goto_tb(ctx, target);
+
+    tcg_temp_free(addendum);
+    tcg_temp_free(target);
+
+    return DISAS_NORETURN;
 }
 
 
 /*
  * B
- *    Variables: @rd
- *    Functions: getCCFlag, getPCL, shouldExecuteDelaySlot, executeDelaySlot,
- *               setPC
  * --- code ---
- * {
- *   take_branch = false;
- *   cc_flag = getCCFlag ();
- *   if((cc_flag == true))
- *     {
- *       take_branch = true;
- *     };
- *   bta = (getPCL () + @rd);
- *   if((shouldExecuteDelaySlot () == true))
- *     {
- *       executeDelaySlot (bta, take_branch);
- *     };
- *   if((cc_flag == true))
- *     {
- *       setPC (bta);
- *     };
- * }
+ * if (cc_flag == true)
+ *   gen_prep_to_branch(offset)
  */
-
 int
-arc_gen_B(DisasCtxt *ctx, TCGv rd)
+arc_gen_B(DisasCtxt *ctx, TCGv offset)
 {
-    int ret = DISAS_NEXT;
-    TCGv take_branch = tcg_temp_local_new();
-    TCGv temp_5 = tcg_temp_local_new();
-    TCGv cc_flag = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_7 = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
-    TCGv bta = tcg_temp_local_new();
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    tcg_gen_mov_tl(take_branch, arc_false);
-    getCCFlag(temp_5);
-    tcg_gen_mov_tl(cc_flag, temp_5);
-    TCGLabel *done_1 = gen_new_label();
-    tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
-    tcg_gen_xori_tl(temp_2, temp_1, 1);
-    tcg_gen_andi_tl(temp_2, temp_2, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    tcg_gen_mov_tl(take_branch, arc_true);
-    gen_set_label(done_1);
-    getPCL(temp_7);
-    tcg_gen_mov_tl(temp_6, temp_7);
-    tcg_gen_add_tl(bta, temp_6, rd);
-    if ((shouldExecuteDelaySlot () == true)) {
-        executeDelaySlot(bta, take_branch);
-    }
-    TCGLabel *done_2 = gen_new_label();
-    tcg_gen_setcond_tl(TCG_COND_EQ, temp_3, cc_flag, arc_true);
-    tcg_gen_xori_tl(temp_4, temp_3, 1);
-    tcg_gen_andi_tl(temp_4, temp_4, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_4, arc_true, done_2);
-    setPC(bta);
-    gen_set_label(done_2);
-    tcg_temp_free(take_branch);
-    tcg_temp_free(temp_5);
-    tcg_temp_free(cc_flag);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_2);
-    tcg_temp_free(temp_7);
-    tcg_temp_free(temp_6);
-    tcg_temp_free(bta);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(temp_4);
+    TCGLabel *do_not_branch = gen_new_label();
+    TCGv cond = tcg_temp_local_new();
 
-    return ret;
+    arc_gen_verifyCCFlag(ctx, cond);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, do_not_branch);
+
+    gen_prep_to_branch(ctx, offset);
+
+    gen_set_label(do_not_branch);
+    tcg_temp_free(cond);
+
+    return disas_ret_for_branch(ctx->insn);
 }
 
 
-/* DBNZ
- *    Variables: @a, @offset
- *    Functions: getPCL, setPC
---- code ---
-{
-  bta = getPCL() + @offset;
-  @a = @a - 1
-  if (shouldExecuteDelaySlot() == 1)
-  {
-      take_branch = true;
-      if (@a == 0)
-      {
-          take_branch = false;
-      };
-      executeDelaySlot (bta, take_branch);
-  };
-  if(@a != 0) {
-    setPC(getPCL () + @offset)
-  }
-}
+/*
+ * DBNZ
+ * --- code ---
+ * @a = @a - 1
+ * if (@a != 0)
+ *   gen_prep_to_branch(offset)
  */
-
 int
 arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset)
 {
-    int ret = DISAS_NEXT;
     TCGLabel *do_not_branch = gen_new_label();
-    TCGLabel *keep_take_branch_1 = gen_new_label();
-    TCGv bta = tcg_temp_local_new();
 
-    getPCL(bta);
-    tcg_gen_add_tl(bta, bta, offset);
+    /* if (--a != 0) */
     tcg_gen_subi_tl(a, a, 1);
-
-    if (shouldExecuteDelaySlot() == 1) {
-        TCGv take_branch = tcg_const_local_tl(1);
-        tcg_gen_brcondi_tl(TCG_COND_NE, a, 0, keep_take_branch_1);
-        tcg_temp_free(take_branch);
-        tcg_gen_mov_tl(take_branch, tcg_const_local_tl(0));
-        gen_set_label(keep_take_branch_1);
-        executeDelaySlot(bta, take_branch);
-        tcg_temp_free(take_branch);
-    }
-
     tcg_gen_brcondi_tl(TCG_COND_EQ, a, 0, do_not_branch);
-        setPC(bta);
-    gen_set_label(do_not_branch);
-    tcg_temp_free(bta);
 
-  return ret;
+    gen_prep_to_branch(ctx, offset);
+
+    gen_set_label(do_not_branch);
+
+    return disas_ret_for_branch(ctx->insn);
 }
 
 /*
  * BBIT0
- *    Variables: @b, @c, @rd
- *    Functions: getCCFlag, getPCL, shouldExecuteDelaySlot, executeDelaySlot,
- *               setPC
  * --- code ---
- * {
- *   take_branch = false;
- *   cc_flag = getCCFlag ();
- *   p_b = @b;
- *   p_c = (@c & 31);
- *   tmp = (1 << p_c);
- *   if((cc_flag == true))
- *     {
- *       if(((p_b && tmp) == 0))
- *         {
- *           take_branch = true;
- *         };
- *     };
- *   bta = (getPCL () + @rd);
- *   if((shouldExecuteDelaySlot () == true))
- *     {
- *       executeDelaySlot (bta, take_branch);
- *     };
- *   if((cc_flag == true))
- *     {
- *       if(((p_b && tmp) == 0))
- *         {
- *           setPC (bta);
- *         };
- *     };
- * }
+ * _c = @c & 31
+ * msk = 1 << _c
+ * bit = @b & msk
+ * if (bit == 0)
+ *   gen_prep_to_branch(offset)
  */
-
 int
-arc_gen_BBIT0(DisasCtxt *ctx, TCGv b, TCGv c, TCGv rd)
+arc_gen_BBIT0(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset)
 {
-    int ret = DISAS_NEXT;
-    TCGv take_branch = tcg_temp_local_new();
-    TCGv temp_11 = tcg_temp_local_new();
-    TCGv cc_flag = tcg_temp_local_new();
-    TCGv p_b = tcg_temp_local_new();
-    TCGv p_c = tcg_temp_local_new();
-    TCGv tmp = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_5 = tcg_temp_local_new();
-    TCGv temp_13 = tcg_temp_local_new();
-    TCGv temp_12 = tcg_temp_local_new();
-    TCGv bta = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
-    TCGv temp_7 = tcg_temp_local_new();
-    TCGv temp_8 = tcg_temp_local_new();
-    TCGv temp_9 = tcg_temp_local_new();
-    TCGv temp_10 = tcg_temp_local_new();
-    tcg_gen_mov_tl(take_branch, arc_false);
-    getCCFlag(temp_11);
-    tcg_gen_mov_tl(cc_flag, temp_11);
-    tcg_gen_mov_tl(p_b, b);
-    tcg_gen_andi_tl(p_c, c, 31);
-    tcg_gen_shlfi_tl(tmp, 1, p_c);
-    TCGLabel *done_1 = gen_new_label();
-    tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
-    tcg_gen_xori_tl(temp_2, temp_1, 1);
-    tcg_gen_andi_tl(temp_2, temp_2, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    TCGLabel *done_2 = gen_new_label();
-    tcg_gen_and_tl(temp_3, p_b, tmp);
-    tcg_gen_setcondi_tl(TCG_COND_EQ, temp_4, temp_3, 0);
-    tcg_gen_xori_tl(temp_5, temp_4, 1);
-    tcg_gen_andi_tl(temp_5, temp_5, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_5, arc_true, done_2);
-    tcg_gen_mov_tl(take_branch, arc_true);
-    gen_set_label(done_2);
-    gen_set_label(done_1);
-    getPCL(temp_13);
-    tcg_gen_mov_tl(temp_12, temp_13);
-    tcg_gen_add_tl(bta, temp_12, rd);
-    if ((shouldExecuteDelaySlot () == true)) {
-        executeDelaySlot(bta, take_branch);
-    }
-    TCGLabel *done_3 = gen_new_label();
-    tcg_gen_setcond_tl(TCG_COND_EQ, temp_6, cc_flag, arc_true);
-    tcg_gen_xori_tl(temp_7, temp_6, 1);
-    tcg_gen_andi_tl(temp_7, temp_7, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_7, arc_true, done_3);
-    TCGLabel *done_4 = gen_new_label();
-    tcg_gen_and_tl(temp_8, p_b, tmp);
-    tcg_gen_setcondi_tl(TCG_COND_EQ, temp_9, temp_8, 0);
-    tcg_gen_xori_tl(temp_10, temp_9, 1);
-    tcg_gen_andi_tl(temp_10, temp_10, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_10, arc_true, done_4);
-    setPC(bta);
-    gen_set_label(done_4);
-    gen_set_label(done_3);
-    tcg_temp_free(take_branch);
-    tcg_temp_free(temp_11);
-    tcg_temp_free(cc_flag);
-    tcg_temp_free(p_b);
-    tcg_temp_free(p_c);
-    tcg_temp_free(tmp);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_2);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(temp_4);
-    tcg_temp_free(temp_5);
-    tcg_temp_free(temp_13);
-    tcg_temp_free(temp_12);
-    tcg_temp_free(bta);
-    tcg_temp_free(temp_6);
-    tcg_temp_free(temp_7);
-    tcg_temp_free(temp_8);
-    tcg_temp_free(temp_9);
-    tcg_temp_free(temp_10);
+    TCGLabel *do_not_branch = gen_new_label();
+    TCGv _c = tcg_temp_new();
+    TCGv msk = tcg_const_tl(1);
+    TCGv bit = tcg_temp_new();
 
-    return ret;
+    /* if ((b & (1 << (c & 31))) == 0) */
+    tcg_gen_andi_tl(_c, c, 31);
+    tcg_gen_shl_tl(msk, msk, _c);
+    tcg_gen_and_tl(bit, b, msk);
+    tcg_gen_brcondi_tl(TCG_COND_NE, bit, 0, do_not_branch);
+
+    gen_prep_to_branch(ctx, offset);
+
+    gen_set_label(do_not_branch);
+    tcg_temp_free(bit);
+    tcg_temp_free(msk);
+    tcg_temp_free(_c);
+
+    return disas_ret_for_branch(ctx->insn);
 }
 
 
 /*
  * BBIT1
- *    Variables: @b, @c, @rd
- *    Functions: getCCFlag, getPCL, shouldExecuteDelaySlot, executeDelaySlot,
- *               setPC
  * --- code ---
- * {
- *   take_branch = false;
- *   cc_flag = getCCFlag ();
- *   p_b = @b;
- *   p_c = (@c & 31);
- *   tmp = (1 << p_c);
- *   if((cc_flag == true))
- *     {
- *       if(((p_b && tmp) != 0))
- *         {
- *           take_branch = true;
- *         };
- *     };
- *   bta = (getPCL () + @rd);
- *   if((shouldExecuteDelaySlot () == true))
- *     {
- *       executeDelaySlot (bta, take_branch);
- *     };
- *   if((cc_flag == true))
- *     {
- *       if(((p_b && tmp) != 0))
- *         {
- *           setPC (bta);
- *         };
- *     };
- * }
+ * _c = @c & 31
+ * msk = 1 << _c
+ * bit = @b & msk
+ * if (bit != 0)
+ *   gen_prep_to_branch(offset)
  */
-
 int
-arc_gen_BBIT1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv rd)
+arc_gen_BBIT1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset)
 {
-    int ret = DISAS_NEXT;
-    TCGv take_branch = tcg_temp_local_new();
-    TCGv temp_11 = tcg_temp_local_new();
-    TCGv cc_flag = tcg_temp_local_new();
-    TCGv p_b = tcg_temp_local_new();
-    TCGv p_c = tcg_temp_local_new();
-    TCGv tmp = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_5 = tcg_temp_local_new();
-    TCGv temp_13 = tcg_temp_local_new();
-    TCGv temp_12 = tcg_temp_local_new();
-    TCGv bta = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
-    TCGv temp_7 = tcg_temp_local_new();
-    TCGv temp_8 = tcg_temp_local_new();
-    TCGv temp_9 = tcg_temp_local_new();
-    TCGv temp_10 = tcg_temp_local_new();
-    tcg_gen_mov_tl(take_branch, arc_false);
-    getCCFlag(temp_11);
-    tcg_gen_mov_tl(cc_flag, temp_11);
-    tcg_gen_mov_tl(p_b, b);
-    tcg_gen_andi_tl(p_c, c, 31);
-    tcg_gen_shlfi_tl(tmp, 1, p_c);
-    TCGLabel *done_1 = gen_new_label();
-    tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
-    tcg_gen_xori_tl(temp_2, temp_1, 1);
-    tcg_gen_andi_tl(temp_2, temp_2, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    TCGLabel *done_2 = gen_new_label();
-    tcg_gen_and_tl(temp_3, p_b, tmp);
-    tcg_gen_setcondi_tl(TCG_COND_NE, temp_4, temp_3, 0);
-    tcg_gen_xori_tl(temp_5, temp_4, 1);
-    tcg_gen_andi_tl(temp_5, temp_5, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_5, arc_true, done_2);
-    tcg_gen_mov_tl(take_branch, arc_true);
-    gen_set_label(done_2);
-    gen_set_label(done_1);
-    getPCL(temp_13);
-    tcg_gen_mov_tl(temp_12, temp_13);
-    tcg_gen_add_tl(bta, temp_12, rd);
-    if ((shouldExecuteDelaySlot () == true)) {
-        executeDelaySlot(bta, take_branch);
-    }
-    TCGLabel *done_3 = gen_new_label();
-    tcg_gen_setcond_tl(TCG_COND_EQ, temp_6, cc_flag, arc_true);
-    tcg_gen_xori_tl(temp_7, temp_6, 1);
-    tcg_gen_andi_tl(temp_7, temp_7, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_7, arc_true, done_3);
-    TCGLabel *done_4 = gen_new_label();
-    tcg_gen_and_tl(temp_8, p_b, tmp);
-    tcg_gen_setcondi_tl(TCG_COND_NE, temp_9, temp_8, 0);
-    tcg_gen_xori_tl(temp_10, temp_9, 1);
-    tcg_gen_andi_tl(temp_10, temp_10, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_10, arc_true, done_4);
-    setPC(bta);
-    gen_set_label(done_4);
-    gen_set_label(done_3);
-    tcg_temp_free(take_branch);
-    tcg_temp_free(temp_11);
-    tcg_temp_free(cc_flag);
-    tcg_temp_free(p_b);
-    tcg_temp_free(p_c);
-    tcg_temp_free(tmp);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_2);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(temp_4);
-    tcg_temp_free(temp_5);
-    tcg_temp_free(temp_13);
-    tcg_temp_free(temp_12);
-    tcg_temp_free(bta);
-    tcg_temp_free(temp_6);
-    tcg_temp_free(temp_7);
-    tcg_temp_free(temp_8);
-    tcg_temp_free(temp_9);
-    tcg_temp_free(temp_10);
+    TCGLabel *do_not_branch = gen_new_label();
+    TCGv _c = tcg_temp_new();
+    TCGv msk = tcg_const_tl(1);
+    TCGv bit = tcg_temp_new();
 
-    return ret;
+    /* if ((b & (1 << (c & 31))) != 0) */
+    tcg_gen_andi_tl(_c, c, 31);
+    tcg_gen_shl_tl(msk, msk, _c);
+    tcg_gen_and_tl(bit, b, msk);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, bit, 0, do_not_branch);
+
+    gen_prep_to_branch(ctx, offset);
+
+    gen_set_label(do_not_branch);
+    tcg_temp_free(bit);
+    tcg_temp_free(msk);
+    tcg_temp_free(_c);
+
+    return disas_ret_for_branch(ctx->insn);
 }
 
 

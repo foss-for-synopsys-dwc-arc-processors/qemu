@@ -60,9 +60,6 @@ TCGv    cpu_intvec;
 
 TCGv    cpu_lock_lf_var;
 
-/* NOTE: Pseudo register required for comparison with lp_end */
-TCGv    cpu_npc;
-
 /* LLOCK and SCOND support values */
 TCGv cpu_exclusive_addr;
 TCGv cpu_exclusive_val;
@@ -77,7 +74,7 @@ TCGv cpu_exclusive_val_hi;
 #define ARRANGE_ENDIAN(endianess, buf)                  \
     ((endianess) ? ror32(buf, 16) : bswap32(buf))
 
-void gen_goto_tb(const DisasContext *ctx, int n, TCGv dest)
+void gen_goto_tb(const DisasContext *ctx, TCGv dest)
 {
     tcg_gen_mov_tl(cpu_pc, dest);
     tcg_gen_andi_tl(cpu_pcl, dest, ~((target_ulong) 3));
@@ -143,42 +140,35 @@ void arc_cpu_record_sigbus(CPUState *cs, vaddr addr,
 void arc_translate_init(void)
 {
     int i;
-#define ARC_REG_OFFS(x) offsetof(CPUARCState, x)
-
-#define NEW_ARC_REG(TCGV, FIELD) \
-        { &TCGV, offsetof(CPUARCState, FIELD), #FIELD },
 
     static const struct { TCGv *ptr; int off; const char *name; } r32[] = {
-        NEW_ARC_REG(cpu_S1f, macmod.S1)
-        NEW_ARC_REG(cpu_S2f, macmod.S2)
-        NEW_ARC_REG(cpu_CSf, macmod.CS)
+        { &cpu_pstate, offsetof(CPUARCState, stat.pstate), "stat.pstate" },
+        { &cpu_Zf    , offsetof(CPUARCState, stat.Zf)    , "stat.Zf"     },
+        { &cpu_Nf    , offsetof(CPUARCState, stat.Nf)    , "stat.Nf"     },
+        { &cpu_Cf    , offsetof(CPUARCState, stat.Cf)    , "stat.Cf"     },
+        { &cpu_Vf    , offsetof(CPUARCState, stat.Vf)    , "stat.Vf"     },
 
-        NEW_ARC_REG(cpu_pstate, stat.pstate)
-        NEW_ARC_REG(cpu_Zf, stat.Zf)
-        NEW_ARC_REG(cpu_Nf, stat.Nf)
-        NEW_ARC_REG(cpu_Cf, stat.Cf)
-        NEW_ARC_REG(cpu_Vf, stat.Vf)
+        { &cpu_er_pstate, offsetof(CPUARCState, stat_er.pstate),
+          "stat_er.pstate" },
+        { &cpu_er_Zf, offsetof(CPUARCState, stat_er.Zf), "stat_er.Zf" },
+        { &cpu_er_Nf, offsetof(CPUARCState, stat_er.Nf), "stat_er.Nf" },
+        { &cpu_er_Cf, offsetof(CPUARCState, stat_er.Cf), "stat_er.Cf" },
+        { &cpu_er_Vf, offsetof(CPUARCState, stat_er.Vf), "stat_er.Vf" },
 
-        NEW_ARC_REG(cpu_er_pstate, stat_er.pstate)
-        NEW_ARC_REG(cpu_er_Zf, stat_er.Zf)
-        NEW_ARC_REG(cpu_er_Nf, stat_er.Nf)
-        NEW_ARC_REG(cpu_er_Cf, stat_er.Cf)
-        NEW_ARC_REG(cpu_er_Vf, stat_er.Vf)
+        { &cpu_eret , offsetof(CPUARCState, eret) , "eret"  },
+        { &cpu_erbta, offsetof(CPUARCState, erbta), "erbta" },
+        { &cpu_efa  , offsetof(CPUARCState, efa)  , "efa"   },
+        { &cpu_bta  , offsetof(CPUARCState, bta)  , "bta"   },
 
-        NEW_ARC_REG(cpu_eret, eret)
-        NEW_ARC_REG(cpu_erbta, erbta)
-        NEW_ARC_REG(cpu_efa, efa)
-        NEW_ARC_REG(cpu_bta, bta)
 #if defined(TARGET_ARC32)
-        NEW_ARC_REG(cpu_lps, lps)
-        NEW_ARC_REG(cpu_lpe, lpe)
+        { &cpu_lps, offsetof(CPUARCState, lps), "lps" },
+        { &cpu_lpe, offsetof(CPUARCState, lpe), "lpe" },
 #endif
-        NEW_ARC_REG(cpu_pc , pc)
-        NEW_ARC_REG(cpu_npc, npc)
+        { &cpu_pc , offsetof(CPUARCState, pc) , "pc" },
 
-        NEW_ARC_REG(cpu_intvec, intvec)
+        { &cpu_intvec, offsetof(CPUARCState, intvec), "intvec" },
 
-        NEW_ARC_REG(cpu_lock_lf_var, lock_lf_var)
+        { &cpu_lock_lf_var, offsetof(CPUARCState, lock_lf_var), "lock_lf_var" }
     };
 
 
@@ -192,12 +182,9 @@ void arc_translate_init(void)
 
         sprintf(name, "r[%d]", i);
         cpu_r[i] = tcg_global_mem_new(cpu_env,
-                                      ARC_REG_OFFS(r[i]),
+                                      offsetof(CPUARCState, r[i]),
                                       strdup(name));
     }
-
-#undef ARC_REG_OFFS
-#undef NEW_ARC_REG
 
     cpu_exclusive_addr = tcg_global_mem_new(cpu_env,
         offsetof(CPUARCState, exclusive_addr), "exclusive_addr");
@@ -763,7 +750,7 @@ int arc_gen_LEAVE(DisasContext *ctx)
 
     /* now that we are done, should we jump to blink? */
     if (jump_to_blink) {
-        gen_goto_tb(ctx, 1, cpu_blink);
+        gen_goto_tb(ctx, cpu_blink);
         ret = DISAS_NORETURN;
     }
 
@@ -1527,7 +1514,7 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
         TCG_GET_STATUS_FIELD_MASKED(temp_DEf, cpu_pstate, DEf);
         tcg_gen_brcondi_tl(TCG_COND_EQ, temp_DEf, 0, DEf_not_set_label1);
         TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, DEf);
-        gen_goto_tb(ctx, 1, cpu_bta);
+        gen_goto_tb(ctx, cpu_bta);
         gen_set_label(DEf_not_set_label1);
 
         tcg_temp_free(temp_DEf);
@@ -1577,7 +1564,6 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     decode_opc(env, dc);
 
     dc->base.pc_next = dc->npc;
-    tcg_gen_movi_tl(cpu_npc, dc->npc);
 
     if (dc->base.is_jmp == DISAS_NORETURN) {
         gen_gotoi_tb(dc, 0, dc->npc);

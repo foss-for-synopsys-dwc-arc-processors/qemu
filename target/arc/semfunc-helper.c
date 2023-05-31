@@ -125,6 +125,56 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
     tcg_temp_free(nC);
 }
 
+/*
+ * This functions is only used when dealing with branch instructions.
+ * It's called to generate code at the point that it's decided that the
+ * branch _is_ taken. Therefore, the PC is going to change. In the absence
+ * of a delay slot, the PC is changed immediately. Whereas in the other
+ * case, the change of PC is delayed by setting the BTA (Branch Target
+ * Address) register and the "DE" flag of "status32".
+ *
+ * target = cpu_pcl + offset
+ *
+ * if (ctx->insn.d)      // has a delay slot?
+ * {
+ *     reg_bta = target
+ *     status32.de = 1
+ * } else {
+ *     cpu_pc = target
+ *     [ end of block ]
+ * }
+ */
+void
+gen_prep_to_branch(const DisasCtxt *ctx, TCGv addendum)
+{
+    TCGv target = tcg_temp_new();
+
+    g_assert(ctx->insn.class == BRANCH);
+
+    tcg_gen_movi_tl(target, ctx->pcl);
+    tcg_gen_add_tl(target, target, addendum);
+
+    if (ctx->insn.d) {
+        const uint32_t status32_de_flag = 1 << 6;
+        TCGv status32 = tcg_temp_new();
+
+        arc_gen_get_register(status32, R_STATUS32);
+        tcg_gen_ori_tl(status32, status32, status32_de_flag);
+        arc_gen_set_register(R_STATUS32, status32);
+        tcg_gen_mov_tl(cpu_bta, target);
+
+        tcg_temp_free(status32);
+    } else {
+        /*
+         * FIXME: shahab, shouldn't arc_tr_translate_insn() or
+         * arc_tr_tb_stop() take care of this?
+         */
+        gen_goto_tb(ctx, target);
+    }
+
+    tcg_temp_free(target);
+}
+
 #define MEMIDX (ctx->mem_idx)
 
 #ifdef TARGET_ARC32
