@@ -21,6 +21,7 @@
 #include "qemu/osdep.h"
 #include "hw/boards.h"
 #include "hw/arc/virt.h"
+#include "cpu.h"
 
 /*
  * Available command line properties, defined by:
@@ -36,6 +37,13 @@ static Property arc_virt_properties[] = {
 static void arc_virt_machine_class_init(ObjectClass *oc, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(oc);
+    MachineClass *mc = MACHINE_CLASS(oc);
+
+#ifdef TARGET_ARC64
+    mc->default_cpu_type = TYPE_ARC_CPU_HS6X;
+#else
+    mc->default_cpu_type = TYPE_ARC_CPU_ARCHS;
+#endif
 
     device_class_set_props(dc, arc_virt_properties);
 }
