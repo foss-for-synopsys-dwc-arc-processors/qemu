@@ -122,7 +122,11 @@ static void arc_sim_machine_init(MachineClass *mc)
     mc->max_cpus = 1;
     mc->is_default = false;
     mc->no_serial = 1;
-    mc->default_cpu_type = ARC_CPU_TYPE_NAME("archs");
+#ifdef TARGET_ARC64
+    mc->default_cpu_type = TYPE_ARC_CPU_HS6X;
+#else
+    mc->default_cpu_type = TYPE_ARC_CPU_ARCHS;
+#endif
 }
 
 DEFINE_MACHINE("arc-sim", arc_sim_machine_init)
