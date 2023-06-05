@@ -9202,6 +9202,68 @@ arc_gen_MPYDU(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)
 }
 
 /*
+ * VMAX2
+ * Compare the 32-bit signed vector elements of the input register pairs b and c
+ * The maximum value of the two elements is stored in the corresponding
+ * output register pair a.
+ * This instruction does not update any STATUS32 flags.
+ *    Inputs:  [@b, @(b+1)], [@c, @(c+1)]
+ *    Outputs: [@a, @(a+1)]
+ * --- code ---
+ * {
+ *   cc_flag = getCCFlag ();
+ *   if((cc_flag == true))
+ *     {
+ *       a      = signed_max(b, c);
+ *       @(a+1) = signed_max(@(b+1), @(c+1));
+ *     };
+ * }
+ */
+int
+arc_gen_VMAX2(DisasCtxt *ctx, TCGv_i32 a, TCGv_i32 b, TCGv_i32 c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    tcg_gen_smax_i32(nextRegWithNull(a), nextReg(b), nextReg(c));
+    tcg_gen_smax_i32(a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+/*
+ * VMIN2
+ * Compare the 32-bit signed vector elements of the input register pairs b and c
+ * The minimum value of the two elements is stored in the corresponding
+ * output register pair a.
+ * This instruction does not update any STATUS32 flags.
+ *    Inputs:  [@b, @(b+1)], [@c, @(c+1)]
+ *    Outputs: [@a, @(a+1)]
+ * --- code ---
+ * {
+ *   cc_flag = getCCFlag ();
+ *   if((cc_flag == true))
+ *     {
+ *       a      = signed_min(b, c);
+ *       @(a+1) = signed_min(@(b+1), @(c+1));
+ *     };
+ * }
+ */
+int
+arc_gen_VMIN2(DisasCtxt *ctx, TCGv_i32 a, TCGv_i32 b, TCGv_i32 c)
+{
+    ARC_GEN_SEMFUNC_INIT();
+
+    tcg_gen_smin_i32(nextRegWithNull(a), nextReg(b), nextReg(c));
+    tcg_gen_smin_i32(a, b, c);
+
+    ARC_GEN_SEMFUNC_DEINIT();
+
+    return DISAS_NEXT;
+}
+
+/*
  * ATLD
  *    Variables: @b, @c
  *    Functions: arc_gen_atld_op
