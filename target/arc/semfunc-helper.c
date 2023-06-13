@@ -155,15 +155,15 @@ gen_prep_to_branch(const DisasCtxt *ctx, TCGv addendum)
     tcg_gen_add_tl(target, target, addendum);
 
     if (ctx->insn.d) {
-        const uint32_t status32_de_flag = 1 << 6;
-        TCGv status32 = tcg_temp_new();
+        /* TODO: shahab, better variable for next insn? */
+        /* TODO: shahab, during debug, check if ctx->npc holds correct value. */
+        TCGv fall_addr = tcg_const_tl(ctx->base.pc_next + ctx->insn.len);
 
-        arc_gen_get_register(status32, R_STATUS32);
-        tcg_gen_ori_tl(status32, status32, status32_de_flag);
-        arc_gen_set_register(R_STATUS32, status32);
+        tcg_gen_ori_tl(cpu_pstate, cpu_pstate, STATUS32_DE);
         tcg_gen_mov_tl(cpu_bta, target);
+        gen_goto_tb(ctx, fall_addr);
 
-        tcg_temp_free(status32);
+        tcg_temp_free(fall_addr);
     } else {
         /*
          * FIXME: shahab, shouldn't arc_tr_translate_insn() or

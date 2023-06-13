@@ -3899,7 +3899,7 @@ arc_gen_LR(DisasCtxt *ctx, TCGv dest, TCGv src)
     int ret = DISAS_NORETURN;
 
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
-	gen_io_start();
+        gen_io_start();
     }
 
     TCGv temp_1 = tcg_temp_local_new();
@@ -4210,7 +4210,7 @@ arc_gen_PREFETCH(DisasCtxt *ctx, TCGv src1, TCGv src2)
  *         {
  *           high_part = HELPER (mpym, _b, _c);
  *           tmp1 = (high_part & 2147483648);
- *	     tmp2 = @a >> 31;
+ *           tmp2 = @a >> 31;
  *           setZFlag (@a);
  *           setNFlag (high_part);
  *           setVFlag ((tmp1 != tmp2));
@@ -5603,7 +5603,7 @@ arc_gen_B(DisasCtxt *ctx, TCGv offset)
     gen_set_label(do_not_branch);
     tcg_temp_free(cond);
 
-    return disas_ret_for_branch(ctx->insn);
+    return DISAS_NORETURN;
 }
 
 
@@ -5627,7 +5627,7 @@ arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset)
 
     gen_set_label(do_not_branch);
 
-    return disas_ret_for_branch(ctx->insn);
+    return DISAS_NORETURN;
 }
 
 /*
@@ -5660,7 +5660,7 @@ arc_gen_BBIT0(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset)
     tcg_temp_free(msk);
     tcg_temp_free(_c);
 
-    return disas_ret_for_branch(ctx->insn);
+    return DISAS_NORETURN;
 }
 
 
@@ -5694,7 +5694,7 @@ arc_gen_BBIT1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset)
     tcg_temp_free(msk);
     tcg_temp_free(_c);
 
-    return disas_ret_for_branch(ctx->insn);
+    return DISAS_NORETURN;
 }
 
 
@@ -8555,7 +8555,7 @@ arc_gen_cmpl2_i32(TCGv_i32 ret, TCGv_i32 arg1,
     tcg_gen_mov_i32(ret, t1);
 
     tcg_temp_free_i32(t2);
-	tcg_temp_free_i32(t1);
+    tcg_temp_free_i32(t1);
 }
 
 #define ARC_GEN_CMPL2_H0_I32(RET, ARG1)     arc_gen_cmpl2_i32(RET, ARG1, 0, 16)

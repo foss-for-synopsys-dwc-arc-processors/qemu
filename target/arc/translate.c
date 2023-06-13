@@ -27,10 +27,6 @@
 
 
 /* Globals */
-TCGv    cpu_S1f;
-TCGv    cpu_S2f;
-TCGv    cpu_CSf;
-
 TCGv    cpu_pstate;
 TCGv    cpu_Vf;
 TCGv    cpu_Cf;
@@ -200,15 +196,19 @@ static void arc_tr_init_disas_context(DisasContextBase *dcbase,
     DisasContext *dc = container_of(dcbase, DisasContext, base);
 
     dc->base.is_jmp = DISAS_NEXT;
+
+    /* Information from the proceeding block. */
     dc->mem_idx = dc->base.tb->flags & 1;
+
+    /*
+     * TODO: shahab, is this really necessary?
+     * can't we get away with env->stat.pstate & STATUS32_DE?
+     */
+    dc->in_delay_slot = !!(dc->base.tb->flags & STATUS32_DE);
 }
+
 static void arc_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
 {
-    /* place holder for now */
-    /* TODO: Make sure you really need to guard it. */
-    //DisasContext *dc = container_of(dcbase, DisasContext, base);
-    //dc->possible_delayslot_instruction = dc->env->stat.DEf;
-
 }
 
 static void arc_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
@@ -216,7 +216,7 @@ static void arc_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
 
 
-    tcg_gen_insn_start(dc->base.pc_next);
+    tcg_gen_insn_start(dc->base.pc_next, dc->in_delay_slot);
     dc->cpc = dc->base.pc_next;
 
     if (dc->base.num_insns == dc->base.max_insns &&
@@ -488,7 +488,7 @@ void arc_gen_excp(const DisasCtxt *ctx,
 
     tcg_gen_movi_tl(cpu_pc, ctx->cpc);
     tcg_gen_movi_tl(cpu_eret, ctx->cpc);
-    tcg_gen_movi_tl(cpu_erbta, ctx->npc);
+    tcg_gen_mov_tl(cpu_erbta, cpu_bta);
 
     gen_helper_raise_exception(cpu_env, tcg_index, tcg_cause, tcg_param);
 
@@ -523,7 +523,7 @@ static bool check_enter_leave_nr_regs(const DisasCtxt *ctx,
         TCGv tcg_param = tcg_const_tl(0);
 
         tcg_gen_movi_tl(cpu_eret, ctx->cpc);
-        tcg_gen_movi_tl(cpu_erbta, ctx->npc);
+        tcg_gen_mov_tl(cpu_erbta, cpu_bta);
 
         gen_helper_raise_exception(cpu_env, tcg_index, tcg_cause, tcg_param);
 
@@ -1475,6 +1475,82 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
     return ret;
 }
 
+/*
+ * Delayed jump for delay slot instruction. The branch takes place
+ * only if the status32.DE flag is set. The target of the branch is
+ * saved in BTA (Branch Target Address).
+ */
+static void gen_delayed_jump(DisasContext * ctx)
+{
+    TCGLabel *dont_branch = gen_new_label();
+    TCGv de = tcg_temp_new();
+    bool use_goto;
+
+    /* if (status32.DE) */
+    tcg_gen_andi_tl(de, cpu_pstate, STATUS32_DE);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, de, 0, dont_branch);
+    tcg_temp_free(de);
+
+    /*
+     * status32.DE = 0
+     * PC = BTA
+     * goto BTA
+     */
+    tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_DE);
+    /* TODO: shahab, turn this into a function. */
+    /* TODO: shahab, master the details, including singlestep. */
+    /* slot 0 for the target of branch. */
+    use_goto = translator_use_goto_tb(&ctx->base, ctx->env->bta);
+    if (use_goto) {
+        tcg_gen_goto_tb(0);
+    }
+
+    tcg_gen_mov_tl(cpu_pc, cpu_bta);
+    tcg_gen_andi_tl(cpu_pcl, cpu_pc, (~((target_ulong) 3)));
+
+    if (use_goto) {
+        tcg_gen_exit_tb(ctx->base.tb, 0);
+    } else {
+        /* TODO: shahab, is this really necessary? */
+        if (ctx->base.singlestep_enabled) {
+            gen_helper_debug(cpu_env);
+        }
+        tcg_gen_exit_tb(NULL, 0);
+    }
+
+    gen_set_label(dont_branch);
+
+    /* TODO: shahab, introduce ctx->envflags or something for conditional
+     * branch
+     */
+    ///* If the branch is conditional, then slot 1 is used for the fall-thru. */
+    //if (ctx->envflags & DELAY_SLOT_COND) {
+    if (1) {
+        /* TODO: shahab, isn't there a readily usable ctx->varialbe?
+         * There is! ctx->npc . */
+        const target_ulong fall_addr = ctx->base.pc_next;
+        use_goto = translator_use_goto_tb(&ctx->base, fall_addr);
+
+        if (use_goto)
+            tcg_gen_goto_tb(1);
+
+        tcg_gen_movi_tl(cpu_pc, fall_addr);
+        tcg_gen_movi_tl(cpu_pcl, fall_addr & (~((target_ulong) 3)));
+
+        if (use_goto)
+            tcg_gen_exit_tb(ctx->base.tb, 1);
+        else {
+            /* TODO: shahab, is this really necessary? */
+            if (ctx->base.singlestep_enabled) {
+                gen_helper_debug(cpu_env);
+            }
+            tcg_gen_exit_tb(NULL, 0);
+        }
+    }
+
+    ctx->base.is_jmp = DISAS_NORETURN;
+}
+
 void decode_opc(CPUARCState *env, DisasContext *ctx)
 {
     ctx->env = env;
@@ -1489,7 +1565,6 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
         env->in_delayslot_instruction = true;
         env->next_insn_is_delayslot = false;
     }
-
 
     ctx->base.is_jmp = arc_decode(ctx, opcode);
 
@@ -1554,6 +1629,7 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUARCState *env = cpu->env_ptr;
+    const bool in_delay_slot = (env->stat.pstate & STATUS32_DE);
 
 
     /* TODO (issue #62): these must be removed */
@@ -1562,10 +1638,12 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 
     dc->cpc = dc->base.pc_next;
     decode_opc(env, dc);
-
     dc->base.pc_next = dc->npc;
 
-    if (dc->base.is_jmp == DISAS_NORETURN) {
+    /* Was the freshly processed instruction in a delay slot? */
+    if (in_delay_slot) {
+        gen_delayed_jump(dc);
+    } else if (dc->base.is_jmp == DISAS_NORETURN) {
         gen_gotoi_tb(dc, 0, dc->npc);
     }
 
@@ -1597,7 +1675,7 @@ static void arc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     case DISAS_UPDATE:
         gen_gotoi_tb(dc, 0, dc->base.pc_next);
         break;
-    case DISAS_BRANCH_IN_DELAYSLOT:
+    case DISAS_DELAYSLOT:
     case DISAS_NORETURN:
         break;
     default:

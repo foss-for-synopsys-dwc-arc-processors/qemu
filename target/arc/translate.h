@@ -38,8 +38,9 @@
 #include "exec/translator.h"
 
 /* signaling the end of translation block */
-#define DISAS_UPDATE        DISAS_TARGET_0
-#define DISAS_BRANCH_IN_DELAYSLOT DISAS_TARGET_1
+#define DISAS_UPDATE    DISAS_TARGET_0
+/* TODO: shahab, is this really used? */
+#define DISAS_DELAYSLOT DISAS_TARGET_1
 
 typedef struct DisasContext {
     DisasContextBase base;
@@ -66,9 +67,8 @@ typedef struct DisasContext {
     uint16_t buffer[2];
     uint8_t  mem_idx;
 
-    TCGv     tmp_reg;
-    TCGLabel *label;
-
+    /* Is the next instruction to process in a delay slot? */
+    bool     in_delay_slot;
 } DisasContext;
 
 

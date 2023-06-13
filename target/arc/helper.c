@@ -43,7 +43,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
     const char  *name;
 
     struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
-    if(entry != NULL) {
+    if (entry != NULL) {
         qemu_mutex_unlock(&(entry->mutex));
         entry->lpa_lf = 0;
     }
@@ -67,7 +67,7 @@ void arc_cpu_do_interrupt(CPUState *cs)
      * semihosting enabled.
      */
     if (cs->exception_index == EXCP_SWI
-        && semihosting_enabled()){
+        && semihosting_enabled()) {
         qemu_log_mask(CPU_LOG_INT, "Entering semihosting\n");
         do_arc_semihosting(env);
         /* Return to the next instruction. */
@@ -158,6 +158,15 @@ void arc_cpu_do_interrupt(CPUState *cs)
      * of STATUS32.
      */
     env->stat_er = env->stat;
+    /*
+     * A trap in a delay slot that will jump to BTA (status32.DE is set),
+     * must continue at BTA. As a result, we also clear the DE flag.
+     */
+    if (cs->exception_index == EXCP_TRAP &&
+        env->stat_er.pstate & STATUS32_DE) {
+        env->eret = env->bta;
+        env->stat_er.pstate &= ~STATUS32_DE;
+    }
 
     /* 4. exception return branch target address register. */
     env->erbta = env->bta;

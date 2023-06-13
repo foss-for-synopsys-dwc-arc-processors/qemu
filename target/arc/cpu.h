@@ -63,6 +63,12 @@ typedef struct CPUArchState CPUARCState;
 #define CPU_IMM(env)    ((env)->r[62])
 #define CPU_PCL(env)    ((env)->r[63])
 
+/* TODO: shahab, are all these, specially IMM and MASK, required? */
+#define STATUS32_DE            (1 << 6)     /* Dealing with a delay slot */
+
+/* tcg_gen_insn_start() should take an extra argument for "envflags". */
+#define TARGET_INSN_START_EXTRA_WORDS 1
+
 enum exception_code_list {
     EXCP_NO_EXCEPTION = -1,
     EXCP_RESET = 0,
@@ -218,6 +224,10 @@ typedef struct {
 struct CPUArchState {
     target_ulong        r[64];
     uint64_t            fpr[32];      /* assume both F and D extensions. */
+
+    /* TODO: shahab, do we need this? */
+    /* general execution flags */
+    uint32_t flags;
 
     /* floating point auxiliary registers. */
     uint32_t fp_ctrl;
@@ -398,16 +408,16 @@ static inline int cpu_mmu_index(const CPUARCState *env, bool ifetch)
 
 static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
                                         target_ulong *cs_base,
-                                        uint32_t *pflags)
+                                        uint32_t *flags)
 {
     *pc = env->pc;
     *cs_base = 0;
+    *flags = 0;
+
 #ifndef CONFIG_USER_ONLY
-    *pflags = cpu_mmu_index(env, 0);
-#else
-    /* This is just to avoid a warning. MMU is not used in linux-user. */
-    *pflags = 0;
+    *flags |= cpu_mmu_index(env, 0);
 #endif
+    *flags |= env->stat.pstate & STATUS32_DE;
 }
 
 #define IS_ARCV3(CPU) \

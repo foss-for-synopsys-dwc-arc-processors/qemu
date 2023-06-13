@@ -89,18 +89,6 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 
 #define getFFlag(R) ((int) ctx->insn.f)
 
-/*
- * During the decoding phase, the default return value for branch
- * instructions is DISAS_NORETURN, as they are supposedly the last
- * instructions of a TB. However, if a delay slot is present, the
- * decoder is asked to continue by DISAS_NEXT.
- */
-static inline int disas_ret_for_branch(const insn_t insn)
-{
-    return (insn.d ? DISAS_NEXT : DISAS_NORETURN);
-}
-
-
 /* semfunc-helper.c */
 void gen_prep_to_branch(const DisasCtxt *ctx, TCGv target);
 
