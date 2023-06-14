@@ -458,81 +458,89 @@ arc_gen_KFLAG(DisasCtxt *ctx, TCGv src)
 
 /*
  * ADD
- *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getFFlag, setZFlag, setNFlag, setCFlag, CarryADD,
- *               setVFlag, OverflowADD
  * --- code ---
+ * if (ctx->insn.cc)
  * {
- *   cc_flag = getCCFlag ();
- *   lb = @b;
- *   lc = @c;
- *   if((cc_flag == true))
- *     {
- *       lb = @b;
- *       lc = @c;
- *       @a = (@b + @c);
- *       if((getFFlag () == true))
- *         {
- *           setZFlag (@a);
- *           setNFlag (@a);
- *           setCFlag (CarryADD (@a, lb, lc));
- *           setVFlag (OverflowADD (@a, lb, lc));
- *         };
- *     };
+ *   if (ctx->insn.ff)
+ *   {
+ *     msb_b = b >> (target_bits-1)
+ *     msb_c = c >> (target_bits-1)
+ *   }
+ *
+ *   a = b + c
+ *
+ *   if (ctx->insn.ff)
+ *   {
+ *     msb_a = a >> (target_bits-1)
+ *
+ *     cpu_z = (a == 0)
+ *     cpu_n = msb_a
+ *     cpu_c = (msb_b & msb_c) | (msb_b & ~msb_a) | (msb_c & ~msb_a)
+ *     cpu_v = xnor(msb_b, msb_c) & xor(msb_b, msb_a)
+ *   }
  * }
  */
 
 int
 arc_gen_ADD(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 {
-    int ret = DISAS_NEXT;
-    TCGv temp_3 = tcg_temp_local_new();
-    TCGv cc_flag = tcg_temp_local_new();
-    TCGv lb = tcg_temp_local_new();
-    TCGv lc = tcg_temp_local_new();
-    TCGv temp_1 = tcg_temp_local_new();
-    TCGv temp_2 = tcg_temp_local_new();
-    TCGv temp_5 = tcg_temp_local_new();
-    TCGv temp_4 = tcg_temp_local_new();
-    TCGv temp_7 = tcg_temp_local_new();
-    TCGv temp_6 = tcg_temp_local_new();
-    getCCFlag(temp_3);
-    tcg_gen_mov_tl(cc_flag, temp_3);
-    tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
-    TCGLabel *done_1 = gen_new_label();
-    tcg_gen_setcond_tl(TCG_COND_EQ, temp_1, cc_flag, arc_true);
-    tcg_gen_xori_tl(temp_2, temp_1, 1);
-    tcg_gen_andi_tl(temp_2, temp_2, 1);
-    tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    tcg_gen_mov_tl(lb, b);
-    tcg_gen_mov_tl(lc, c);
-    tcg_gen_add_tl(a, b, c);
-    if ((getFFlag () == true)) {
-        setZFlag(a);
-        setNFlag(a);
-        CarryADD(temp_5, a, lb, lc);
-        tcg_gen_mov_tl(temp_4, temp_5);
-        setCFlag(temp_4);
-        OverflowADD(temp_7, a, lb, lc);
-        tcg_gen_mov_tl(temp_6, temp_7);
-        setVFlag(temp_6);
+    TCGLabel *skip = gen_new_label();
+    TCGv cc = tcg_temp_new();
+    TCGv msb_a = tcg_temp_new();
+    TCGv msb_b = tcg_temp_new();
+    TCGv msb_c = tcg_temp_new();
+    TCGv t = tcg_temp_new();
+
+    if (ctx->insn.cc != ARC_COND_AL) {
+        arc_gen_verifyCCFlag(ctx, cc);
+        tcg_gen_brcondi_tl(TCG_COND_NE, cc, 1, skip);
     }
-    gen_set_label(done_1);
-    tcg_temp_free(temp_3);
-    tcg_temp_free(cc_flag);
-    tcg_temp_free(lb);
-    tcg_temp_free(lc);
-    tcg_temp_free(temp_1);
-    tcg_temp_free(temp_2);
-    tcg_temp_free(temp_5);
-    tcg_temp_free(temp_4);
-    tcg_temp_free(temp_7);
-    tcg_temp_free(temp_6);
 
-    return ret;
+    /* Record the input operands MSB, if we have to update the flags. */
+    if (ctx->insn.f) {
+        tcg_gen_shri_tl(msb_b, b, TARGET_LONG_BITS - 1);
+        tcg_gen_shri_tl(msb_c, c, TARGET_LONG_BITS - 1);
+    }
+
+    tcg_gen_add_tl(a, b, c);
+
+    if (ctx->insn.f) {
+        tcg_gen_shri_tl(msb_a, a, TARGET_LONG_BITS - 1);
+        tcg_gen_setcondi_tl(TCG_COND_EQ, cpu_Zf, a, 0);
+        tcg_gen_mov_tl(cpu_Nf, msb_a);
+
+        /* carry = (msb_b & msb_c) | (msb_b & ~msb_a) | (msb_c & ~msb_a) */
+        tcg_gen_and_tl(cpu_Cf, msb_b, msb_c);
+        tcg_gen_andc_tl(t, msb_b, msb_a);
+        tcg_gen_or_tl(cpu_Cf, cpu_Cf, t);
+        tcg_gen_andc_tl(t, msb_c, msb_a);
+        tcg_gen_or_tl(cpu_Cf, cpu_Cf, t);
+
+        /*
+         * overflow = xnor(b,c) & xor(b,a)
+         *
+         * xnor(b,c) is 1 if and only if b and c are the same.
+         * xor(b,a)  is 1 if and only if they are not the same.
+         *
+         * In other words, if both operands have the same sign,
+         * but the result has a different one, that's an overflow.
+         */
+        tcg_gen_xor_tl(cpu_Vf, msb_b, msb_c);
+        tcg_gen_not_tl(cpu_Vf, cpu_Vf);
+        tcg_gen_andi_tl(cpu_Vf, cpu_Vf, 1);
+        tcg_gen_xor_tl(t, msb_b, msb_a);
+        tcg_gen_and_tl(cpu_Vf, cpu_Vf, t);
+    }
+
+    gen_set_label(skip);
+    tcg_temp_free(t);
+    tcg_temp_free(msb_c);
+    tcg_temp_free(msb_b);
+    tcg_temp_free(msb_a);
+    tcg_temp_free(cc);
+
+    return DISAS_NEXT;
 }
-
 
 /*
  * ADD1
