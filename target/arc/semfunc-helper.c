@@ -127,52 +127,53 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
 
 /*
  * This functions is only used when dealing with branch instructions.
- * It's called to generate code at the point that it's decided that the
+ * It's called to emit TCGs at the point that it's decided that the
  * branch _is_ taken. Therefore, the PC is going to change. In the absence
  * of a delay slot, the PC is changed immediately. Whereas in the other
  * case, the change of PC is delayed by setting the BTA (Branch Target
  * Address) register and the "DE" flag of "status32".
  *
- * target = cpu_pcl + offset
- *
- * if (ctx->insn.d)      // has a delay slot?
+ * if (ctx->insn.d)      // has a delay slot
  * {
- *     reg_bta = target
  *     status32.de = 1
- * } else {
+ *     reg_bta = target
+ * } else {               // without any delay slot
  *     cpu_pc = target
- *     [ end of block ]
+ *     [ chain tb to "target" address ]
  * }
+ *
+ * There is no use of gen_gotoi_tb() to fall through to a delay slot.
+ * The caller can put it at the most appropriate place among the emitted
+ * TCG instructions. Consider DBNZ as an example:
+ *
+ *                              slot=0
+ *                          if (--counter)
+ *                                {
+ *  ------------------------gen_branch_or_delay()-----------------------
+ *                          /                   \
+ *  gen_gotoi(target, slot++)                    status32.de = 1
+ *                                               BTA = target
+ *  -------------------------End of calling-----------------------------
+ * }                               }
+ *                       gen_gotoi(next_pc, slot)
+ *                       ^^^^^^^^^
+ * this will "goto" the next linear insn, which either may be the delay
+ * slot of dbnz or the fall-thru instruction for cases that the counter
+ * has reached 0.
  */
 void
-gen_prep_to_branch(const DisasCtxt *ctx, TCGv addendum)
+gen_branch_or_delay(DisasCtxt *ctx, target_ulong target, unsigned *slot)
 {
-    TCGv target = tcg_temp_new();
+    assert(ctx->insn.class == BRANCH);
 
-    g_assert(ctx->insn.class == BRANCH);
-
-    tcg_gen_movi_tl(target, ctx->pcl);
-    tcg_gen_add_tl(target, target, addendum);
-
+    *slot = 0;
     if (ctx->insn.d) {
-        /* TODO: shahab, better variable for next insn? */
-        /* TODO: shahab, during debug, check if ctx->npc holds correct value. */
-        TCGv fall_addr = tcg_const_tl(ctx->base.pc_next + ctx->insn.len);
-
         tcg_gen_ori_tl(cpu_pstate, cpu_pstate, STATUS32_DE);
-        tcg_gen_mov_tl(cpu_bta, target);
-        gen_goto_tb(ctx, fall_addr);
-
-        tcg_temp_free(fall_addr);
+        tcg_gen_movi_tl(cpu_bta, target);
     } else {
-        /*
-         * FIXME: shahab, shouldn't arc_tr_translate_insn() or
-         * arc_tr_tb_stop() take care of this?
-         */
-        gen_goto_tb(ctx, target);
+        gen_gotoi_tb(ctx, *slot, target);
+        *slot += 1;
     }
-
-    tcg_temp_free(target);
 }
 
 #define MEMIDX (ctx->mem_idx)

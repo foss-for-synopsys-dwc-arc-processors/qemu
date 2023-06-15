@@ -70,10 +70,23 @@ TCGv cpu_exclusive_val_hi;
 #define ARRANGE_ENDIAN(endianess, buf)                  \
     ((endianess) ? ror32(buf, 16) : bswap32(buf))
 
+/* Update program counters, namely PC and PCL (TCGv edition). */
+static inline void update_pcs(const TCGv addr)
+{
+    tcg_gen_mov_tl(cpu_pc, addr);
+    tcg_gen_andi_tl(cpu_pcl, cpu_pc, ~((target_ulong) 3));
+}
+
+/* Update program counters, namely PC and PCL (immediate edition). */
+static inline void updatei_pcs(const target_ulong addr)
+{
+    tcg_gen_movi_tl(cpu_pc, addr);
+    tcg_gen_movi_tl(cpu_pcl, addr & (~((target_ulong) 3)));
+}
+
 void gen_goto_tb(const DisasContext *ctx, TCGv dest)
 {
-    tcg_gen_mov_tl(cpu_pc, dest);
-    tcg_gen_andi_tl(cpu_pcl, dest, ~((target_ulong) 3));
+    update_pcs(dest);
     /* TODO: is this really needed !!! */
     if (ctx->base.singlestep_enabled) {
         gen_helper_debug(cpu_env);
@@ -82,16 +95,14 @@ void gen_goto_tb(const DisasContext *ctx, TCGv dest)
     }
 }
 
-static void gen_gotoi_tb(DisasContext *ctx, int n, target_ulong dest)
+void gen_gotoi_tb(DisasContext *ctx, int slot, target_ulong dest)
 {
     if (translator_use_goto_tb(&ctx->base, dest)) {
-        tcg_gen_goto_tb(n);
-        tcg_gen_movi_tl(cpu_pc, dest);
-        tcg_gen_movi_tl(cpu_pcl, dest & (~((target_ulong) 3)));
-        tcg_gen_exit_tb(ctx->base.tb, n);
+        tcg_gen_goto_tb(slot);
+        updatei_pcs(dest);
+        tcg_gen_exit_tb(ctx->base.tb, slot);
     } else {
-        tcg_gen_movi_tl(cpu_pc, dest);
-        tcg_gen_movi_tl(cpu_pcl, dest & (~((target_ulong) 3)));
+        updatei_pcs(dest);
         if (ctx->base.singlestep_enabled) {
             gen_helper_debug(cpu_env);
         }
@@ -1675,7 +1686,7 @@ static void arc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     case DISAS_UPDATE:
         gen_gotoi_tb(dc, 0, dc->base.pc_next);
         break;
-    case DISAS_DELAYSLOT:
+    case DISAS_HANDLED:
     case DISAS_NORETURN:
         break;
     default:

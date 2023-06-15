@@ -39,8 +39,9 @@
 
 /* signaling the end of translation block */
 #define DISAS_UPDATE    DISAS_TARGET_0
-/* TODO: shahab, is this really used? */
-#define DISAS_DELAYSLOT DISAS_TARGET_1
+/* TODO: shahab, a better name? */
+/* The (branch) instruction is handled with inserting the tcg_gen_tb_*() */
+#define DISAS_HANDLED DISAS_TARGET_1
 
 typedef struct DisasContext {
     DisasContextBase base;
@@ -121,6 +122,7 @@ extern TCGv     cpu_lock_lf_var;
 typedef struct DisasContext DisasCtxt;
 
 void gen_goto_tb(const DisasContext *ctx, TCGv dest);
+void gen_gotoi_tb(DisasContext *ctx, int slot, target_ulong dest);
 
 void decode_opc(CPUARCState *env, DisasContext *ctx);
 

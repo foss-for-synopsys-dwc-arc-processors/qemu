@@ -89,8 +89,12 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 
 #define getFFlag(R) ((int) ctx->insn.f)
 
+/* TODO: shahab, move handmade functions from semfuncv* to translate.c
+ * and then move this function from semfunc-helper.c to translate.c.
+ */
+/* TODO: shahab, isn't gen_branch() better? */
 /* semfunc-helper.c */
-void gen_prep_to_branch(const DisasCtxt *ctx, TCGv target);
+void gen_branch_or_delay(DisasCtxt *ctx, target_ulong target, unsigned *slot);
 
 void to_implement(const DisasCtxt *ctx);
 void to_implement_wo_abort(const DisasCtxt *ctx);
