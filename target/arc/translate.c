@@ -1495,7 +1495,6 @@ static void gen_delayed_jump(DisasContext * ctx)
 {
     TCGLabel *dont_branch = gen_new_label();
     TCGv de = tcg_temp_new();
-    bool use_goto;
 
     /* if (status32.DE) */
     tcg_gen_andi_tl(de, cpu_pstate, STATUS32_DE);
@@ -1504,62 +1503,18 @@ static void gen_delayed_jump(DisasContext * ctx)
 
     /*
      * status32.DE = 0
-     * PC = BTA
      * goto BTA
+     * PC = BTA
      */
     tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_DE);
-    /* TODO: shahab, turn this into a function. */
-    /* TODO: shahab, master the details, including singlestep. */
     /* slot 0 for the target of branch. */
-    use_goto = translator_use_goto_tb(&ctx->base, ctx->env->bta);
-    if (use_goto) {
-        tcg_gen_goto_tb(0);
-    }
-
-    tcg_gen_mov_tl(cpu_pc, cpu_bta);
-    tcg_gen_andi_tl(cpu_pcl, cpu_pc, (~((target_ulong) 3)));
-
-    if (use_goto) {
-        tcg_gen_exit_tb(ctx->base.tb, 0);
-    } else {
-        /* TODO: shahab, is this really necessary? */
-        if (ctx->base.singlestep_enabled) {
-            gen_helper_debug(cpu_env);
-        }
-        tcg_gen_exit_tb(NULL, 0);
-    }
+    gen_gotoi_tb(ctx, 0, ctx->env->bta);
 
     gen_set_label(dont_branch);
+    /* Slot 1 is used for the fall-thru. */
+    gen_gotoi_tb(ctx, 1, ctx->npc);
 
-    /* TODO: shahab, introduce ctx->envflags or something for conditional
-     * branch
-     */
-    ///* If the branch is conditional, then slot 1 is used for the fall-thru. */
-    //if (ctx->envflags & DELAY_SLOT_COND) {
-    if (1) {
-        /* TODO: shahab, isn't there a readily usable ctx->varialbe?
-         * There is! ctx->npc . */
-        const target_ulong fall_addr = ctx->base.pc_next;
-        use_goto = translator_use_goto_tb(&ctx->base, fall_addr);
-
-        if (use_goto)
-            tcg_gen_goto_tb(1);
-
-        tcg_gen_movi_tl(cpu_pc, fall_addr);
-        tcg_gen_movi_tl(cpu_pcl, fall_addr & (~((target_ulong) 3)));
-
-        if (use_goto)
-            tcg_gen_exit_tb(ctx->base.tb, 1);
-        else {
-            /* TODO: shahab, is this really necessary? */
-            if (ctx->base.singlestep_enabled) {
-                gen_helper_debug(cpu_env);
-            }
-            tcg_gen_exit_tb(NULL, 0);
-        }
-    }
-
-    ctx->base.is_jmp = DISAS_NORETURN;
+    ctx->base.is_jmp = DISAS_HANDLED;
 }
 
 void decode_opc(CPUARCState *env, DisasContext *ctx)
@@ -1642,7 +1597,6 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     CPUARCState *env = cpu->env_ptr;
     const bool in_delay_slot = (env->stat.pstate & STATUS32_DE);
 
-
     /* TODO (issue #62): these must be removed */
     dc->zero = tcg_const_local_tl(0);
     dc->one  = tcg_const_local_tl(1);
@@ -1654,7 +1608,9 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     /* Was the freshly processed instruction in a delay slot? */
     if (in_delay_slot) {
         gen_delayed_jump(dc);
-    } else if (dc->base.is_jmp == DISAS_NORETURN) {
+    }
+
+    if (dc->base.is_jmp == DISAS_NORETURN) {
         gen_gotoi_tb(dc, 0, dc->npc);
     }
 
