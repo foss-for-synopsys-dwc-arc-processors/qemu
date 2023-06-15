@@ -87,7 +87,7 @@ static inline void updatei_pcs(const target_ulong addr)
 void gen_goto_tb(const DisasContext *ctx, TCGv dest)
 {
     update_pcs(dest);
-    /* TODO: is this really needed !!! */
+    /* TODO: shahab, is this really needed!?! */
     if (ctx->base.singlestep_enabled) {
         gen_helper_debug(cpu_env);
     } else {
@@ -103,9 +103,11 @@ void gen_gotoi_tb(DisasContext *ctx, int slot, target_ulong dest)
         tcg_gen_exit_tb(ctx->base.tb, slot);
     } else {
         updatei_pcs(dest);
+        /* TODO: shahab, is this really needed!?! */
         if (ctx->base.singlestep_enabled) {
             gen_helper_debug(cpu_env);
         }
+        /* TODO: shahab, cris uses tcg_gen_lookup_and_goto_ptr() */
         tcg_gen_exit_tb(NULL, 0);
     }
 }
