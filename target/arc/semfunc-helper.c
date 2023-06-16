@@ -164,7 +164,9 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
 void
 gen_branch_or_delay(DisasCtxt *ctx, target_ulong target, unsigned *slot)
 {
-    assert(ctx->insn.class == BRANCH);
+    assert(ctx->insn.class == BRANCH ||
+           ctx->insn.class == BBIT0  ||
+           ctx->insn.class == BBIT1);
 
     *slot = 0;
     if (ctx->insn.d) {
