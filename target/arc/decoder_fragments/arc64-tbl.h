@@ -2123,7 +2123,7 @@
 { "bl_s", 0x0000f800, 0x0000f800, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, BRANCH, NONE, { SIMM13_A32_5_S }, { 0 } }
 
 /* bl_s LIMM34 0111101111100000 */
-{ "bl_s", 0x00007be0, 0x0000ffff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, BRANCH, NONE, { LIMM34 }, { 0 } }
+{ "bl_s", 0x00007be0, 0x0000ffff, ARC_OPCODE_ARC64, BRANCH, NONE, { LIMM34 }, { 0 } }
 
 /* bmsk<.f> RA,RB,RC 00100xxx00010011xxxxxxxxxxxxxxxx */
 { "bmsk", 0x20130000, 0xf8ff0000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, LOGICAL, NONE, { RA, RB, RC }, { C_F } }
@@ -12068,124 +12068,244 @@
 { "vfdrep", 0xe0528020, 0xfffff820, ARC_OPCODE_ARC64, FLOAT, NONE, { FA, FB }, { 0 } }
 
 /* vmin2 RA,RB,RC 00101xxx001110001xxxxxxxxxxxxxxx */
-{ "vmin2", 0x28388000, 0xf8ff8000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, RC }, { 0 } }
+{ "vmin2", 0x28388000, 0xf8ff8000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, RB, RC }, { 0 } }
 
 /* vmin2 ZA,RB,RC 00101xxx001110001xxxxxxxxx111110 */
-{ "vmin2", 0x2838803e, 0xf8ff803f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, RC }, { 0 } }
+{ "vmin2", 0x2838803e, 0xf8ff803f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, RB, RC }, { 0 } }
 
 /* vmin2<.cc> RB,RBdup,RC 00101xxx111110001xxxxxxxxx0xxxxx */
-{ "vmin2", 0x28f88000, 0xf8ff8020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, RC }, { C_CC } }
+{ "vmin2", 0x28f88000, 0xf8ff8020, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, RC }, { C_CC } }
 
 /* vmin2 RA,RB,UIMM6_20 00101xxx011110001xxxxxxxxxxxxxxx */
-{ "vmin2", 0x28788000, 0xf8ff8000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, UIMM6_20 }, { 0 } }
+{ "vmin2", 0x28788000, 0xf8ff8000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, RB, UIMM6_20 }, { 0 } }
 
 /* vmin2 ZA,RB,UIMM6_20 00101xxx011110001xxxxxxxxx111110 */
-{ "vmin2", 0x2878803e, 0xf8ff803f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, UIMM6_20 }, { 0 } }
+{ "vmin2", 0x2878803e, 0xf8ff803f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, RB, UIMM6_20 }, { 0 } }
 
 /* vmin2<.cc> RB,RBdup,UIMM6_20 00101xxx111110001xxxxxxxxx1xxxxx */
-{ "vmin2", 0x28f88020, 0xf8ff8020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, UIMM6_20 }, { C_CC } }
+{ "vmin2", 0x28f88020, 0xf8ff8020, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, UIMM6_20 }, { C_CC } }
 
 /* vmin2 RB,RBdup,SIMM12_20 00101xxx101110001xxxxxxxxxxxxxxx */
-{ "vmin2", 0x28b88000, 0xf8ff8000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, SIMM12_20 }, { 0 } }
+{ "vmin2", 0x28b88000, 0xf8ff8000, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, SIMM12_20 }, { 0 } }
 
 /* vmin2 RA,LIMM,RC 00101110001110001111xxxxxxxxxxxx */
-{ "vmin2", 0x2e38f000, 0xfffff000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, RC }, { 0 } }
+{ "vmin2", 0x2e38f000, 0xfffff000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, LIMM, RC }, { 0 } }
 
 /* vmin2 RA,RB,LIMM 00101xxx001110001xxx111110xxxxxx */
-{ "vmin2", 0x28388f80, 0xf8ff8fc0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, LIMM }, { 0 } }
+{ "vmin2", 0x28388f80, 0xf8ff8fc0, ARC_OPCODE_ARC64, MOVE, NONE, { RA, RB, LIMM }, { 0 } }
 
 /* vmin2 ZA,LIMM,RC 00101110001110001111xxxxxx111110 */
-{ "vmin2", 0x2e38f03e, 0xfffff03f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { 0 } }
+{ "vmin2", 0x2e38f03e, 0xfffff03f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, RC }, { 0 } }
 
 /* vmin2 ZA,RB,LIMM 00101xxx001110001xxx111110111110 */
-{ "vmin2", 0x28388fbe, 0xf8ff8fff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, LIMM }, { 0 } }
+{ "vmin2", 0x28388fbe, 0xf8ff8fff, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, RB, LIMM }, { 0 } }
 
 /* vmin2<.cc> ZA,LIMM,RC 00101110111110001111xxxxxx0xxxxx */
-{ "vmin2", 0x2ef8f000, 0xfffff020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { C_CC } }
+{ "vmin2", 0x2ef8f000, 0xfffff020, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, RC }, { C_CC } }
 
 /* vmin2<.cc> RB,RBdup,LIMM 00101xxx111110001xxx1111100xxxxx */
-{ "vmin2", 0x28f88f80, 0xf8ff8fe0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, LIMM }, { C_CC } }
+{ "vmin2", 0x28f88f80, 0xf8ff8fe0, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, LIMM }, { C_CC } }
 
 /* vmin2 RA,LIMM,UIMM6_20 00101110011110001111xxxxxxxxxxxx */
-{ "vmin2", 0x2e78f000, 0xfffff000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, UIMM6_20 }, { 0 } }
+{ "vmin2", 0x2e78f000, 0xfffff000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, LIMM, UIMM6_20 }, { 0 } }
 
 /* vmin2 ZA,LIMM,UIMM6_20 00101110011110001111xxxxxx111110 */
-{ "vmin2", 0x2e78f03e, 0xfffff03f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { 0 } }
+{ "vmin2", 0x2e78f03e, 0xfffff03f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { 0 } }
 
 /* vmin2<.cc> ZA,LIMM,UIMM6_20 00101110111110001111xxxxxx1xxxxx */
-{ "vmin2", 0x2ef8f020, 0xfffff020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { C_CC } }
+{ "vmin2", 0x2ef8f020, 0xfffff020, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { C_CC } }
 
 /* vmin2 ZA,LIMM,SIMM12_20 00101110101110001111xxxxxxxxxxxx */
-{ "vmin2", 0x2eb8f000, 0xfffff000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, SIMM12_20 }, { 0 } }
+{ "vmin2", 0x2eb8f000, 0xfffff000, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, SIMM12_20 }, { 0 } }
 
 /* vmin2 RA,LIMM,LIMMdup 00101110001110001111111110xxxxxx */
-{ "vmin2", 0x2e38ff80, 0xffffffc0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, LIMMdup }, { 0 } }
+{ "vmin2", 0x2e38ff80, 0xffffffc0, ARC_OPCODE_ARC64, MOVE, NONE, { RA, LIMM, LIMMdup }, { 0 } }
 
 /* vmin2 ZA,LIMM,LIMMdup 00101110001110001111111110111110 */
-{ "vmin2", 0x2e38ffbe, 0xffffffff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { 0 } }
+{ "vmin2", 0x2e38ffbe, 0xffffffff, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, LIMMdup }, { 0 } }
 
 /* vmin2<.cc> ZA,LIMM,LIMMdup 001011101111100011111111100xxxxx */
-{ "vmin2", 0x2ef8ff80, 0xffffffe0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { C_CC } }
+{ "vmin2", 0x2ef8ff80, 0xffffffe0, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, LIMMdup }, { C_CC } }
+
+/* vmin2 RA,RB,RC 00100xxx000100010xxxxxxxxxxxxxxx */
+{ "vmin2", 0x20110000, 0xf8ff8000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, RC }, { 0 } }
+
+/* vmin2 ZA,RB,RC 00100xxx000100010xxxxxxxxx111110 */
+{ "vmin2", 0x2011003e, 0xf8ff803f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, RC }, { 0 } }
+
+/* vmin2<.cc> RB,RBdup,RC 00100xxx110100010xxxxxxxxx0xxxxx */
+{ "vmin2", 0x20d10000, 0xf8ff8020, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, RC }, { C_CC } }
+
+/* vmin2 RA,RB,UIMM6_20 00100xxx010100010xxxxxxxxxxxxxxx */
+{ "vmin2", 0x20510000, 0xf8ff8000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, UIMM6_20 }, { 0 } }
+
+/* vmin2 ZA,RB,UIMM6_20 00100xxx010100010xxxxxxxxx111110 */
+{ "vmin2", 0x2051003e, 0xf8ff803f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, UIMM6_20 }, { 0 } }
+
+/* vmin2<.cc> RB,RBdup,UIMM6_20 00100xxx110100010xxxxxxxxx1xxxxx */
+{ "vmin2", 0x20d10020, 0xf8ff8020, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, UIMM6_20 }, { C_CC } }
+
+/* vmin2 RB,RBdup,SIMM12_20 00100xxx100100010xxxxxxxxxxxxxxx */
+{ "vmin2", 0x20910000, 0xf8ff8000, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, SIMM12_20 }, { 0 } }
+
+/* vmin2 RA,LIMM,RC 00100110000100010111xxxxxxxxxxxx */
+{ "vmin2", 0x26117000, 0xfffff000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, RC }, { 0 } }
+
+/* vmin2 RA,RB,LIMM 00100xxx000100010xxx111110xxxxxx */
+{ "vmin2", 0x20110f80, 0xf8ff8fc0, ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, LIMM }, { 0 } }
+
+/* vmin2 ZA,LIMM,RC 00100110000100010111xxxxxx111110 */
+{ "vmin2", 0x2611703e, 0xfffff03f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { 0 } }
+
+/* vmin2 ZA,RB,LIMM 00100xxx000100010xxx111110111110 */
+{ "vmin2", 0x20110fbe, 0xf8ff8fff, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, LIMM }, { 0 } }
+
+/* vmin2<.cc> ZA,LIMM,RC 00100110110100010111xxxxxx0xxxxx */
+{ "vmin2", 0x26d17000, 0xfffff020, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { C_CC } }
+
+/* vmin2<.cc> RB,RBdup,LIMM 00100xxx110100010xxx1111100xxxxx */
+{ "vmin2", 0x20d10f80, 0xf8ff8fe0, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, LIMM }, { C_CC } }
+
+/* vmin2 RA,LIMM,UIMM6_20 00100110010100010111xxxxxxxxxxxx */
+{ "vmin2", 0x26517000, 0xfffff000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, UIMM6_20 }, { 0 } }
+
+/* vmin2 ZA,LIMM,UIMM6_20 00100110010100010111xxxxxx111110 */
+{ "vmin2", 0x2651703e, 0xfffff03f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { 0 } }
+
+/* vmin2<.cc> ZA,LIMM,UIMM6_20 00100110110100010111xxxxxx1xxxxx */
+{ "vmin2", 0x26d17020, 0xfffff020, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { C_CC } }
+
+/* vmin2 ZA,LIMM,SIMM12_20 00100110100100010111xxxxxxxxxxxx */
+{ "vmin2", 0x26917000, 0xfffff000, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, SIMM12_20 }, { 0 } }
+
+/* vmin2 RA,LIMM,LIMMdup 00100110000100010111111110xxxxxx */
+{ "vmin2", 0x26117f80, 0xffffffc0, ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, LIMMdup }, { 0 } }
+
+/* vmin2 ZA,LIMM,LIMMdup 00100110000100010111111110111110 */
+{ "vmin2", 0x26117fbe, 0xffffffff, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { 0 } }
+
+/* vmin2<.cc> ZA,LIMM,LIMMdup 001001101101000101111111100xxxxx */
+{ "vmin2", 0x26d17f80, 0xffffffe0, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { C_CC } }
 
 /* vmax2 RA,RB,RC 00101xxx001110011xxxxxxxxxxxxxxx */
-{ "vmax2", 0x28398000, 0xf8ff8000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, RC }, { 0 } }
+{ "vmax2", 0x28398000, 0xf8ff8000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, RB, RC }, { 0 } }
 
 /* vmax2 ZA,RB,RC 00101xxx001110011xxxxxxxxx111110 */
-{ "vmax2", 0x2839803e, 0xf8ff803f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, RC }, { 0 } }
+{ "vmax2", 0x2839803e, 0xf8ff803f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, RB, RC }, { 0 } }
 
 /* vmax2<.cc> RB,RBdup,RC 00101xxx111110011xxxxxxxxx0xxxxx */
-{ "vmax2", 0x28f98000, 0xf8ff8020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, RC }, { C_CC } }
+{ "vmax2", 0x28f98000, 0xf8ff8020, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, RC }, { C_CC } }
 
 /* vmax2 RA,RB,UIMM6_20 00101xxx011110011xxxxxxxxxxxxxxx */
-{ "vmax2", 0x28798000, 0xf8ff8000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, UIMM6_20 }, { 0 } }
+{ "vmax2", 0x28798000, 0xf8ff8000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, RB, UIMM6_20 }, { 0 } }
 
 /* vmax2 ZA,RB,UIMM6_20 00101xxx011110011xxxxxxxxx111110 */
-{ "vmax2", 0x2879803e, 0xf8ff803f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, UIMM6_20 }, { 0 } }
+{ "vmax2", 0x2879803e, 0xf8ff803f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, RB, UIMM6_20 }, { 0 } }
 
 /* vmax2<.cc> RB,RBdup,UIMM6_20 00101xxx111110011xxxxxxxxx1xxxxx */
-{ "vmax2", 0x28f98020, 0xf8ff8020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, UIMM6_20 }, { C_CC } }
+{ "vmax2", 0x28f98020, 0xf8ff8020, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, UIMM6_20 }, { C_CC } }
 
 /* vmax2 RB,RBdup,SIMM12_20 00101xxx101110011xxxxxxxxxxxxxxx */
-{ "vmax2", 0x28b98000, 0xf8ff8000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, SIMM12_20 }, { 0 } }
+{ "vmax2", 0x28b98000, 0xf8ff8000, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, SIMM12_20 }, { 0 } }
 
 /* vmax2 RA,LIMM,RC 00101110001110011111xxxxxxxxxxxx */
-{ "vmax2", 0x2e39f000, 0xfffff000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, RC }, { 0 } }
+{ "vmax2", 0x2e39f000, 0xfffff000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, LIMM, RC }, { 0 } }
 
 /* vmax2 RA,RB,LIMM 00101xxx001110011xxx111110xxxxxx */
-{ "vmax2", 0x28398f80, 0xf8ff8fc0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, LIMM }, { 0 } }
+{ "vmax2", 0x28398f80, 0xf8ff8fc0, ARC_OPCODE_ARC64, MOVE, NONE, { RA, RB, LIMM }, { 0 } }
 
 /* vmax2 ZA,LIMM,RC 00101110001110011111xxxxxx111110 */
-{ "vmax2", 0x2e39f03e, 0xfffff03f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { 0 } }
+{ "vmax2", 0x2e39f03e, 0xfffff03f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, RC }, { 0 } }
 
 /* vmax2 ZA,RB,LIMM 00101xxx001110011xxx111110111110 */
-{ "vmax2", 0x28398fbe, 0xf8ff8fff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, LIMM }, { 0 } }
+{ "vmax2", 0x28398fbe, 0xf8ff8fff, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, RB, LIMM }, { 0 } }
 
 /* vmax2<.cc> ZA,LIMM,RC 00101110111110011111xxxxxx0xxxxx */
-{ "vmax2", 0x2ef9f000, 0xfffff020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { C_CC } }
+{ "vmax2", 0x2ef9f000, 0xfffff020, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, RC }, { C_CC } }
 
 /* vmax2<.cc> RB,RBdup,LIMM 00101xxx111110011xxx1111100xxxxx */
-{ "vmax2", 0x28f98f80, 0xf8ff8fe0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, LIMM }, { C_CC } }
+{ "vmax2", 0x28f98f80, 0xf8ff8fe0, ARC_OPCODE_ARC64, MOVE, NONE, { RB, RBdup, LIMM }, { C_CC } }
 
 /* vmax2 RA,LIMM,UIMM6_20 00101110011110011111xxxxxxxxxxxx */
-{ "vmax2", 0x2e79f000, 0xfffff000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, UIMM6_20 }, { 0 } }
+{ "vmax2", 0x2e79f000, 0xfffff000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, LIMM, UIMM6_20 }, { 0 } }
 
 /* vmax2 ZA,LIMM,UIMM6_20 00101110011110011111xxxxxx111110 */
-{ "vmax2", 0x2e79f03e, 0xfffff03f, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { 0 } }
+{ "vmax2", 0x2e79f03e, 0xfffff03f, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { 0 } }
 
 /* vmax2<.cc> ZA,LIMM,UIMM6_20 00101110111110011111xxxxxx1xxxxx */
-{ "vmax2", 0x2ef9f020, 0xfffff020, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { C_CC } }
+{ "vmax2", 0x2ef9f020, 0xfffff020, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { C_CC } }
 
 /* vmax2 ZA,LIMM,SIMM12_20 00101110101110011111xxxxxxxxxxxx */
-{ "vmax2", 0x2eb9f000, 0xfffff000, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, SIMM12_20 }, { 0 } }
+{ "vmax2", 0x2eb9f000, 0xfffff000, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, SIMM12_20 }, { 0 } }
 
 /* vmax2 RA,LIMM,LIMMdup 00101110001110011111111110xxxxxx */
-{ "vmax2", 0x2e39ff80, 0xffffffc0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, LIMMdup }, { 0 } }
+{ "vmax2", 0x2e39ff80, 0xffffffc0, ARC_OPCODE_ARC64, MOVE, NONE, { RA, LIMM, LIMMdup }, { 0 } }
 
 /* vmax2 ZA,LIMM,LIMMdup 00101110001110011111111110111110 */
-{ "vmax2", 0x2e39ffbe, 0xffffffff, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { 0 } }
+{ "vmax2", 0x2e39ffbe, 0xffffffff, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, LIMMdup }, { 0 } }
 
 /* vmax2<.cc> ZA,LIMM,LIMMdup 001011101111100111111111100xxxxx */
-{ "vmax2", 0x2ef9ff80, 0xffffffe0, ARC_OPCODE_ARC64 | ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { C_CC } }
+{ "vmax2", 0x2ef9ff80, 0xffffffe0, ARC_OPCODE_ARC64, MOVE, NONE, { ZA, LIMM, LIMMdup }, { C_CC } }
+
+/* vmax2 RA,RB,RC 00100xxx000010110xxxxxxxxxxxxxxx */
+{ "vmax2", 0x200b0000, 0xf8ff8000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, RC }, { 0 } }
+
+/* vmax2 ZA,RB,RC 00100xxx000010110xxxxxxxxx111110 */
+{ "vmax2", 0x200b003e, 0xf8ff803f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, RC }, { 0 } }
+
+/* vmax2<.cc> RB,RBdup,RC 00100xxx110010110xxxxxxxxx0xxxxx */
+{ "vmax2", 0x20cb0000, 0xf8ff8020, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, RC }, { C_CC } }
+
+/* vmax2 RA,RB,UIMM6_20 00100xxx010010110xxxxxxxxxxxxxxx */
+{ "vmax2", 0x204b0000, 0xf8ff8000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, UIMM6_20 }, { 0 } }
+
+/* vmax2 ZA,RB,UIMM6_20 00100xxx010010110xxxxxxxxx111110 */
+{ "vmax2", 0x204b003e, 0xf8ff803f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, UIMM6_20 }, { 0 } }
+
+/* vmax2<.cc> RB,RBdup,UIMM6_20 00100xxx110010110xxxxxxxxx1xxxxx */
+{ "vmax2", 0x20cb0020, 0xf8ff8020, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, UIMM6_20 }, { C_CC } }
+
+/* vmax2 RB,RBdup,SIMM12_20 00100xxx100010110xxxxxxxxxxxxxxx */
+{ "vmax2", 0x208b0000, 0xf8ff8000, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, SIMM12_20 }, { 0 } }
+
+/* vmax2 RA,LIMM,RC 00100110000010110111xxxxxxxxxxxx */
+{ "vmax2", 0x260b7000, 0xfffff000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, RC }, { 0 } }
+
+/* vmax2 RA,RB,LIMM 00100xxx000010110xxx111110xxxxxx */
+{ "vmax2", 0x200b0f80, 0xf8ff8fc0, ARC_OPCODE_ARC32, MOVE, NONE, { RA, RB, LIMM }, { 0 } }
+
+/* vmax2 ZA,LIMM,RC 00100110000010110111xxxxxx111110 */
+{ "vmax2", 0x260b703e, 0xfffff03f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { 0 } }
+
+/* vmax2 ZA,RB,LIMM 00100xxx000010110xxx111110111110 */
+{ "vmax2", 0x200b0fbe, 0xf8ff8fff, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, RB, LIMM }, { 0 } }
+
+/* vmax2<.cc> ZA,LIMM,RC 00100110110010110111xxxxxx0xxxxx */
+{ "vmax2", 0x26cb7000, 0xfffff020, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, RC }, { C_CC } }
+
+/* vmax2<.cc> RB,RBdup,LIMM 00100xxx110010110xxx1111100xxxxx */
+{ "vmax2", 0x20cb0f80, 0xf8ff8fe0, ARC_OPCODE_ARC32, MOVE, NONE, { RB, RBdup, LIMM }, { C_CC } }
+
+/* vmax2 RA,LIMM,UIMM6_20 00100110010010110111xxxxxxxxxxxx */
+{ "vmax2", 0x264b7000, 0xfffff000, ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, UIMM6_20 }, { 0 } }
+
+/* vmax2 ZA,LIMM,UIMM6_20 00100110010010110111xxxxxx111110 */
+{ "vmax2", 0x264b703e, 0xfffff03f, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { 0 } }
+
+/* vmax2<.cc> ZA,LIMM,UIMM6_20 00100110110010110111xxxxxx1xxxxx */
+{ "vmax2", 0x26cb7020, 0xfffff020, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, UIMM6_20 }, { C_CC } }
+
+/* vmax2 ZA,LIMM,SIMM12_20 00100110100010110111xxxxxxxxxxxx */
+{ "vmax2", 0x268b7000, 0xfffff000, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, SIMM12_20 }, { 0 } }
+
+/* vmax2 RA,LIMM,LIMMdup 00100110000010110111111110xxxxxx */
+{ "vmax2", 0x260b7f80, 0xffffffc0, ARC_OPCODE_ARC32, MOVE, NONE, { RA, LIMM, LIMMdup }, { 0 } }
+
+/* vmax2 ZA,LIMM,LIMMdup 00100110000010110111111110111110 */
+{ "vmax2", 0x260b7fbe, 0xffffffff, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { 0 } }
+
+/* vmax2<.cc> ZA,LIMM,LIMMdup 001001101100101101111111100xxxxx */
+{ "vmax2", 0x26cb7f80, 0xffffffe0, ARC_OPCODE_ARC32, MOVE, NONE, { ZA, LIMM, LIMMdup }, { C_CC } }
 
 /* vpack4hl RA,RB,RC 01011xxx001100001xxxxxxxxxxxxxxx */
 { "vpack4hl", 0x58308000, 0xf8ff8000, ARC_OPCODE_ARC64, MOVE, NONE, { RA, RB, RC }, { 0 } }
