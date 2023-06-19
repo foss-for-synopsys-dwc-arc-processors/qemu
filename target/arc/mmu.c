@@ -112,7 +112,7 @@ arc_mmu_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
                       val, env->pc);
         mmu->enabled = (val >> 31);
         mmu->pid_asid = val & 0xff;
-        tlb_flush(cs);
+        tlb_flush_all_cpus_synced(cs);
         break;
     case AUX_ID_sasid0:
         mmu->sasid0 = val;
@@ -306,7 +306,7 @@ arc_mmu_aux_set_tlbcmd(const struct arc_aux_reg_detail *aux_reg_detail,
          * don't try to optimize this: upon ASID rollover the entire TLB is
          * unconditionally flushed for any ASID
          */
-        tlb_flush(cs);
+        tlb_flush_all_cpus_synced(cs);
     }
     if (val == TLB_CMD_READ) {
         /*
@@ -321,7 +321,7 @@ arc_mmu_aux_set_tlbcmd(const struct arc_aux_reg_detail *aux_reg_detail,
         mmu->tlbindex &= ~(TLBINDEX_E | TLBINDEX_RC);
     }
     if (val == TLB_CMD_DELETE || val == TLB_CMD_INSERT) {
-        tlb_flush_page_by_mmuidx(cs, VPN(pd0), 3);
+        tlb_flush_page_by_mmuidx_all_cpus_synced(cs, VPN(pd0), 3);
 
         if ((pd0 & PD0_G) != 0) {
             /*
