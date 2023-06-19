@@ -7719,7 +7719,7 @@ arc_gen_SCONDD(DisasCtxt *ctx, TCGv addr, TCGv value)
 int
 arc_gen_DMB (DisasCtxt *ctx, TCGv a)
 {
-  int ret = DISAS_NEXT;
+  int ret = DISAS_UPDATE;
 
   TCGBar bar = 0;
   switch(ctx->insn.operands[0].value & 7) {
