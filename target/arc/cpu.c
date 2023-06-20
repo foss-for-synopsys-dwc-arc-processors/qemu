@@ -462,13 +462,6 @@ static void arc_v3_cpu_class_init(ObjectClass *oc, void *data)
 #endif
 }
 
-static void arc_any_initfn(Object *obj)
-{
-    /* Set cpu feature flags */
-    ARCCPU *cpu = ARC_CPU(obj);
-    cpu->family = ARC_OPCODE_ARC700;
-}
-
 #ifdef TARGET_ARC32
 static void arc600_initfn(Object *obj)
 {
@@ -513,8 +506,17 @@ static void arc_hs6x_initfn(Object *obj)
     ARCCPU *cpu = ARC_CPU(obj);
     cpu->family = ARC_OPCODE_ARC64;
 }
-
 #endif
+
+/*  Default CPUs  */
+static void arc_any_initfn(Object *obj)
+{
+#ifdef TARGET_ARC64
+    arc_hs6x_initfn(obj);
+#else
+    archs_initfn(obj);
+#endif
+}
 
 #define DEFINE_CPU_V2(type_name, initfn)        \
     {                                           \
