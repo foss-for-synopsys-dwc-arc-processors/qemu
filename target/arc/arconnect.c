@@ -209,13 +209,14 @@ static void arc_cirq_raise(CPUARCState *env, uint16_t cirq)
 {
     unsigned int max_cpus = 4; /* TODO: make this variable */
     enum idu_mode_enum mode = env->arconnect.idu_data[cirq].mode;
-    uint8_t core_id = 0;
+    uint8_t counter = env->arconnect.idu_data[cirq].counter;
+    int dest = env->arconnect.idu_data[cirq].dest;
     bool is_first_acknoledge = false;
-    bool dest = false;
+    uint8_t core_id = 0;
+
     switch(mode) {
     case ROUND_ROBIN:
 	/* Round robin */
-	uint8_t counter = env->arconnect.idu_data[cirq].counter;
 	do {
 	    core_id = (counter + cirq) % max_cpus;
 	    counter++;
@@ -236,7 +237,6 @@ static void arc_cirq_raise(CPUARCState *env, uint16_t cirq)
 	qemu_mutex_unlock(&idu_mutex);
 	// fall through
     case ALL_DESTINATION:
-	int dest = env->arconnect.idu_data[cirq].dest;
 	core_id = 0;
 	for(core_id = 0; dest != 0; core_id++) {
 	    if((dest & 0x1) != 0) {
