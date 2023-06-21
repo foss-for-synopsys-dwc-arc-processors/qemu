@@ -609,7 +609,6 @@ static void QEMU_NORETURN raise_mem_exception(
 
     env->efa = addr;
     env->eret = env->pc;
-    env->erbta = env->bta;
 
     cs->exception_index = excp->number;
     env->causecode = excp->causecode;
