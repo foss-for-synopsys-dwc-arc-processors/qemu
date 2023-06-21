@@ -111,8 +111,10 @@ void arc_gen_no_further_loads_pending(const DisasCtxt *ctx, TCGv ret);
 void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define setDebugLD(A)   arc_gen_set_debug(ctx, A)
 #define executeDelaySlot(bta, take_branch) \
+    qemu_log_mask(CPU_LOG_INT, "in delayslot\n"); \
     ctx->env->in_delayslot_instruction = false; \
     ctx->env->next_insn_is_delayslot = true; \
+    tcg_gen_mov_tl(cpu_bta, bta); \
     TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, DEf, take_branch); \
     TCG_SET_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
 
