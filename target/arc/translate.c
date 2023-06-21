@@ -1574,6 +1574,7 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 
     if(env->next_insn_is_delayslot == true) {
       SET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf, 1);
+      ctx->base.is_jmp = DISAS_NEXT;
     }
 
 
