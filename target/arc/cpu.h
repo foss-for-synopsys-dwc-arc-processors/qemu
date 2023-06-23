@@ -63,11 +63,18 @@ typedef struct CPUArchState CPUARCState;
 #define CPU_IMM(env)    ((env)->r[62])
 #define CPU_PCL(env)    ((env)->r[63])
 
-/* TODO: shahab, are all these, specially IMM and MASK, required? */
-#define STATUS32_DE            (1 << 6)     /* Dealing with a delay slot */
+/* The DE flag in status32 register. */
+#define STATUS32_DE            (1 << 6)
 
-/* tcg_gen_insn_start() should take an extra argument for "envflags". */
-#define TARGET_INSN_START_EXTRA_WORDS 1
+/* Runtime flags fields: piggy back information in unused bits of status32. */
+/* Indicate if a branching instruction with a delay slot is met. */
+#define BRANCH_DELAY     (1 << 21)
+/* TODO: shahab, either use BRANCH_COND or remove it. */
+/* Signal that the delay slot insn belongs to a conditional branch. */
+#define BRANCH_COND      (1 << 22)
+/* TODO: shahab, either use BRANCH_MSK or remove it. */
+/* Mask of aboves. */
+#define BRANCH_MSK       (BRANCH_DELAY | BRANCH_COND)
 
 enum exception_code_list {
     EXCP_NO_EXCEPTION = -1,
@@ -132,6 +139,7 @@ FIELD(STATUS32, ESf, 15, 1)
 FIELD(STATUS32, RBf, 16, 3)
 FIELD(STATUS32, ADf, 19, 1)
 FIELD(STATUS32, USf, 20, 1)
+/* TODO: shahab, remove line below. */
 FIELD(STATUS32, PREVIOUS_IS_DELAYSLOTf, 30, 1)
 FIELD(STATUS32, IEf, 31, 1)
 
@@ -224,10 +232,6 @@ typedef struct {
 struct CPUArchState {
     target_ulong        r[64];
     uint64_t            fpr[32];      /* assume both F and D extensions. */
-
-    /* TODO: shahab, do we need this? */
-    /* general execution flags */
-    uint32_t flags;
 
     /* floating point auxiliary registers. */
     uint32_t fp_ctrl;
@@ -408,16 +412,15 @@ static inline int cpu_mmu_index(const CPUARCState *env, bool ifetch)
 
 static inline void cpu_get_tb_cpu_state(CPUARCState *env, target_ulong *pc,
                                         target_ulong *cs_base,
-                                        uint32_t *flags)
+                                        uint32_t *pflags)
 {
     *pc = env->pc;
     *cs_base = 0;
-    *flags = 0;
+    *pflags = 0;
 
 #ifndef CONFIG_USER_ONLY
-    *flags |= cpu_mmu_index(env, 0);
+    *pflags |= cpu_mmu_index(env, 0);
 #endif
-    *flags |= env->stat.pstate & STATUS32_DE;
 }
 
 #define IS_ARCV3(CPU) \

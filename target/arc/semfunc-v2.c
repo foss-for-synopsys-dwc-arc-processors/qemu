@@ -5607,6 +5607,8 @@ arc_gen_B(DisasCtxt *ctx, TCGv offset)
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
+    update_delay_envflag(ctx);
+
     arc_gen_verifyCCFlag(ctx, cond);
     tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, do_not_branch);
 
@@ -5634,6 +5636,8 @@ arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset)
     const target_ulong target = ctx->pcl + ctx->insn.operands[1].value;
     unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
+
+    update_delay_envflag(ctx);
 
     /* if (--a != 0) */
     tcg_gen_subi_tl(a, a, 1);

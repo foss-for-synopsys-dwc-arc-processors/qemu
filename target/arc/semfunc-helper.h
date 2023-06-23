@@ -96,6 +96,14 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 /* semfunc-helper.c */
 void gen_branch_or_delay(DisasCtxt *ctx, target_ulong target, unsigned *slot);
 
+static inline void update_delay_envflag(DisasContext *ctx)
+{
+    if (ctx->insn.d) {
+        tcg_gen_ori_tl(cpu_pstate, cpu_pstate, BRANCH_DELAY);
+    }
+}
+
+
 void to_implement(const DisasCtxt *ctx);
 void to_implement_wo_abort(const DisasCtxt *ctx);
 

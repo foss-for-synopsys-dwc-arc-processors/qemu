@@ -219,6 +219,8 @@ void arc_cpu_do_interrupt(CPUState *cs)
     SET_STATUS_BIT(env->stat, ESf, 0);
     SET_STATUS_BIT(env->stat, DZf, 0);
     SET_STATUS_BIT(env->stat, SCf, 0);
+    /* Clear delay information before translating the handler. */
+    env->stat.pstate &= ~BRANCH_MSK;
 
     /* 15. The PC is set with the appropriate exception vector. */
     switch(get_mmu_version(env)) {

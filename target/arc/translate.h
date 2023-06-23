@@ -68,8 +68,8 @@ typedef struct DisasContext {
     uint16_t buffer[2];
     uint8_t  mem_idx;
 
-    /* Is the next instruction to process in a delay slot? */
-    bool     in_delay_slot;
+    bool in_delay_slot;   /* current TB is in a delay slot. */
+    bool in_cond_slot;    /* current TB follows a conditional branch. */
 } DisasContext;
 
 
@@ -86,6 +86,7 @@ typedef struct DisasContext {
 #define cpu_pcl    (cpu_r[63])
 #define cpu_limm   (cpu_r[62])
 
+/* Runtime information, internal to QEMU. */
 extern TCGv     cpu_pstate;
 extern TCGv     cpu_Vf;
 extern TCGv     cpu_Cf;

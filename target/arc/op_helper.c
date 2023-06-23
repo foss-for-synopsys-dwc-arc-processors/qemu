@@ -552,6 +552,26 @@ arc_status_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
     }
 }
 
+void
+arc_branch_regs_set(const struct arc_aux_reg_detail *aux_reg_detail,
+                    target_ulong val, void *data)
+{
+    CPUARCState *env = (CPUARCState *) data;
+    val = (val >> 1) << 1;      /* Clear the LSB. */
+
+    switch (aux_reg_detail->id) {
+
+    case AUX_ID_bta:
+        env->bta = val;
+        break;
+    case AUX_ID_erbta:
+        env->erbta = val;
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
+
 #ifdef TARGET_ARC64
 uint64_t helper_carry_add_flag32(uint64_t dest, uint64_t b, uint64_t c) {
     return carry_add_flag(dest, b, c, 32);

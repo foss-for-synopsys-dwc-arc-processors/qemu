@@ -180,11 +180,9 @@ void arc_translate_init(void)
         { &cpu_lock_lf_var, offsetof(CPUARCState, lock_lf_var), "lock_lf_var" }
     };
 
-
     for (i = 0; i < ARRAY_SIZE(r32); ++i) {
         *r32[i].ptr = tcg_global_mem_new(cpu_env, r32[i].off, r32[i].name);
     }
-
 
     for (i = 0; i < 64; i++) {
         char name[16];
@@ -207,17 +205,12 @@ static void arc_tr_init_disas_context(DisasContextBase *dcbase,
                                       CPUState *cs)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
+    const CPUARCState *env = cs->env_ptr;
 
     dc->base.is_jmp = DISAS_NEXT;
-
-    /* Information from the proceeding block. */
     dc->mem_idx = dc->base.tb->flags & 1;
-
-    /*
-     * TODO: shahab, is this really necessary?
-     * can't we get away with env->stat.pstate & STATUS32_DE?
-     */
-    dc->in_delay_slot = !!(dc->base.tb->flags & STATUS32_DE);
+    dc->in_delay_slot = !!(env->stat.pstate & BRANCH_DELAY);
+    dc->in_cond_slot  = !!(env->stat.pstate & BRANCH_COND);
 }
 
 static void arc_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
@@ -229,7 +222,7 @@ static void arc_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
 
 
-    tcg_gen_insn_start(dc->base.pc_next, dc->in_delay_slot);
+    tcg_gen_insn_start(dc->base.pc_next);
     dc->cpc = dc->base.pc_next;
 
     if (dc->base.num_insns == dc->base.max_insns &&
@@ -1490,8 +1483,8 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
 
 /*
  * Delayed jump for delay slot instruction. The branch takes place
- * only if the status32.DE flag is set. The target of the branch is
- * saved in BTA (Branch Target Address).
+ * only if the status32.DE flag is set. The target of the branch
+ * must have already been saved in BTA (Branch Target Address).
  */
 static void gen_delayed_jump(DisasContext * ctx)
 {
@@ -1506,7 +1499,6 @@ static void gen_delayed_jump(DisasContext * ctx)
     /*
      * status32.DE = 0
      * goto BTA
-     * PC = BTA
      */
     tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_DE);
     /* slot 0 for the target of branch. */
@@ -1535,6 +1527,12 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
     }
 
     ctx->base.is_jmp = arc_decode(ctx, opcode);
+
+    /* Was the instruction in a delay slot? */
+    if (ctx->in_delay_slot) {
+        tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~BRANCH_MSK);
+        gen_delayed_jump(ctx);
+    }
 
     /*
      * Either decoder knows that this is a delayslot
@@ -1597,7 +1595,6 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUARCState *env = cpu->env_ptr;
-    const bool in_delay_slot = (env->stat.pstate & STATUS32_DE);
 
     /* TODO (issue #62): these must be removed */
     dc->zero = tcg_const_local_tl(0);
@@ -1606,11 +1603,6 @@ static void arc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     dc->cpc = dc->base.pc_next;
     decode_opc(env, dc);
     dc->base.pc_next = dc->npc;
-
-    /* Was the freshly processed instruction in a delay slot? */
-    if (in_delay_slot) {
-        gen_delayed_jump(dc);
-    }
 
     if (dc->base.is_jmp == DISAS_NORETURN) {
         gen_gotoi_tb(dc, 0, dc->npc);

@@ -67,7 +67,7 @@ uint32_t pack_status32(ARCStatus *status_r)
 /* Reverse of the above function. */
 void unpack_status32(ARCStatus *status_r, uint32_t value)
 {
-    status_r->pstate = value;
+    status_r->pstate = value & PSTATE_MASK;
     status_r->Zf  = FIELD_EX32(value, STATUS32, Zf);
     status_r->Nf  = FIELD_EX32(value, STATUS32, Nf);
     status_r->Cf  = FIELD_EX32(value, STATUS32, Cf);
