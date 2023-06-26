@@ -516,6 +516,8 @@ bool arc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
         /* In a delay slot of branch */
         || env->in_delayslot_instruction
         || GET_STATUS_BIT(env->stat, DEf)
+	|| env->next_insn_is_delayslot
+	|| GET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf)
         || (!(interrupt_request & CPU_INTERRUPT_HARD))) {
         return false;
     }
