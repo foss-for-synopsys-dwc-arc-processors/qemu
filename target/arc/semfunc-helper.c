@@ -149,11 +149,11 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
  *                              slot=0
  *                          if (--counter)
  *                                {
- *  ------------------------gen_branch_or_delay()-----------------------
- *                          /                   \
- *  gen_gotoi(target, slot++)                    status32.de = 1
- *                                               BTA = target
- *  -------------------------End of calling-----------------------------
+ *  ------------------------gen_branchi()-----------------------
+ *                          /           \
+ *  gen_gotoi(target, slot++)            status32.de = 1
+ *                                       BTA = target
+ *  -------------------------End of call------------------------
  * }                               }
  *                       gen_gotoi(next_pc, slot)
  *                       ^^^^^^^^^
@@ -162,7 +162,7 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
  * has reached 0.
  */
 void
-gen_branch_or_delay(DisasCtxt *ctx, target_ulong target, unsigned *slot)
+gen_branchi(DisasCtxt *ctx, target_ulong target, unsigned *slot)
 {
     assert(ctx->insn.class == BRANCH ||
            ctx->insn.class == BBIT0  ||
@@ -175,6 +175,20 @@ gen_branch_or_delay(DisasCtxt *ctx, target_ulong target, unsigned *slot)
     } else {
         gen_gotoi_tb(ctx, *slot, target);
         *slot += 1;
+    }
+}
+
+/* The TCGv version of gen_branchi(). */
+void
+gen_branch(DisasCtxt *ctx, TCGv target)
+{
+    assert(ctx->insn.class == JUMP);
+
+    if (ctx->insn.d) {
+        tcg_gen_ori_tl(cpu_pstate, cpu_pstate, STATUS32_DE);
+        tcg_gen_mov_tl(cpu_bta, target);
+    } else {
+        gen_goto_tb(ctx, target);
     }
 }
 

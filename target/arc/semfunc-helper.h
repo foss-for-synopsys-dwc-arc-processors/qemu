@@ -92,9 +92,9 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 /* TODO: shahab, move handmade functions from semfuncv* to translate.c
  * and then move this function from semfunc-helper.c to translate.c.
  */
-/* TODO: shahab, isn't gen_branch() better? */
 /* semfunc-helper.c */
-void gen_branch_or_delay(DisasCtxt *ctx, target_ulong target, unsigned *slot);
+void gen_branchi(DisasCtxt *ctx, target_ulong target, unsigned *slot);
+void gen_branch(DisasCtxt *ctx, TCGv target);
 
 static inline void update_delay_flag(DisasContext *ctx)
 {
