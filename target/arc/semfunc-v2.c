@@ -5607,7 +5607,7 @@ arc_gen_B(DisasCtxt *ctx, TCGv offset)
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
-    update_delay_envflag(ctx);
+    update_delay_flag(ctx);
 
     arc_gen_verifyCCFlag(ctx, cond);
     tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, do_not_branch);
@@ -5637,7 +5637,7 @@ arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset)
     unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
 
-    update_delay_envflag(ctx);
+    update_delay_flag(ctx);
 
     /* if (--a != 0) */
     tcg_gen_subi_tl(a, a, 1);
@@ -5671,6 +5671,8 @@ arc_gen_BBIT0(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset)
     TCGv _c = tcg_temp_new();
     TCGv msk = tcg_const_tl(1);
     TCGv bit = tcg_temp_new();
+
+    update_delay_flag(ctx);
 
     /* if ((b & (1 << (c & 31))) == 0) */
     tcg_gen_andi_tl(_c, c, 31);
@@ -5710,6 +5712,8 @@ arc_gen_BBIT1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset)
     TCGv _c = tcg_temp_new();
     TCGv msk = tcg_const_tl(1);
     TCGv bit = tcg_temp_new();
+
+    update_delay_flag(ctx);
 
     /* if ((b & (1 << (c & 31))) != 0) */
     tcg_gen_andi_tl(_c, c, 31);
