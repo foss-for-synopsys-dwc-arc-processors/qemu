@@ -46,9 +46,6 @@ TCGv    cpu_efa;
 TCGv    cpu_bta;
 
 TCGv    cpu_pc;
-/* replaced by AUX_REG array */
-TCGv    cpu_lps;
-TCGv    cpu_lpe;
 
 TCGv    cpu_r[64];
 
@@ -168,11 +165,6 @@ void arc_translate_init(void)
         { &cpu_erbta, offsetof(CPUARCState, erbta), "erbta" },
         { &cpu_efa  , offsetof(CPUARCState, efa)  , "efa"   },
         { &cpu_bta  , offsetof(CPUARCState, bta)  , "bta"   },
-
-#if defined(TARGET_ARC32)
-        { &cpu_lps, offsetof(CPUARCState, lps), "lps" },
-        { &cpu_lpe, offsetof(CPUARCState, lpe), "lpe" },
-#endif
         { &cpu_pc , offsetof(CPUARCState, pc) , "pc" },
 
         { &cpu_intvec, offsetof(CPUARCState, intvec), "intvec" },
@@ -1488,25 +1480,23 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
  */
 static void gen_delayed_jump(DisasContext * ctx)
 {
-    TCGLabel *dont_branch = gen_new_label();
+    TCGv zero = tcg_const_local_tl(0);
     TCGv de = tcg_temp_new();
+    TCGv npc = tcg_const_local_tl(ctx->npc);
+    TCGv target = tcg_temp_new();
 
-    /* if (status32.DE) */
     tcg_gen_andi_tl(de, cpu_pstate, STATUS32_DE);
-    tcg_gen_brcondi_tl(TCG_COND_EQ, de, 0, dont_branch);
-    tcg_temp_free(de);
-
-    /*
-     * status32.DE = 0
-     * goto BTA
-     */
+    /* target = (de TCG_COND_NE zero) ? cpu_bta : npc */
+    tcg_gen_movcond_tl(TCG_COND_NE, target, de, zero, cpu_bta, npc);
+    /* status32.DE = 0 */
     tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_DE);
-    /* slot 0 for the target of branch. */
-    gen_gotoi_tb(ctx, 0, ctx->env->bta);
 
-    gen_set_label(dont_branch);
-    /* Slot 1 is used for the fall-thru. */
-    gen_gotoi_tb(ctx, 1, ctx->npc);
+    gen_goto_tb(ctx, target);
+
+    tcg_temp_free(target);
+    tcg_temp_free(npc);
+    tcg_temp_free(de);
+    tcg_temp_free(zero);
 
     ctx->base.is_jmp = DISAS_HANDLED;
 }
@@ -1569,9 +1559,6 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
 
 
     if (env->lpe == ctx->npc) {
-
-        DisasJumpType ret = ctx->base.is_jmp;
-
         TCGLabel *zol_end = gen_new_label();
         TCGLabel *zol_else = gen_new_label();
         TCGv lps = tcg_temp_local_new();
@@ -1582,7 +1569,9 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
         gen_set_label(zol_else);
           tcg_gen_subi_tl(cpu_lpc, cpu_lpc, 1);
           tcg_gen_movi_tl(lps, env->lps);
-          setPC(lps);
+          /* Set PC */
+          assert(!ctx->insn.d);
+          gen_goto_tb(ctx, lps);
         gen_set_label(zol_end);
 
         ctx->base.is_jmp = DISAS_NORETURN;
