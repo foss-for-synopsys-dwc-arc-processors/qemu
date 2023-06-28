@@ -165,6 +165,7 @@ void
 gen_branchi(DisasCtxt *ctx, target_ulong target, unsigned *slot)
 {
     assert(ctx->insn.class == BRANCH ||
+           ctx->insn.class == BRCC   ||
            ctx->insn.class == BBIT0  ||
            ctx->insn.class == BBIT1);
 
