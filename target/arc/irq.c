@@ -652,7 +652,7 @@ void arc_initializeIRQ(ARCCPU *cpu)
     CPUARCState *env = &cpu->env;
     uint32_t i;
 
-    assert(256 == 16 + cpu->cfg.number_of_interrupts);
+    assert(NR_OF_EXCEPTIONS + cpu->cfg.number_of_interrupts <= 256);
 
     if (cpu->cfg.has_interrupts) {
         /* FIXME! add N (NMI) bit. */
