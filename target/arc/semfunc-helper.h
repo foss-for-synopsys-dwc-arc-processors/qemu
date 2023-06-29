@@ -114,7 +114,6 @@ void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
     qemu_log_mask(CPU_LOG_INT, "in delayslot\n"); \
     ctx->env->in_delayslot_instruction = false; \
     ctx->env->next_insn_is_delayslot = true; \
-    tcg_gen_mov_tl(cpu_bta, bta); \
     TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, DEf, take_branch); \
     TCG_SET_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
 
