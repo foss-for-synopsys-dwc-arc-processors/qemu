@@ -1555,17 +1555,17 @@ void decode_opc(CPUARCState *env, DisasContext *ctx)
     if(env->in_delayslot_instruction == true
        || GET_STATUS_BIT(env->stat, PREVIOUS_IS_DELAYSLOTf)) {
         TCGv temp_DEf = tcg_temp_local_new();
-        ctx->base.is_jmp = DISAS_NORETURN;
-
-        TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
-
-        /* Post execution delayslot logic. */
         TCGLabel *DEf_not_set_label1 = gen_new_label();
+
         TCG_GET_STATUS_FIELD_MASKED(temp_DEf, cpu_pstate, DEf);
-	if (env->next_insn_is_delayslot)
-            TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, PREVIOUS_IS_DELAYSLOTf, temp_DEf);
+        TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, PREVIOUS_IS_DELAYSLOTf);
         TCG_CLR_STATUS_FIELD_BIT(cpu_pstate, DEf);
+
+        if (env->next_insn_is_delayslot)
+            TCG_SET_STATUS_FIELD_VALUE(cpu_pstate, PREVIOUS_IS_DELAYSLOTf, temp_DEf);
+
         tcg_gen_brcondi_tl(TCG_COND_EQ, temp_DEf, 0, DEf_not_set_label1);
+        ctx->base.is_jmp = DISAS_NORETURN;
         gen_goto_tb(ctx, 1, cpu_bta);
         gen_set_label(DEf_not_set_label1);
 
