@@ -29,7 +29,6 @@ DEF_HELPER_4(raise_exception, noreturn, env, tl, tl, tl)
 DEF_HELPER_2(zol_verify, void, env, tl)
 DEF_HELPER_2(set_status32, void, env, tl)
 DEF_HELPER_1(get_status32, tl, env)
-DEF_HELPER_3(set_status32_bit, void, env, tl, tl)
 
 DEF_HELPER_FLAGS_3(carry_add_flag, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl)
 DEF_HELPER_FLAGS_3(overflow_add_flag, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl)

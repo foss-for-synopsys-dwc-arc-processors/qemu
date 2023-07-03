@@ -398,17 +398,6 @@ void helper_set_status32(CPUARCState *env, target_ulong value)
     set_status32(env, value);
 }
 
-void helper_set_status32_bit(CPUARCState *env, target_ulong bit,
-                             target_ulong value)
-{
-    target_ulong bit_mask = (1 << bit);
-    /* Verify i changing bit is in pstate. Assert otherwise. */
-    assert((bit_mask & PSTATE_MASK) == 0);
-
-    env->stat.pstate &= ~bit_mask;
-    env->stat.pstate |= (value << bit);
-}
-
 static inline target_ulong
 carry_add_flag(target_ulong dest, target_ulong b, target_ulong c, uint8_t size)
 {
