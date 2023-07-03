@@ -162,6 +162,23 @@ some_data_2:
   start
 
 ; Test 1
+; scondd without previous llockd (check initial CPU conditions), should not work
+prep_test_case
+  mov r0, @some_data_1
+; load instead of llockd, so no flag has been set since boot
+  ldd r2, [r0]
+  chk_reg64 r2, r3, data_12, data_11
+
+  add r2, r2, 1
+  clr_flags
+; scondd wont work
+  scondd r2, [r0]
+  is_no_flag_set
+; nothing changed (scondd failed)
+  ldd r4, [r0]
+  chk_reg64 r4, r5, data_12, data_11
+
+; Test 2
 ; llock and scondd to the same address
 ; Expected to work
 prep_test_case
@@ -179,7 +196,7 @@ prep_test_case
   ldd r4, [r0]
   chk_reg64 r2, r3, data_12, (data_11 + 1)
 
-; Test 2
+; Test 3
 ; 2 equivalent llocks and sconddF to the same address
 ; Expected to work
 prep_test_case
@@ -200,7 +217,7 @@ prep_test_case
   ld r2, [r0]
   chk_reg64 r2, r3, data_12, (data_11 + 1)
 
-; Test 3
+; Test 4
 ; 2 llocks for different addresses, scondd to first llocks' address shouldnt work
 prep_test_case
 
@@ -224,7 +241,7 @@ prep_test_case
   chk_reg64 r2, r3, data_12, data_11
 
 
-; Test 4
+; Test 5
 ; 2 llocks for different addresses, scondd to second (last) llocks' address should work
 prep_test_case
 
@@ -246,7 +263,7 @@ prep_test_case
   chk_reg64 r2, r3, data_12, data_11
 
 
-; Test 5
+; Test 6
 ; 2 llocks for different addresses, with matching scondd
 ; interleaved order means both scondd fail
 prep_test_case
@@ -280,7 +297,7 @@ prep_test_case
   ldd r2, [r4]
   chk_reg64 r2, r3, data_22, data_21
 
-; Test 6
+; Test 7
 ; llock, data changes, scondd fails
 prep_test_case
 
@@ -311,7 +328,7 @@ prep_test_case
 
 j @valhalla
 
-; Test 7
+; Test 8
 ; llock, there is a write to the addres but data doesnt change, scondd fails
 prep_test_case
 
@@ -335,7 +352,7 @@ prep_test_case
   ldd r2, [r0]
   chk_reg64 r2, r3, data_12, data_11
 
-; Test 8
+; Test 9
 ; llock, data changes to different value, and then changes it back, scondd should
 ; still fail
 prep_test_case

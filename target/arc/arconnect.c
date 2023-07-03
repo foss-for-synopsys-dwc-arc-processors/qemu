@@ -95,16 +95,22 @@ enum arconnect_commands {
     CMD_IDU_READ_PSTATUS
 };
 
+/*
+ * Setup SMP (arconnect) related data structures
+ */
 void arc_arconnect_init(ARCCPU *cpu)
 {
-    int i;
     cpu->env.arconnect.intrpt_status = 0;
-    cpu->env.arconnect.lpa_lf = 0;
-    cpu->env.arconnect.locked_mutex = NULL;
+
+    /* Initialize all llock/scond lpa entries and respective mutexes */
+    int i;
     for(i = 0; i < LPA_LFS_SIZE; i++) {
         lpa_lfs[i].lpa_lf = 0;
         qemu_mutex_init(&lpa_lfs[i].mutex);
     }
+
+    cpu->env.arconnect.lpa_lf = &(lpa_lfs[0]);
+    cpu->env.arconnect.locked_mutex = &(lpa_lfs[0].mutex);
 }
 
 /* TODO: Find a better way to get cpu for core. */
