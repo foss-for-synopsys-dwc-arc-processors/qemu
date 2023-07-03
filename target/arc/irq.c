@@ -55,7 +55,7 @@ uint32_t pack_status32(ARCStatus *status_r)
 {
     uint32_t res = 0x0;
 
-    res |= status_r->pstate & PSTATE_MASK;
+    res |= status_r->pstate & (PSTATE_MASK | BRANCH_MSK);
     res = FIELD_DP32(res, STATUS32, Zf,  status_r->Zf);
     res = FIELD_DP32(res, STATUS32, Nf,  status_r->Nf);
     res = FIELD_DP32(res, STATUS32, Cf,  status_r->Cf);
@@ -67,7 +67,7 @@ uint32_t pack_status32(ARCStatus *status_r)
 /* Reverse of the above function. */
 void unpack_status32(ARCStatus *status_r, uint32_t value)
 {
-    status_r->pstate = value & PSTATE_MASK;
+    status_r->pstate = value & (PSTATE_MASK | BRANCH_MSK);
     status_r->Zf  = FIELD_EX32(value, STATUS32, Zf);
     status_r->Nf  = FIELD_EX32(value, STATUS32, Nf);
     status_r->Cf  = FIELD_EX32(value, STATUS32, Cf);
