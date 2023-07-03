@@ -59,7 +59,7 @@ static void set_status32(CPUARCState *env, target_ulong value)
     if (GET_STATUS_BIT(env->stat, Uf) == 1) {
         value &= 0x00000f00;
     } else if (!debug_mode) {
-        value &= 0xffff6f3f;
+        value &= 0xffff6f7f;
     }
 
     if (GET_STATUS_BIT(env->stat, Uf) != ((value >> 7)  & 0x1)) {
