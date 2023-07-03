@@ -4010,23 +4010,23 @@ arc_gen_CLRI(DisasCtxt *ctx, TCGv c)
  *       throwExcpPriviledgeV();
  *     }
  *   status32 = getRegister (R_STATUS32);
- *   e_mask = 30;
+ *   e_mask = 0x1E;
  *   e_mask = ~e_mask;
- *   e_value = ((@c & 15) << 1);
- *   temp1 = (@c & 32);
- *   if((temp1 != 0))
+ *   e_value = ((@c & 0xF) << 1);
+ *   temp1 = (@c & 0x20);
+ *   if((temp1 != 0))    // src2[5] == 1
  *     {
  *       status32 = ((status32 & e_mask) | e_value);
- *       ie_mask = 2147483648;
+ *       ie_mask = 0x8000_0000;
  *       ie_mask = ~ie_mask;
- *       ie_value = ((@c & 16) << 27);
+ *       ie_value = ((@c & 0x10) << 27);
  *       status32 = ((status32 & ie_mask) | ie_value);
  *     }
  *   else
  *     {
- *       status32 = (status32 | 2147483648);
- *       temp2 = (@c & 16);
- *       if((temp2 != 0))
+ *       status32 = (status32 | 0x8000_0000);
+ *       temp2 = (@c & 0x10);
+ *       if((temp2 != 0))   // src2[4] == 1
  *         {
  *           status32 = ((status32 & e_mask) | e_value);
  *         };
