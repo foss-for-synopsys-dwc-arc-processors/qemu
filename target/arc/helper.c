@@ -158,6 +158,15 @@ void arc_cpu_do_interrupt(CPUState *cs)
      * of STATUS32.
      */
     env->stat_er = env->stat;
+    /*
+     * A trap in a delay slot that will jump to BTA (status32.DE is set),
+     * must continue at BTA. As a result, we also clear the DE flag.
+     */
+    if (cs->exception_index == EXCP_TRAP &&
+        env->stat_er.pstate & STATUS32_DE) {
+        env->eret = env->bta;
+        env->stat_er.pstate &= ~STATUS32_DE;
+    }
 
     /* 4. exception return branch target address register. */
     env->erbta = env->bta;

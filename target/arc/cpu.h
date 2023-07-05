@@ -63,6 +63,9 @@ typedef struct CPUArchState CPUARCState;
 #define CPU_IMM(env)    ((env)->r[62])
 #define CPU_PCL(env)    ((env)->r[63])
 
+/* The DE flag in status32 register. */
+#define STATUS32_DE            (1 << 6)
+
 enum exception_code_list {
     EXCP_NO_EXCEPTION = -1,
     EXCP_RESET = 0,
