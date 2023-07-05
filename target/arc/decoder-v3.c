@@ -155,7 +155,7 @@ load_insninfo_if_valid_v3(uint64_t insn,
 
         /* Check for (short) LIMM indicator.  If it is there, then
            make sure we pick the right format.  */
-        slimmind = (isa_mask & (ARC_OPCODE_ARCV2 | ARC_OPCODE_ARC64)) ?
+        slimmind = (isa_mask & ARC_OPCODE_V2_V3) ?
           REG_LIMM_S : REG_LIMM;
         if (operand->flags & ARC_OPERAND_IR
             && !(operand->flags & ARC_OPERAND_LIMM))
