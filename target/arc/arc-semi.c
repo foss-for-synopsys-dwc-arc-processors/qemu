@@ -59,6 +59,50 @@ static void sim_console_read(void *opaque, const uint8_t *buf, int size)
     p->input.offset += copy;
 }
 
+struct kernel_stat
+{
+    uint16_t my_dev;
+	uint16_t my___pad1;
+	uint32_t my_ino;
+	uint16_t my_mode;
+	uint16_t my_nlink;
+	uint16_t my_uid;
+	uint16_t my_gid;
+	uint16_t my_rdev;
+	uint16_t my___pad2;
+	uint32_t my_size;
+	uint32_t my_blksize;
+	uint32_t my_blocks;
+	uint32_t my_atime;
+	uint32_t my___unused1;
+	uint32_t my_mtime;
+	uint32_t my___unused2;
+	uint32_t my_ctime;
+	uint32_t my___unused3;
+	uint32_t my___unused4;
+	uint32_t my___unused5;
+};
+
+void conv_stat(struct stat *st, size_t* size)
+{
+    struct kernel_stat kernel_st;
+
+    kernel_st.my_dev = st->st_dev;
+    kernel_st.my_ino = st->st_ino;
+    kernel_st.my_mode = st->st_mode;
+    kernel_st.my_nlink = st->st_nlink;
+    kernel_st.my_uid = st->st_uid;
+    kernel_st.my_gid = st->st_gid;
+    kernel_st.my_rdev = st->st_rdev;
+    kernel_st.my_size = st->st_size;
+    kernel_st.my_blocks = st->st_blocks;
+    kernel_st.my_blksize = st->st_blksize;
+    kernel_st.my_atime = st->st_atime;
+    kernel_st.my_mtime = st->st_mtime;
+    kernel_st.my_ctime = st->st_ctime;
+
+  *size = sizeof(kernel_st);
+}
 
 void arc_sim_open_console(Chardev *chr)
 {
@@ -238,16 +282,49 @@ void do_arc_semihosting(CPUARCState *env)
         memset(&sbuf, 0, sizeof(sbuf));
         regs[0] = fstat(regs[0], &sbuf);
 
-        hwaddr len = sizeof(sbuf);
+        size_t size;
+        conv_stat(&sbuf, &size);
+
+        hwaddr len = size;
         void *buf = cpu_physical_memory_map(regs[1], &len, 1);
         if (buf)
         {
-            memcpy(buf, &sbuf, sizeof (sbuf));
+            memcpy(buf, &sbuf, size);
             cpu_physical_memory_unmap(buf, len, 1, len);
         }
         break;
     }
 
+    case TARGET_SYS_stat:
+    {
+        char name[1024];
+        int rc;
+        int i;
+
+        for (i = 0; i < ARRAY_SIZE(name); ++i) {
+            rc = cpu_memory_rw_debug(cs, regs[0] + i,
+                                     (uint8_t *)name + i, 1, 0);
+            if (rc != 0 || name[i] == 0) {
+                break;
+            }
+        }
+
+        struct stat sbuf;
+        memset(&sbuf, 0, sizeof(sbuf));
+        regs[0] = stat(name, &sbuf);
+
+        size_t size;
+        conv_stat(&sbuf, &size);
+
+        hwaddr len = size;
+        void *buf = cpu_physical_memory_map(regs[1], &len, 1);
+        if (buf)
+        {
+            memcpy(buf, &sbuf, size);
+            cpu_physical_memory_unmap(buf, len, 1, len);
+        }
+        break;
+    }
 #if 0
     case TARGET_SYS_argc:
         regs[2] = semihosting_get_argc();
