@@ -449,7 +449,6 @@ int gdb_v3_core_read(CPUState *cpu, GByteArray *buf, int reg);
 int gdb_v3_core_write(CPUState *cpu, uint8_t *buf, int reg);
 void do_arc_semihosting(CPUARCState *env);
 void arc_sim_open_console(Chardev *chr);
-void conv_stat(struct stat *st, size_t *size);
 
 void QEMU_NORETURN arc_raise_exception(CPUARCState *env, uintptr_t host_pc, int32_t excp_idx);
 
