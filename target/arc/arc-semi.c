@@ -59,7 +59,41 @@ static void sim_console_read(void *opaque, const uint8_t *buf, int size)
     p->input.offset += copy;
 }
 
-struct kernel_stat
+/*
+ * Conversion between linux's struct stat to newlib's struct stat.
+ *
+ * The struct stat represents file status information in the Linux system.
+ * It contains various fields that describe the attributes and properfites of
+ * a file or directory.
+ *
+ * Path: newlib/libc/include/sys/stat.h
+ *
+ * struct	stat
+ * {
+ *   dev_t		st_dev;
+ *   ino_t		st_ino;
+ *   mode_t	st_mode;
+ *   nlink_t	st_nlink;
+ *   uid_t		st_uid;
+ *   gid_t		st_gid;
+ *   dev_t		st_rdev;
+ *   off_t		st_size;
+ *   ...
+ *   struct timespec st_atim;
+ *   struct timespec st_mtim;
+ *   struct timespec st_ctim;
+ *   blksize_t     st_blksize;
+ *   blkcnt_t	st_blocks;
+ * #if !defined(__rtems__)
+ *   long		st_spare4[2];
+ * #endif
+ * #endif
+ * };
+ *
+ * The struct arc_stat is a modified version of the newlib's stat struct,
+ * designed to support both 32-bit and 64-bit systems.
+ */
+struct arc_stat
 {
     uint16_t my_dev;
 	uint16_t my___pad1;
@@ -83,25 +117,28 @@ struct kernel_stat
 	uint32_t my___unused5;
 };
 
-void conv_stat(struct stat *st, size_t* size)
+static struct arc_stat conv_stat(struct stat *st);
+
+/* Converts linux's stat to newlib's stat struct */
+static struct arc_stat conv_stat(struct stat *st)
 {
-    struct kernel_stat kernel_st;
+    struct arc_stat arc_st;
 
-    kernel_st.my_dev = st->st_dev;
-    kernel_st.my_ino = st->st_ino;
-    kernel_st.my_mode = st->st_mode;
-    kernel_st.my_nlink = st->st_nlink;
-    kernel_st.my_uid = st->st_uid;
-    kernel_st.my_gid = st->st_gid;
-    kernel_st.my_rdev = st->st_rdev;
-    kernel_st.my_size = st->st_size;
-    kernel_st.my_blocks = st->st_blocks;
-    kernel_st.my_blksize = st->st_blksize;
-    kernel_st.my_atime = st->st_atime;
-    kernel_st.my_mtime = st->st_mtime;
-    kernel_st.my_ctime = st->st_ctime;
+    arc_st.my_dev = st->st_dev;
+    arc_st.my_ino = st->st_ino;
+    arc_st.my_mode = st->st_mode;
+    arc_st.my_nlink = st->st_nlink;
+    arc_st.my_uid = st->st_uid;
+    arc_st.my_gid = st->st_gid;
+    arc_st.my_rdev = st->st_rdev;
+    arc_st.my_size = st->st_size;
+    arc_st.my_blocks = st->st_blocks;
+    arc_st.my_blksize = st->st_blksize;
+    arc_st.my_atime = st->st_atime;
+    arc_st.my_mtime = st->st_mtime;
+    arc_st.my_ctime = st->st_ctime;
 
-  *size = sizeof(kernel_st);
+    return arc_st;
 }
 
 void arc_sim_open_console(Chardev *chr)
@@ -276,31 +313,69 @@ void do_arc_semihosting(CPUARCState *env)
         break;
     }
 
+    /*
+     * Expected register values:
+     * regs[0] (r0) - AFile descriptor
+     * regs[1] (r1) - Address of newlib structure buffer
+     */
     case TARGET_SYS_fstat:
     {
+        printf("DEBUG: TARGET_SYS_fstat\n");
+
+        /*
+         * Initialize a stat struct to store
+         * file status information
+         */
         struct stat sbuf;
         memset(&sbuf, 0, sizeof(sbuf));
+
+        /*
+         * Call the fstat system call with the
+         * file descriptor and store the result in regs[0]
+         */
         regs[0] = fstat(regs[0], &sbuf);
 
-        size_t size;
-        conv_stat(&sbuf, &size);
+        /*
+         * Converts linux's stat struct to newlib's stat struct
+         */
+        struct arc_stat arc_sbuf = conv_stat(&sbuf);
 
-        hwaddr len = size;
+        /*
+         * Map the physical memory to a buffer at the specified address
+         */
+        hwaddr len = sizeof(arc_sbuf);
         void *buf = cpu_physical_memory_map(regs[1], &len, 1);
+
+        /*
+         * If the buffer mapping is successful,
+         * copy the converted stat structure to the buffer
+         */
         if (buf)
         {
-            memcpy(buf, &sbuf, size);
+            memcpy(buf, &arc_sbuf, sizeof(arc_sbuf));
             cpu_physical_memory_unmap(buf, len, 1, len);
         }
         break;
     }
 
+    /*
+     * Expected register values:
+     * regs[0] (r0) - Address of the file name string in memory
+     * regs[1] (r1) - Address of newlib structure buffer
+     */
     case TARGET_SYS_stat:
     {
+        printf("DEBUG: TARGET_SYS_stat\n");
+        /*
+         *  Create a character array to store the file name
+         */
         char name[1024];
         int rc;
         int i;
 
+        /*
+         * Read the file name character by character from the memory
+         */
         for (i = 0; i < ARRAY_SIZE(name); ++i) {
             rc = cpu_memory_rw_debug(cs, regs[0] + i,
                                      (uint8_t *)name + i, 1, 0);
@@ -309,18 +384,36 @@ void do_arc_semihosting(CPUARCState *env)
             }
         }
 
+        /*
+         * Initialize a stat struct to store
+         * file status information
+         */
         struct stat sbuf;
         memset(&sbuf, 0, sizeof(sbuf));
+
+        /*
+         * Call the stat system call with the
+         * file name and store the result in regs[0]
+         */
         regs[0] = stat(name, &sbuf);
 
-        size_t size;
-        conv_stat(&sbuf, &size);
+        /*
+         * Converts linux's stat struct to newlib's stat struct
+         */
+        struct arc_stat arc_sbuf = conv_stat(&sbuf);
 
-        hwaddr len = size;
+        /*
+         * Map the physical memory to a buffer at the specified address
+         */
+        hwaddr len = sizeof(arc_sbuf);
         void *buf = cpu_physical_memory_map(regs[1], &len, 1);
+        /*
+         * If the buffer mapping is successful,
+         * copy the converted stat structure to the buffer
+         */
         if (buf)
         {
-            memcpy(buf, &sbuf, size);
+            memcpy(buf, &arc_sbuf, sizeof(arc_sbuf));
             cpu_physical_memory_unmap(buf, len, 1, len);
         }
         break;
