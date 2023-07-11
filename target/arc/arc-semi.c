@@ -117,26 +117,26 @@ struct arc_stat
 	uint32_t my___unused5;
 };
 
-static struct arc_stat conv_stat(struct stat *st);
+static struct arc_stat *conv_stat(struct stat *st);
 
 /* Converts linux's stat to newlib's stat struct */
-static struct arc_stat conv_stat(struct stat *st)
+static struct arc_stat *conv_stat(struct stat *st)
 {
-    struct arc_stat arc_st;
+    struct arc_stat *arc_st = malloc (sizeof (struct arc_stat));
 
-    arc_st.my_dev = st->st_dev;
-    arc_st.my_ino = st->st_ino;
-    arc_st.my_mode = st->st_mode;
-    arc_st.my_nlink = st->st_nlink;
-    arc_st.my_uid = st->st_uid;
-    arc_st.my_gid = st->st_gid;
-    arc_st.my_rdev = st->st_rdev;
-    arc_st.my_size = st->st_size;
-    arc_st.my_blocks = st->st_blocks;
-    arc_st.my_blksize = st->st_blksize;
-    arc_st.my_atime = st->st_atime;
-    arc_st.my_mtime = st->st_mtime;
-    arc_st.my_ctime = st->st_ctime;
+    arc_st->my_dev = st->st_dev;
+    arc_st->my_ino = st->st_ino;
+    arc_st->my_mode = st->st_mode;
+    arc_st->my_nlink = st->st_nlink;
+    arc_st->my_uid = st->st_uid;
+    arc_st->my_gid = st->st_gid;
+    arc_st->my_rdev = st->st_rdev;
+    arc_st->my_size = st->st_size;
+    arc_st->my_blocks = st->st_blocks;
+    arc_st->my_blksize = st->st_blksize;
+    arc_st->my_atime = st->st_atime;
+    arc_st->my_mtime = st->st_mtime;
+    arc_st->my_ctime = st->st_ctime;
 
     return arc_st;
 }
@@ -338,12 +338,12 @@ void do_arc_semihosting(CPUARCState *env)
         /*
          * Converts linux's stat struct to newlib's stat struct
          */
-        struct arc_stat arc_sbuf = conv_stat(&sbuf);
+        struct arc_stat *arc_sbuf = conv_stat(&sbuf);
 
         /*
          * Map the physical memory to a buffer at the specified address
          */
-        hwaddr len = sizeof(arc_sbuf);
+        hwaddr len = sizeof(*arc_sbuf);
         void *buf = cpu_physical_memory_map(regs[1], &len, 1);
 
         /*
@@ -352,9 +352,11 @@ void do_arc_semihosting(CPUARCState *env)
          */
         if (buf)
         {
-            memcpy(buf, &arc_sbuf, sizeof(arc_sbuf));
+            memcpy(buf, arc_sbuf, sizeof(*arc_sbuf));
             cpu_physical_memory_unmap(buf, len, 1, len);
         }
+
+        free(arc_sbuf);
         break;
     }
 
@@ -400,12 +402,12 @@ void do_arc_semihosting(CPUARCState *env)
         /*
          * Converts linux's stat struct to newlib's stat struct
          */
-        struct arc_stat arc_sbuf = conv_stat(&sbuf);
+        struct arc_stat *arc_sbuf = conv_stat(&sbuf);
 
         /*
          * Map the physical memory to a buffer at the specified address
          */
-        hwaddr len = sizeof(arc_sbuf);
+        hwaddr len = sizeof(*arc_sbuf);
         void *buf = cpu_physical_memory_map(regs[1], &len, 1);
         /*
          * If the buffer mapping is successful,
@@ -413,9 +415,11 @@ void do_arc_semihosting(CPUARCState *env)
          */
         if (buf)
         {
-            memcpy(buf, &arc_sbuf, sizeof(arc_sbuf));
+            memcpy(buf, arc_sbuf, sizeof(*arc_sbuf));
             cpu_physical_memory_unmap(buf, len, 1, len);
         }
+
+        free(arc_sbuf);
         break;
     }
 #if 0
