@@ -7231,8 +7231,6 @@ arc_gen_SCONDL(DisasCtxt *ctx, TCGv addr, TCGv value)
 int
 arc_gen_DMB (DisasCtxt *ctx, TCGv a)
 {
-  int ret = DISAS_NEXT;
-
   TCGBar bar = 0;
   switch(ctx->insn.operands[0].value & 7) {
     case 1:
@@ -7247,7 +7245,7 @@ arc_gen_DMB (DisasCtxt *ctx, TCGv a)
   }
   tcg_gen_mb(bar);
 
-  return ret;
+  return DISAS_NORETURN;
 }
 
 
