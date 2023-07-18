@@ -39,8 +39,6 @@
 
 /* signaling the end of translation block */
 #define DISAS_UPDATE    DISAS_TARGET_0
-/* The (branch) instruction is handled with inserting the tcg_gen_tb_*() */
-#define DISAS_HANDLED DISAS_TARGET_1
 
 typedef struct DisasContext {
     DisasContextBase base;

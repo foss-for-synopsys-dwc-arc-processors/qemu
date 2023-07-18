@@ -90,7 +90,7 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret);
 #define getFFlag(R) ((int) ctx->insn.f)
 
 /* semfunc-helper.c */
-void gen_branchi(DisasCtxt *ctx, target_ulong target, unsigned *slot);
+void gen_branchi(DisasCtxt *ctx, target_ulong target);
 void gen_branch(DisasCtxt *ctx, TCGv target);
 
 static inline void update_delay_flag(DisasContext *ctx)

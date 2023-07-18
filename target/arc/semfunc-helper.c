@@ -151,31 +151,31 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
  *                                {
  *  ------------------------gen_branchi()-----------------------
  *                          /           \
- *  gen_gotoi(target, slot++)            status32.de = 1
+ *       gen_gotoi(target, 1)            status32.de = 1
  *                                       BTA = target
  *  -------------------------End of call------------------------
- * }                               }
- *                       gen_gotoi(next_pc, slot)
- *                       ^^^^^^^^^
+ *                                 }
+ *                       return DISAS_NORETURN
+ *                       if (ret == DISAS_NORETURN)
+ *                           gen_gotoi(next_pc, 0)
+ *                           ^^^^^^^^^
  * this will "goto" the next linear insn, which either may be the delay
  * slot of dbnz or the fall-thru instruction for cases that the counter
  * has reached 0.
  */
 void
-gen_branchi(DisasCtxt *ctx, target_ulong target, unsigned *slot)
+gen_branchi(DisasCtxt *ctx, target_ulong target)
 {
     assert(ctx->insn.class == BRANCH ||
            ctx->insn.class == BRCC   ||
            ctx->insn.class == BBIT0  ||
            ctx->insn.class == BBIT1);
 
-    *slot = 0;
     if (ctx->insn.d) {
         tcg_gen_ori_tl(cpu_pstate, cpu_pstate, STATUS32_DE);
         tcg_gen_movi_tl(cpu_bta, target);
     } else {
-        gen_gotoi_tb(ctx, *slot, target);
-        *slot += 1;
+        gen_gotoi_tb(ctx, 1, target);
     }
 }
 

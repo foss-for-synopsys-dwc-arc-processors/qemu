@@ -1465,25 +1465,18 @@ static int arc_decode(DisasContext *ctx, const struct arc_opcode *opcode)
  */
 static void gen_delayed_jump(DisasContext * ctx)
 {
-    TCGv zero = tcg_const_local_tl(0);
-    TCGv de = tcg_temp_new();
-    TCGv npc = tcg_const_local_tl(ctx->npc);
-    TCGv target = tcg_temp_new();
+    TCGv cond = tcg_temp_new();
+    TCGLabel *end = gen_new_label();
 
-    tcg_gen_andi_tl(de, cpu_pstate, STATUS32_DE);
-    /* target = (de TCG_COND_NE zero) ? cpu_bta : npc */
-    tcg_gen_movcond_tl(TCG_COND_NE, target, de, zero, cpu_bta, npc);
-    /* status32.DE = 0 */
+    tcg_gen_andi_tl(cond, cpu_pstate, STATUS32_DE);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, end);
+
     tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_DE);
+    gen_goto_tb(ctx, cpu_bta);
 
-    gen_goto_tb(ctx, target);
-
-    tcg_temp_free(target);
-    tcg_temp_free(npc);
-    tcg_temp_free(de);
-    tcg_temp_free(zero);
-
-    ctx->base.is_jmp = DISAS_HANDLED;
+    gen_set_label(end);
+    tcg_temp_free(cond);
+    ctx->base.is_jmp = DISAS_NORETURN;
 }
 
 void decode_opc(CPUARCState *env, DisasContext *ctx)
@@ -1572,7 +1565,6 @@ static void arc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     case DISAS_UPDATE:
         gen_gotoi_tb(dc, 0, dc->base.pc_next);
         break;
-    case DISAS_HANDLED:
     case DISAS_NORETURN:
         break;
     default:
