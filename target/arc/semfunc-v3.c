@@ -5838,7 +5838,6 @@ int
 arc_gen_B(DisasCtxt *ctx, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[0].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -5847,13 +5846,12 @@ arc_gen_B(DisasCtxt *ctx, TCGv offset ATTRIBUTE_UNUSED)
     arc_gen_verifyCCFlag(ctx, cond);
     tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -5872,7 +5870,6 @@ int
 arc_gen_BBIT0(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv _c = tcg_temp_new();
     TCGv msk = tcg_const_tl(1);
@@ -5886,15 +5883,14 @@ arc_gen_BBIT0(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_and_tl(bit, b, msk);
     tcg_gen_brcondi_tl(TCG_COND_NE, bit, 0, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(bit);
     tcg_temp_free(msk);
     tcg_temp_free(_c);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -5913,7 +5909,6 @@ int
 arc_gen_BBIT1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv _c = tcg_temp_new();
     TCGv msk = tcg_const_tl(1);
@@ -5927,15 +5922,14 @@ arc_gen_BBIT1(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_and_tl(bit, b, msk);
     tcg_gen_brcondi_tl(TCG_COND_EQ, bit, 0, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(bit);
     tcg_temp_free(msk);
     tcg_temp_free(_c);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -5959,7 +5953,6 @@ arc_gen_BL(DisasCtxt *ctx, TCGv offset ATTRIBUTE_UNUSED)
 {
     target_ulong target;
     target_ulong save_addr = ctx->npc;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -5998,13 +5991,12 @@ arc_gen_BL(DisasCtxt *ctx, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, do_not_branch);
 
     tcg_gen_movi_tl(cpu_blink, save_addr);
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6028,10 +6020,9 @@ arc_gen_J(DisasCtxt *ctx, TCGv target)
     gen_branch(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, 0, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6088,12 +6079,11 @@ arc_gen_JL(DisasCtxt *ctx, TCGv target)
     gen_branch(ctx, _target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, 0, ctx->npc);
 
     tcg_temp_free(cond);
     tcg_temp_free(_target);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6209,7 +6199,6 @@ int
 arc_gen_BREQ(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv b32 = tcg_temp_new();
     TCGv c32 = tcg_temp_new();
@@ -6221,16 +6210,15 @@ arc_gen_BREQ(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_andi_tl(c32, c, 0xffffffff);
     tcg_gen_brcond_tl(TCG_COND_NE, b32, c32, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
 
     tcg_temp_free(cond);
     tcg_temp_free(c32);
     tcg_temp_free(b32);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6347,7 +6335,6 @@ int
 arc_gen_BRNE(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv b32 = tcg_temp_new();
     TCGv c32 = tcg_temp_new();
@@ -6359,16 +6346,15 @@ arc_gen_BRNE(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_andi_tl(c32, c, 0xffffffff);
     tcg_gen_brcond_tl(TCG_COND_EQ, b32, c32, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
 
     tcg_temp_free(cond);
     tcg_temp_free(c32);
     tcg_temp_free(b32);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6485,7 +6471,6 @@ int
 arc_gen_BRLT(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv b32 = tcg_temp_new();
     TCGv c32 = tcg_temp_new();
@@ -6497,15 +6482,14 @@ arc_gen_BRLT(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_ext32s_tl(c32, c);
     tcg_gen_brcond_tl(TCG_COND_GE, b32, c32, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
     tcg_temp_free(c32);
     tcg_temp_free(b32);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6621,7 +6605,6 @@ int
 arc_gen_BRGE(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv b32 = tcg_temp_new();
     TCGv c32 = tcg_temp_new();
@@ -6633,16 +6616,15 @@ arc_gen_BRGE(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_ext32s_tl(c32, c);
     tcg_gen_brcond_tl(TCG_COND_LT, b32, c32, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
 
     tcg_temp_free(cond);
     tcg_temp_free(c32);
     tcg_temp_free(b32);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6858,7 +6840,6 @@ int
 arc_gen_BRLO(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv b32 = tcg_temp_new();
     TCGv c32 = tcg_temp_new();
@@ -6870,16 +6851,15 @@ arc_gen_BRLO(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_andi_tl(c32, c, 0xffffffff);
     tcg_gen_brcond_tl(TCG_COND_GEU, b32, c32, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
 
     tcg_temp_free(cond);
     tcg_temp_free(c32);
     tcg_temp_free(b32);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -6986,7 +6966,6 @@ int
 arc_gen_BRHS(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv b32 = tcg_temp_new();
     TCGv c32 = tcg_temp_new();
@@ -6998,16 +6977,15 @@ arc_gen_BRHS(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_andi_tl(c32, c, 0xffffffff);
     tcg_gen_brcond_tl(TCG_COND_LTU, b32, c32, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
 
     tcg_temp_free(cond);
     tcg_temp_free(c32);
     tcg_temp_free(b32);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -11464,7 +11442,6 @@ int
 arc_gen_BREQL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -11472,13 +11449,12 @@ arc_gen_BREQL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 
     tcg_gen_brcond_tl(TCG_COND_NE, b, c, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -11561,7 +11537,6 @@ int
 arc_gen_BRNEL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -11569,13 +11544,12 @@ arc_gen_BRNEL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 
     tcg_gen_brcond_tl(TCG_COND_EQ, b, c, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -11659,7 +11633,6 @@ int
 arc_gen_BRLTL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -11667,13 +11640,12 @@ arc_gen_BRLTL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 
     tcg_gen_brcond_tl(TCG_COND_GE, b, c, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -11765,7 +11737,6 @@ int
 arc_gen_BRGEL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -11773,13 +11744,12 @@ arc_gen_BRGEL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 
     tcg_gen_brcond_tl(TCG_COND_LT, b, c, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -11951,7 +11921,6 @@ int
 arc_gen_BRLOL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -11959,13 +11928,12 @@ arc_gen_BRLOL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 
     tcg_gen_brcond_tl(TCG_COND_GEU, b, c, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -12042,7 +12010,6 @@ int
 arc_gen_BRHSL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv cond = tcg_temp_local_new();
 
@@ -12050,13 +12017,12 @@ arc_gen_BRHSL(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 
     tcg_gen_brcond_tl(TCG_COND_LTU, b, c, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(cond);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -12676,10 +12642,9 @@ arc_gen_FFSL(DisasCtxt *ctx, TCGv src, TCGv dest)
  *   gen_branchi(target)
  */
 int
-arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset ATTRIBUTE_UNUSED)
+arc_gen_DBNZ(DisasCtxt *ctx, TCGv a, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[1].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
 
     update_delay_flag(ctx);
@@ -12688,12 +12653,11 @@ arc_gen_DBNZ (DisasCtxt *ctx, TCGv a, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_subi_tl(a, a, 1);
     tcg_gen_brcondi_tl(TCG_COND_EQ, a, 0, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 /*
@@ -12711,7 +12675,6 @@ int
 arc_gen_BBIT0L(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv _c = tcg_temp_new();
     TCGv msk = tcg_const_tl(1);
@@ -12725,15 +12688,14 @@ arc_gen_BBIT0L(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_and_tl(bit, b, msk);
     tcg_gen_brcondi_tl(TCG_COND_NE, bit, 0, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(bit);
     tcg_temp_free(msk);
     tcg_temp_free(_c);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 
@@ -12752,7 +12714,6 @@ int
 arc_gen_BBIT1L(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
 {
     const target_ulong target = ctx->pcl + ctx->insn.operands[2].value;
-    unsigned slot;
     TCGLabel *do_not_branch = gen_new_label();
     TCGv _c = tcg_temp_new();
     TCGv msk = tcg_const_tl(1);
@@ -12766,15 +12727,14 @@ arc_gen_BBIT1L(DisasCtxt *ctx, TCGv b, TCGv c, TCGv offset ATTRIBUTE_UNUSED)
     tcg_gen_and_tl(bit, b, msk);
     tcg_gen_brcondi_tl(TCG_COND_EQ, bit, 0, do_not_branch);
 
-    gen_branchi(ctx, target, &slot);
+    gen_branchi(ctx, target);
 
     gen_set_label(do_not_branch);
-    gen_gotoi_tb(ctx, slot, ctx->npc);
     tcg_temp_free(bit);
     tcg_temp_free(msk);
     tcg_temp_free(_c);
 
-    return DISAS_HANDLED;
+    return DISAS_NORETURN;
 }
 
 int
