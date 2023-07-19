@@ -56,11 +56,6 @@ void arc_cpu_do_interrupt(CPUState *cs)
      * address passed as exception parameter.
      */
     if (cs->exception_index == EXCP_LPEND_REACHED) {
-        /*
-         * TODO: this whole thing looks wrong, putting assert to make sure for
-         * removal.
-         */
-        g_assert_not_reached();
         env->pc = env->param;
         CPU_PCL(env) = env->pc & 0xfffffffe;
         return;
