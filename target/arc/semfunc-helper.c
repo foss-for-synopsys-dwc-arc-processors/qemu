@@ -146,7 +146,6 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
  * The caller can put it at the most appropriate place among the emitted
  * TCG instructions. Consider DBNZ as an example:
  *
- *                              slot=0
  *                          if (--counter)
  *                                {
  *  ------------------------gen_branchi()-----------------------
@@ -156,6 +155,9 @@ void arc_gen_verifyCCFlag(const DisasCtxt *ctx, TCGv ret)
  *  -------------------------End of call------------------------
  *                                 }
  *                       return DISAS_NORETURN
+ *                                 .
+ *                                 .
+ *                                 .
  *                       if (ret == DISAS_NORETURN)
  *                           gen_gotoi(next_pc, 0)
  *                           ^^^^^^^^^
@@ -175,6 +177,7 @@ gen_branchi(DisasCtxt *ctx, target_ulong target)
         tcg_gen_ori_tl(cpu_pstate, cpu_pstate, STATUS32_DE);
         tcg_gen_movi_tl(cpu_bta, target);
     } else {
+        /* Use slot 1, because slot 0 is used for next pc. */
         gen_gotoi_tb(ctx, 1, target);
     }
 }
