@@ -24,7 +24,552 @@ enum {
     TARGET_SYS_argv_sz = 1001,
     TARGET_SYS_argv = 1002,
     TARGET_SYS_memset = 1004,
+
+    TARGET_SYS_errno = 2000,
 };
+
+enum {
+    TARGET_ERRNO_EPERM = 1,			/* Not owner */
+    TARGET_ERRNO_ENOENT = 2,		/* No such file or directory */
+    TARGET_ERRNO_ESRCH = 3,			/* No such process */
+    TARGET_ERRNO_EINTR = 4,			/* Interrupted system call */
+    TARGET_ERRNO_EIO = 5,			/* I/O error */
+    TARGET_ERRNO_ENXIO = 6,			/* No such device or address */
+    TARGET_ERRNO_E2BIG = 7,			/* Arg list too long */
+    TARGET_ERRNO_ENOEXEC = 8,		/* Exec format error */
+    TARGET_ERRNO_EBADF = 9,			/* Bad file number */
+    TARGET_ERRNO_ECHILD = 10,		/* No children */
+    TARGET_ERRNO_EAGAIN = 11,		/* No more processes */
+    TARGET_ERRNO_ENOMEM = 12,		/* Not enough space */
+    TARGET_ERRNO_EACCES = 13,		/* Permission denied */
+    TARGET_ERRNO_EFAULT = 14,		/* Bad address */
+    TARGET_ERRNO_ENOTBLK = 15,	    /* Block device required */
+    TARGET_ERRNO_EBUSY = 16,		/* Device or resource busy */
+    TARGET_ERRNO_EEXIST = 17,		/* File exists */
+    TARGET_ERRNO_EXDEV = 18,		/* Cross-device link */
+    TARGET_ERRNO_ENODEV = 19,		/* No such device */
+    TARGET_ERRNO_ENOTDIR = 20,		/* Not a directory */
+    TARGET_ERRNO_EISDIR = 21,		/* Is a directory */
+    TARGET_ERRNO_EINVAL = 22,		/* Invalid argument */
+    TARGET_ERRNO_ENFILE = 23,		/* Too many open files in system */
+    TARGET_ERRNO_EMFILE = 24,		/* File descriptor value too large */
+    TARGET_ERRNO_ENOTTY = 25,		/* Not a character device */
+    TARGET_ERRNO_ETXTBSY = 26,		/* Text file busy */
+    TARGET_ERRNO_EFBIG = 27,		/* File too large */
+    TARGET_ERRNO_ENOSPC = 28,		/* No space left on device */
+    TARGET_ERRNO_ESPIPE = 29,		/* Illegal seek */
+    TARGET_ERRNO_EROFS = 30,		/* Read-only file system */
+    TARGET_ERRNO_EMLINK = 31,		/* Too many links */
+    TARGET_ERRNO_EPIPE = 32,		/* Broken pipe */
+    TARGET_ERRNO_EDOM = 33,			/* Mathematics argument out of domain of function */
+    TARGET_ERRNO_ERANGE = 34,		/* Result too large */
+    TARGET_ERRNO_ENOMSG = 35,		/* No message of desired type */
+    TARGET_ERRNO_EIDRM = 36,		/* Identifier removed */
+    TARGET_ERRNO_ECHRNG = 37,       /* Channel number out of range */
+    TARGET_ERRNO_EL2NSYNC = 38,     /* Level 2 not synchronized */
+    TARGET_ERRNO_EL3HLT = 39,	    /* Level 3 halted */
+    TARGET_ERRNO_EL3RST = 40,       /* Level 3 reset */
+    TARGET_ERRNO_ELNRNG = 41,	    /* Link number out of range */
+    TARGET_ERRNO_EUNATCH = 42,	    /* Protocol driver not attached */
+    TARGET_ERRNO_ENOCSI = 43,	    /* No CSI structure available */
+    TARGET_ERRNO_EL2HLT = 44,	    /* Level 2 halted */
+    TARGET_ERRNO_EDEADLK = 45,		/* Deadlock */
+    TARGET_ERRNO_ENOLCK = 46,		/* No lock */
+    TARGET_ERRNO_EBADE = 50,		/* Invalid exchange */
+    TARGET_ERRNO_EBADR = 51,		/* Invalid request descriptor */
+    TARGET_ERRNO_EXFULL = 52,		/* Exchange full */
+    TARGET_ERRNO_ENOANO = 53,		/* No anode */
+    TARGET_ERRNO_EBADRQC = 54,		/* Invalid request code */
+    TARGET_ERRNO_EBADSLT = 55,		/* Invalid slot */
+    TARGET_ERRNO_EDEADLOCK = 56,	/* File locking deadlock error */
+    TARGET_ERRNO_EBFONT = 57,		/* Bad font file fmt */
+    TARGET_ERRNO_ENOSTR = 60,		/* Not a stream */
+    TARGET_ERRNO_ENODATA = 61,		/* No data (for no delay io) */
+    TARGET_ERRNO_ETIME = 62,		/* Stream ioctl timeout */
+    TARGET_ERRNO_ENOSR = 63,		/* No stream resources */
+    TARGET_ERRNO_ENONET = 64,		/* Machine is not on the network */
+    TARGET_ERRNO_ENOPKG = 65,		/* Package not installed */
+    TARGET_ERRNO_EREMOTE = 66,		/* The object is remote */
+    TARGET_ERRNO_ENOLINK = 67,		/* Virtual circuit is gone */
+    TARGET_ERRNO_EADV = 68,			/* Advertise error */
+    TARGET_ERRNO_ESRMNT = 69,		/* Srmount error */
+    TARGET_ERRNO_ECOMM = 70,		/* Communication error on send */
+    TARGET_ERRNO_EPROTO = 71,		/* Protocol error */
+    TARGET_ERRNO_EMULTIHOP = 74,	/* Multihop attempted */
+    TARGET_ERRNO_ELBIN = 75,		/* Inode is remote (not really error) */
+    TARGET_ERRNO_EDOTDOT = 76,		/* Cross mount point (not really error) */
+    TARGET_ERRNO_EBADMSG = 77,		/* Bad message */
+    TARGET_ERRNO_EFTYPE = 79,		/* Inappropriate file type or format */
+    TARGET_ERRNO_ENOTUNIQ = 80,		/* Given log. name not unique */
+    TARGET_ERRNO_EBADFD = 81,		/* File descriptor in bad state */
+    TARGET_ERRNO_EREMCHG = 82,		/* Remote address changed */
+    TARGET_ERRNO_ELIBACC = 83,		/* Can't access a needed shared lib */
+    TARGET_ERRNO_ELIBBAD = 84,		/* Accessing a corrupted shared lib */
+    TARGET_ERRNO_ELIBSCN = 85,		/* .lib section in a.out corrupted */
+    TARGET_ERRNO_ELIBMAX = 86,		/* Attempting to link in too many libs */
+    TARGET_ERRNO_ELIBEXEC = 87,		/* Attempting to exec a shared library */
+    TARGET_ERRNO_ENOSYS = 88,		/* Function not implemented */
+    TARGET_ERRNO_ENMFILE = 89,      /* No more files */
+    TARGET_ERRNO_ENOTEMPTY = 90,	/* Directory not empty */
+    TARGET_ERRNO_ENAMETOOLONG = 91,	/* File or path name too long */
+    TARGET_ERRNO_ELOOP = 92,		/* Too many symbolic links */
+    TARGET_ERRNO_EOPNOTSUPP = 95,	/* Operation not supported on socket */
+    TARGET_ERRNO_EPFNOSUPPORT = 96, /* Protocol family not supported */
+    TARGET_ERRNO_ECONNRESET = 104,  /* Connection reset by peer */
+    TARGET_ERRNO_ENOBUFS = 105,		/* No buffer space available */
+    TARGET_ERRNO_EAFNOSUPPORT = 106,/* Address family not supported by protocol family */
+    TARGET_ERRNO_EPROTOTYPE = 107,	/* Protocol wrong type for socket */
+    TARGET_ERRNO_ENOTSOCK = 108,	/* Socket operation on non-socket */
+    TARGET_ERRNO_ENOPROTOOPT = 109,	/* Protocol not available */
+    TARGET_ERRNO_ESHUTDOWN = 110,	/* Can't send after socket shutdown */
+    TARGET_ERRNO_ECONNREFUSED = 111,/* Connection refused */
+    TARGET_ERRNO_EADDRINUSE = 112,	/* Address already in use */
+    TARGET_ERRNO_ECONNABORTED = 113,/* Software caused connection abort */
+    TARGET_ERRNO_ENETUNREACH = 114,	/* Network is unreachable */
+    TARGET_ERRNO_ENETDOWN = 115,	/* Network interface is not configured */
+    TARGET_ERRNO_ETIMEDOUT = 116,	/* Connection timed out */
+    TARGET_ERRNO_EHOSTDOWN = 117,	/* Host is down */
+    TARGET_ERRNO_EHOSTUNREACH = 118,/* Host is unreachable */
+    TARGET_ERRNO_EINPROGRESS = 119,	/* Connection already in progress */
+    TARGET_ERRNO_EALREADY = 120,	/* Socket already connected */
+    TARGET_ERRNO_EDESTADDRREQ = 121,/* Destination address required */
+    TARGET_ERRNO_EMSGSIZE = 122,	/* Message too long */
+    TARGET_ERRNO_EPROTONOSUPPORT = 123,	/* Unknown protocol */
+    TARGET_ERRNO_ESOCKTNOSUPPORT = 124,	/* Socket type not supported */
+    TARGET_ERRNO_EADDRNOTAVAIL = 125,	/* Address not available */
+    TARGET_ERRNO_ENETRESET = 126,   /* Connection aborted by network */
+    TARGET_ERRNO_EISCONN = 127,		/* Socket is already connected */
+    TARGET_ERRNO_ENOTCONN = 128,	/* Socket is not connected */
+    TARGET_ERRNO_ETOOMANYREFS = 129,/* Too many references: cannot splice */
+    TARGET_ERRNO_EPROCLIM = 130,    /* Too many processes */
+    TARGET_ERRNO_EUSERS = 131,      /* Too many users */
+    TARGET_ERRNO_EDQUOT = 132,      /* Reserved */
+    TARGET_ERRNO_ESTALE = 133,      /* Reserved */
+    TARGET_ERRNO_ENOTSUP = 134,     /* Not supported */
+    TARGET_ERRNO_ENOMEDIUM = 135,   /* No medium found */
+    TARGET_ERRNO_ENOSHARE = 136,    /* No such host or network path */
+    TARGET_ERRNO_ECASECLASH = 137,  /* Filename exists with different case */
+    TARGET_ERRNO_EILSEQ = 138,		/* Illegal byte sequence */
+    TARGET_ERRNO_EOVERFLOW = 139,	/* Value too large for defined data type */
+    TARGET_ERRNO_ECANCELED = 140,	/* Operation canceled */
+    TARGET_ERRNO_ENOTRECOVERABLE = 141,	/* State not recoverable */
+    TARGET_ERRNO_EOWNERDEAD = 142,	/* Previous owner died */
+    TARGET_ERRNO_ESTRPIPE = 143,	/* Streams pipe error */
+    TARGET_ERRNO_EHWPOISON = 144,   /* Memory page has hardware error */
+    TARGET_ERRNO_EISNAM = 145,      /* Is a named type file */
+    TARGET_ERRNO_EKEYEXPIRED = 146, /* Key has expired */
+    TARGET_ERRNO_EKEYREJECTED = 147,/* Key was rejected by service */
+    TARGET_ERRNO_EKEYREVOKED = 148, /* Key has been revoked */
+};
+
+static const struct {
+    int host;
+    int target;
+} errno_map[] = {
+#ifdef EPERM
+    { .host = EPERM, .target = TARGET_ERRNO_EPERM },
+#endif
+#ifdef ENOENT
+    { .host = ENOENT, .target = TARGET_ERRNO_ENOENT },
+#endif
+#ifdef ESRCH
+    { .host = ESRCH, .target = TARGET_ERRNO_ESRCH },
+#endif
+#ifdef EINTR
+    { .host = EINTR, .target = TARGET_ERRNO_EINTR },
+#endif
+#ifdef EIO
+    { .host = EIO, .target = TARGET_ERRNO_EIO },
+#endif
+#ifdef ENXIO
+    { .host = ENXIO, .target = TARGET_ERRNO_ENXIO },
+#endif
+#ifdef E2BIG
+    { .host = E2BIG, .target = TARGET_ERRNO_E2BIG },
+#endif
+#ifdef ENOEXEC
+    { .host = ENOEXEC, .target = TARGET_ERRNO_ENOEXEC },
+#endif
+#ifdef EBADF
+    { .host = EBADF, .target = TARGET_ERRNO_EBADF },
+#endif
+#ifdef ECHILD
+    { .host = ECHILD, .target = TARGET_ERRNO_ECHILD },
+#endif
+#ifdef EAGAIN
+    { .host = EAGAIN, .target = TARGET_ERRNO_EAGAIN },
+#endif
+#ifdef ENOMEM
+    { .host = ENOMEM, .target = TARGET_ERRNO_ENOMEM },
+#endif
+#ifdef EACCES
+    { .host = EACCES, .target = TARGET_ERRNO_EACCES },
+#endif
+#ifdef EFAULT
+    { .host = EFAULT, .target = TARGET_ERRNO_EFAULT },
+#endif
+#ifdef ENOTBLK
+    { .host = ENOTBLK, .target = TARGET_ERRNO_ENOTBLK },
+#endif
+#ifdef EBUSY
+    { .host = EBUSY, .target = TARGET_ERRNO_EBUSY },
+#endif
+#ifdef EEXIST
+    { .host = EEXIST, .target = TARGET_ERRNO_EEXIST },
+#endif
+#ifdef EXDEV
+    { .host = EXDEV, .target = TARGET_ERRNO_EXDEV },
+#endif
+#ifdef ENODEV
+    { .host = ENODEV, .target = TARGET_ERRNO_ENODEV },
+#endif
+#ifdef ENOTDIR
+    { .host = ENOTDIR, .target = TARGET_ERRNO_ENOTDIR },
+#endif
+#ifdef EISDIR
+    { .host = EISDIR, .target = TARGET_ERRNO_EISDIR },
+#endif
+#ifdef EINVAL
+    { .host = EINVAL, .target = TARGET_ERRNO_EINVAL },
+#endif
+#ifdef ENFILE
+    { .host = ENFILE, .target = TARGET_ERRNO_ENFILE },
+#endif
+#ifdef EMFILE
+    { .host = EMFILE, .target = TARGET_ERRNO_EMFILE },
+#endif
+#ifdef ENOTTY
+    { .host = ENOTTY, .target = TARGET_ERRNO_ENOTTY },
+#endif
+#ifdef ETXTBSY
+    { .host = ETXTBSY, .target = TARGET_ERRNO_ETXTBSY },
+#endif
+#ifdef EFBIG
+    { .host = EFBIG, .target = TARGET_ERRNO_EFBIG },
+#endif
+#ifdef ENOSPC
+    { .host = ENOSPC, .target = TARGET_ERRNO_ENOSPC },
+#endif
+#ifdef ESPIPE
+    { .host = ESPIPE, .target = TARGET_ERRNO_ESPIPE },
+#endif
+#ifdef EROFS
+    { .host = EROFS, .target = TARGET_ERRNO_EROFS },
+#endif
+#ifdef EMLINK
+    { .host = EMLINK, .target = TARGET_ERRNO_EMLINK },
+#endif
+#ifdef EPIPE
+    { .host = EPIPE, .target = TARGET_ERRNO_EPIPE },
+#endif
+#ifdef EDOM
+    { .host = EDOM, .target = TARGET_ERRNO_EDOM },
+#endif
+#ifdef ERANGE
+    { .host = ERANGE, .target = TARGET_ERRNO_ERANGE },
+#endif
+#ifdef ENOMSG
+    { .host = ENOMSG, .target = TARGET_ERRNO_ENOMSG },
+#endif
+#ifdef EIDRM
+    { .host = EIDRM, .target = TARGET_ERRNO_EIDRM },
+#endif
+#ifdef ECHRNG
+    { .host = ECHRNG, .target = TARGET_ERRNO_ECHRNG },
+#endif
+#ifdef EL2NSYNC
+    { .host = EL2NSYNC, .target = TARGET_ERRNO_EL2NSYNC },
+#endif
+#ifdef EL3HLT
+    { .host = EL3HLT, .target = TARGET_ERRNO_EL3HLT },
+#endif
+#ifdef EL3RST
+    { .host = EL3RST, .target = TARGET_ERRNO_EL3RST },
+#endif
+#ifdef ELNRNG
+    { .host = ELNRNG, .target = TARGET_ERRNO_ELNRNG },
+#endif
+#ifdef EUNATCH
+    { .host = EUNATCH, .target = TARGET_ERRNO_EUNATCH },
+#endif
+#ifdef ENOCSI
+    { .host = ENOCSI, .target = TARGET_ERRNO_ENOCSI },
+#endif
+#ifdef EL2HLT
+    { .host = EL2HLT, .target = TARGET_ERRNO_EL2HLT },
+#endif
+#ifdef EDEADLK
+    { .host = EDEADLK, .target = TARGET_ERRNO_EDEADLK },
+#endif
+#ifdef ENOLCK
+    { .host = ENOLCK, .target = TARGET_ERRNO_ENOLCK },
+#endif
+#ifdef EBADE
+    { .host = EBADE, .target = TARGET_ERRNO_EBADE },
+#endif
+#ifdef EBADR
+    { .host = EBADR, .target = TARGET_ERRNO_EBADR },
+#endif
+#ifdef EXFULL
+    { .host = EXFULL, .target = TARGET_ERRNO_EXFULL },
+#endif
+#ifdef ENOANO
+    { .host = ENOANO, .target = TARGET_ERRNO_ENOANO },
+#endif
+#ifdef EBADRQC
+    { .host = EBADRQC, .target = TARGET_ERRNO_EBADRQC },
+#endif
+#ifdef EBADSLT
+    { .host = EBADSLT, .target = TARGET_ERRNO_EBADSLT },
+#endif
+#ifdef EDEADLOCK
+    { .host = EDEADLOCK, .target = TARGET_ERRNO_EDEADLOCK },
+#endif
+#ifdef EBFONT
+    { .host = EBFONT, .target = TARGET_ERRNO_EBFONT },
+#endif
+#ifdef ENOSTR
+    { .host = ENOSTR, .target = TARGET_ERRNO_ENOSTR },
+#endif
+#ifdef ENODATA
+    { .host = ENODATA, .target = TARGET_ERRNO_ENODATA },
+#endif
+#ifdef ETIME
+    { .host = ETIME, .target = TARGET_ERRNO_ETIME },
+#endif
+#ifdef ENOSR
+    { .host = ENOSR, .target = TARGET_ERRNO_ENOSR },
+#endif
+#ifdef ENONET
+    { .host = ENONET, .target = TARGET_ERRNO_ENONET },
+#endif
+#ifdef ENOPKG
+    { .host = ENOPKG, .target = TARGET_ERRNO_ENOPKG },
+#endif
+#ifdef EREMOTE
+    { .host = EREMOTE, .target = TARGET_ERRNO_EREMOTE },
+#endif
+#ifdef ENOLINK
+    { .host = ENOLINK, .target = TARGET_ERRNO_ENOLINK },
+#endif
+#ifdef EADV
+    { .host = EADV, .target = TARGET_ERRNO_EADV },
+#endif
+#ifdef ESRMNT
+    { .host = ESRMNT, .target = TARGET_ERRNO_ESRMNT },
+#endif
+#ifdef ECOMM
+    { .host = ECOMM, .target = TARGET_ERRNO_ECOMM },
+#endif
+#ifdef EPROTO
+    { .host = EPROTO, .target = TARGET_ERRNO_EPROTO },
+#endif
+#ifdef EMULTIHOP
+    { .host = EMULTIHOP, .target = TARGET_ERRNO_EMULTIHOP },
+#endif
+#ifdef ELBIN
+    { .host = ELBIN, .target = TARGET_ERRNO_ELBIN },
+#endif
+#ifdef EDOTDOT
+    { .host = EDOTDOT, .target = TARGET_ERRNO_EDOTDOT },
+#endif
+#ifdef EBADMSG
+    { .host = EBADMSG, .target = TARGET_ERRNO_EBADMSG },
+#endif
+#ifdef EFTYPE
+    { .host = EFTYPE, .target = TARGET_ERRNO_EFTYPE },
+#endif
+#ifdef ENOTUNIQ
+    { .host = ENOTUNIQ, .target = TARGET_ERRNO_ENOTUNIQ },
+#endif
+#ifdef EBADFD
+    { .host = EBADFD, .target = TARGET_ERRNO_EBADFD },
+#endif
+#ifdef EREMCHG
+    { .host = EREMCHG, .target = TARGET_ERRNO_EREMCHG },
+#endif
+#ifdef ELIBACC
+    { .host = ELIBACC, .target = TARGET_ERRNO_ELIBACC },
+#endif
+#ifdef ELIBBAD
+    { .host = ELIBBAD, .target = TARGET_ERRNO_ELIBBAD },
+#endif
+#ifdef ELIBSCN
+    { .host = ELIBSCN, .target = TARGET_ERRNO_ELIBSCN },
+#endif
+#ifdef ELIBMAX
+    { .host = ELIBMAX, .target = TARGET_ERRNO_ELIBMAX },
+#endif
+#ifdef ELIBEXEC
+    { .host = ELIBEXEC, .target = TARGET_ERRNO_ELIBEXEC },
+#endif
+#ifdef ENOSYS
+    { .host = ENOSYS, .target = TARGET_ERRNO_ENOSYS },
+#endif
+#ifdef ENMFILE
+    { .host = ENMFILE, .target = TARGET_ERRNO_ENMFILE },
+#endif
+#ifdef ENOTEMPTY
+    { .host = ENOTEMPTY, .target = TARGET_ERRNO_ENOTEMPTY },
+#endif
+#ifdef ENAMETOOLONG
+    { .host = ENAMETOOLONG, .target = TARGET_ERRNO_ENAMETOOLONG },
+#endif
+#ifdef ELOOP
+    { .host = ELOOP, .target = TARGET_ERRNO_ELOOP },
+#endif
+#ifdef EOPNOTSUPP
+    { .host = EOPNOTSUPP, .target = TARGET_ERRNO_EOPNOTSUPP },
+#endif
+#ifdef EPFNOSUPPORT
+    { .host = EPFNOSUPPORT, .target = TARGET_ERRNO_EPFNOSUPPORT },
+#endif
+#ifdef ECONNRESET
+    { .host = ECONNRESET, .target = TARGET_ERRNO_ECONNRESET },
+#endif
+#ifdef ENOBUFS
+    { .host = ENOBUFS, .target = TARGET_ERRNO_ENOBUFS },
+#endif
+#ifdef EAFNOSUPPORT
+    { .host = EAFNOSUPPORT, .target = TARGET_ERRNO_EAFNOSUPPORT },
+#endif
+#ifdef EPROTOTYPE
+    { .host = EPROTOTYPE, .target = TARGET_ERRNO_EPROTOTYPE },
+#endif
+#ifdef ENOTSOCK
+    { .host = ENOTSOCK, .target = TARGET_ERRNO_ENOTSOCK },
+#endif
+#ifdef ENOPROTOOPT
+    { .host = ENOPROTOOPT, .target = TARGET_ERRNO_ENOPROTOOPT },
+#endif
+#ifdef ESHUTDOWN
+    { .host = ESHUTDOWN, .target = TARGET_ERRNO_ESHUTDOWN },
+#endif
+#ifdef ECONNREFUSED
+    { .host = ECONNREFUSED, .target = TARGET_ERRNO_ECONNREFUSED },
+#endif
+#ifdef EADDRINUSE
+    { .host = EADDRINUSE, .target = TARGET_ERRNO_EADDRINUSE },
+#endif
+#ifdef ECONNABORTED
+    { .host = ECONNABORTED, .target = TARGET_ERRNO_ECONNABORTED },
+#endif
+#ifdef ENETUNREACH
+    { .host = ENETUNREACH, .target = TARGET_ERRNO_ENETUNREACH },
+#endif
+#ifdef ENETDOWN
+    { .host = ENETDOWN, .target = TARGET_ERRNO_ENETDOWN },
+#endif
+#ifdef ETIMEDOUT
+    { .host = ETIMEDOUT, .target = TARGET_ERRNO_ETIMEDOUT },
+#endif
+#ifdef EHOSTDOWN
+    { .host = EHOSTDOWN, .target = TARGET_ERRNO_EHOSTDOWN },
+#endif
+#ifdef EHOSTUNREACH
+    { .host = EHOSTUNREACH, .target = TARGET_ERRNO_EHOSTUNREACH },
+#endif
+#ifdef EINPROGRESS
+    { .host = EINPROGRESS, .target = TARGET_ERRNO_EINPROGRESS },
+#endif
+#ifdef EALREADY
+    { .host = EALREADY, .target = TARGET_ERRNO_EALREADY },
+#endif
+#ifdef EDESTADDRREQ
+    { .host = EDESTADDRREQ, .target = TARGET_ERRNO_EDESTADDRREQ },
+#endif
+#ifdef EMSGSIZE
+    { .host = EMSGSIZE, .target = TARGET_ERRNO_EMSGSIZE },
+#endif
+#ifdef EPROTONOSUPPORT
+    { .host = EPROTONOSUPPORT, .target = TARGET_ERRNO_EPROTONOSUPPORT },
+#endif
+#ifdef ESOCKTNOSUPPORT
+    { .host = ESOCKTNOSUPPORT, .target = TARGET_ERRNO_ESOCKTNOSUPPORT },
+#endif
+#ifdef EADDRNOTAVAIL
+    { .host = EADDRNOTAVAIL, .target = TARGET_ERRNO_EADDRNOTAVAIL },
+#endif
+#ifdef ENETRESET
+    { .host = ENETRESET, .target = TARGET_ERRNO_ENETRESET },
+#endif
+#ifdef EISCONN
+    { .host = EISCONN, .target = TARGET_ERRNO_EISCONN },
+#endif
+#ifdef ENOTCONN
+    { .host = ENOTCONN, .target = TARGET_ERRNO_ENOTCONN },
+#endif
+#ifdef ETOOMANYREFS
+    { .host = ETOOMANYREFS, .target = TARGET_ERRNO_ETOOMANYREFS },
+#endif
+#ifdef EPROCLIM
+    { .host = EPROCLIM, .target = TARGET_ERRNO_EPROCLIM },
+#endif
+#ifdef EUSERS
+    { .host = EUSERS, .target = TARGET_ERRNO_EUSERS },
+#endif
+#ifdef EDQUOT
+    { .host = EDQUOT, .target = TARGET_ERRNO_EDQUOT },
+#endif
+#ifdef ESTALE
+    { .host = ESTALE, .target = TARGET_ERRNO_ESTALE },
+#endif
+#ifdef ENOTSUP
+    { .host = ENOTSUP, .target = TARGET_ERRNO_ENOTSUP },
+#endif
+#ifdef ENOMEDIUM
+    { .host = ENOMEDIUM, .target = TARGET_ERRNO_ENOMEDIUM },
+#endif
+#ifdef ENOSHARE
+    { .host = ENOSHARE, .target = TARGET_ERRNO_ENOSHARE },
+#endif
+#ifdef ECASECLASH
+    { .host = ECASECLASH, .target = TARGET_ERRNO_ECASECLASH },
+#endif
+#ifdef EILSEQ
+    { .host = EILSEQ, .target = TARGET_ERRNO_EILSEQ },
+#endif
+#ifdef EOVERFLOW
+    { .host = EOVERFLOW, .target = TARGET_ERRNO_EOVERFLOW },
+#endif
+#ifdef ECANCELED
+    { .host = ECANCELED, .target = TARGET_ERRNO_ECANCELED },
+#endif
+#ifdef ENOTRECOVERABLE
+    { .host = ENOTRECOVERABLE, .target = TARGET_ERRNO_ENOTRECOVERABLE },
+#endif
+#ifdef EOWNERDEAD
+    { .host = EOWNERDEAD, .target = TARGET_ERRNO_EOWNERDEAD },
+#endif
+#ifdef ESTRPIPE
+    { .host = ESTRPIPE, .target = TARGET_ERRNO_ESTRPIPE },
+#endif
+#ifdef EHWPOISON
+    { .host = EHWPOISON, .target = TARGET_ERRNO_EHWPOISON },
+#endif
+#ifdef EISNAM
+    { .host = EISNAM, .target = TARGET_ERRNO_EISNAM },
+#endif
+#ifdef EKEYEXPIRED
+    { .host = EKEYEXPIRED, .target = TARGET_ERRNO_EKEYEXPIRED },
+#endif
+#ifdef EKEYREJECTED
+    { .host = EKEYREJECTED, .target = TARGET_ERRNO_EKEYREJECTED },
+#endif
+#ifdef EKEYREVOKED
+    { .host = EKEYREVOKED, .target = TARGET_ERRNO_EKEYREVOKED },
+#endif
+};
+
+static int
+map_errno(int semihosting_errno)
+{
+    unsigned i;
+    for (i = 0; i < sizeof(errno_map)/sizeof(errno_map[0]); i++)
+        if (errno_map[i].host == semihosting_errno)
+            return errno_map[i].target;
+    return TARGET_ERRNO_EINVAL;
+}
 
 typedef struct ArcSimConsole {
     CharBackend be;
@@ -154,6 +699,8 @@ void arc_sim_open_console(Chardev *chr)
     sim_console = &console;
 }
 
+static int arc_semihosting_errno;
+
 /*
  * SYSCALL0:
  *  - Input: R8 syscall name;
@@ -230,6 +777,7 @@ void do_arc_semihosting(CPUARCState *env)
                     }
                     if (io_done == -1) {
                         error = true;
+                        arc_semihosting_errno = errno;
                         io_done = 0;
                     }
                     cpu_physical_memory_unmap(buf, sz, !is_write, io_done);
@@ -268,6 +816,7 @@ void do_arc_semihosting(CPUARCState *env)
 
             if (rc == 0 && i < ARRAY_SIZE(name)) {
                 regs[0] = open(name, regs[1], regs[2]);
+                arc_semihosting_errno = errno;
             } else {
                 regs[0] = -1;
             }
@@ -280,16 +829,19 @@ void do_arc_semihosting(CPUARCState *env)
             regs[0] = 0;
         } else {
             regs[0] = close(regs[0]);
+            arc_semihosting_errno = errno;
         }
         break;
 
     case TARGET_SYS_lseek:
         regs[0] = lseek(regs[0], (off_t)(int32_t)regs[1], regs[2]);
+        arc_semihosting_errno = errno;
         break;
 
     case TARGET_SYS_times:
     case TARGET_SYS_time:
         regs[0] = time (NULL);
+        arc_semihosting_errno = errno;
         break;
 
     case TARGET_SYS_gettimeofday:
@@ -297,6 +849,7 @@ void do_arc_semihosting(CPUARCState *env)
         qemu_timeval tv;
         struct timeval p;
         uint32_t result = qemu_gettimeofday(&tv);
+        arc_semihosting_errno = errno;
         target_ulong base = regs[0];
         uint32_t sz = sizeof (struct timeval);
         hwaddr len = sz;
@@ -332,6 +885,7 @@ void do_arc_semihosting(CPUARCState *env)
          * file descriptor and store the result in regs[0]
          */
         regs[0] = fstat(regs[0], &sbuf);
+        arc_semihosting_errno = errno;
 
         /*
          * Converts linux's stat struct to newlib's stat struct
@@ -395,6 +949,7 @@ void do_arc_semihosting(CPUARCState *env)
          * file name and store the result in regs[0]
          */
         regs[0] = stat(name, &sbuf);
+        arc_semihosting_errno = errno;
 
         /*
          * Converts linux's stat struct to newlib's stat struct
@@ -419,6 +974,9 @@ void do_arc_semihosting(CPUARCState *env)
         free(arc_sbuf);
         break;
     }
+    case TARGET_SYS_errno:
+        regs[0] = map_errno(arc_semihosting_errno);
+        break;
 #if 0
     case TARGET_SYS_argc:
         regs[2] = semihosting_get_argc();
