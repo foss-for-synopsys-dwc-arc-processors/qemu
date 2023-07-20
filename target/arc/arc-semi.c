@@ -669,6 +669,12 @@ static struct arc_stat *conv_stat(struct stat *st)
 {
     struct arc_stat *arc_st = malloc (sizeof (struct arc_stat));
 
+    if (arc_st == NULL)
+    {
+        fprintf(stderr, "arc_stat: Memory not allocated\n");
+        abort();
+    }
+
     arc_st->my_dev = st->st_dev;
     arc_st->my_ino = st->st_ino;
     arc_st->my_mode = st->st_mode;
