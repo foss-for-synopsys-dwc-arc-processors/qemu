@@ -1577,7 +1577,8 @@ static void arc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     switch (dc->base.is_jmp) {
     case DISAS_TOO_MANY:
     case DISAS_UPDATE:
-        gen_gotoi_tb(dc, 0, dc->base.pc_next);
+        updatei_pcs(dc->base.pc_next);
+        tcg_gen_exit_tb(NULL, 0);
         break;
     case DISAS_NORETURN:
         break;

@@ -279,7 +279,7 @@ void arc_gen_set_register(enum arc_registers reg, TCGv value);
 #define setRegister(REG, VALUE) \
     arc_gen_set_register(REG, VALUE); \
     if (REG == R_STATUS32) { \
-        ret = DISAS_NORETURN; \
+        ret = DISAS_UPDATE; \
     } \
 
 #define inKernelMode(R) { \
