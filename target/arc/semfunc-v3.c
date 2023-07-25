@@ -12022,6 +12022,40 @@ arc_gen_POPL(DisasCtxt *ctx, TCGv dest)
 
 
 
+/* POPDL
+ * Given an even-numbered register @src, read the 128-bit value at $sp into
+ * @src (low part) and @src+1 (high part), then increment $sp by 16 bytes. As
+ * confirmed using nsim, since ARCv3 is little-endian, the low part should be
+ * popped first. The hardware performs not a single 16-byte operation, but
+ * rather two consecutive 8-byte operations.
+ *
+ * No flags are affected by this instruction.
+ */
+
+int
+arc_gen_POPDL(DisasCtxt *ctx, TCGv dest)
+{
+    TCGv sp = tcg_temp_new();
+    TCGv next_reg = nextReg(dest);
+
+    tcg_gen_mov_tl(sp, cpu_sp);
+
+    tcg_gen_qemu_ld_tl(dest, sp, ctx->mem_idx, MO_UQ);
+    tcg_gen_addi_tl(sp, sp, 8);
+
+    tcg_gen_qemu_ld_tl(next_reg, sp, ctx->mem_idx, MO_UQ);
+    tcg_gen_addi_tl(sp, sp, 8);
+
+    if (dest != cpu_sp) {
+        tcg_gen_mov_tl(cpu_sp, sp);
+    }
+
+    tcg_temp_free(sp);
+
+    return DISAS_NEXT;
+}
+
+
 
 
 /* PUSHL
@@ -12047,6 +12081,38 @@ arc_gen_PUSHL(DisasCtxt *ctx, TCGv src)
     return DISAS_NEXT;
 }
 
+
+
+
+/* PUSHDL
+ * Given an even-numbered register @src, decrement $sp by 16 bytes, then write
+ * the 128-bit value represented by @src (low part) and @src+1 (high part) into
+ * the memory at $sp-16. As confirmed using nsim, since ARCv3 is little-endian,
+ * the high part should be pushed first. The hardware performs not a single
+ * 16-byte operation, but two consecutive 8-byte operations.
+ *
+ * No flags are affected by this instruction.
+ */
+
+int
+arc_gen_PUSHDL(DisasCtxt *ctx, TCGv src)
+{
+    TCGv sp = tcg_temp_new();
+    TCGv next_reg = nextReg(src);
+
+    tcg_gen_mov_tl(sp, cpu_sp);
+    tcg_gen_subi_tl(sp, sp, 16);
+    tcg_gen_qemu_st_tl(src, sp, ctx->mem_idx, MO_UQ);
+
+    tcg_gen_addi_tl(sp, sp, 8);
+    tcg_gen_qemu_st_tl(next_reg, sp, ctx->mem_idx, MO_UQ);
+
+    tcg_gen_subi_tl(cpu_sp, sp, 8);
+
+    tcg_temp_free(sp);
+
+    return DISAS_NEXT;
+}
 
 
 
