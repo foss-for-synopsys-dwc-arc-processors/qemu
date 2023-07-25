@@ -4244,196 +4244,142 @@ arc_gen_LR (DisasCtxt *ctx, TCGv dest, TCGv src)
 }
 
 
-
-
-
-/* CLRI
- *    Variables: @c
- *    Functions: getRegister, setRegister, inKernelMode
---- code ---
-{
-  in_kernel_mode = inKernelMode();
-  if(in_kernel_mode != 1)
-    {
-      throwExcpPriviledgeV();
-    }
-  status32 = getRegister (R_STATUS32);
-  ie = (status32 & 2147483648);
-  ie = (ie >> 27);
-  e = ((status32 & 30) >> 1);
-  a = 32;
-  @c = ((ie | e) | a);
-  mask = 2147483648;
-  mask = ~mask;
-  status32 = (status32 & mask);
-  setRegister (R_STATUS32, status32);
-}
+/*
+ * CLRI
+ * --- code ---
+ * if (status32.u)
+ *   raise privilege violation
+ *
+ * if (ctx->insn.operands[0].type == reg)
+ * {
+ *   c[4] = status32 >> 31
+ *   c[3:0] = ((status32 & STATUS32_E_MSK) >> 1) & 0xF
+ *   c[5] = 1
+ * }
+ *
+ * status32 &= STATUS32_IE
  */
-
 int
-arc_gen_CLRI (DisasCtxt *ctx, TCGv c)
+arc_gen_CLRI(DisasCtxt *ctx, TCGv c)
 {
-  int ret = DISAS_NEXT;
-  TCGv temp_1 = tcg_temp_local_new();
-  TCGv status32 = tcg_temp_local_new();
-  TCGv ie = tcg_temp_local_new();
-  TCGv temp_2 = tcg_temp_local_new();
-  TCGv e = tcg_temp_local_new();
-  TCGv a = tcg_temp_local_new();
-  TCGv temp_3 = tcg_temp_local_new();
-  TCGv mask = tcg_temp_local_new();
-  TCGv in_kernel_mode = tcg_temp_local_new();
-  inKernelMode(in_kernel_mode);
-  TCGLabel *done_in_kernel_mode = gen_new_label();
-  tcg_gen_brcondi_tl(TCG_COND_EQ, in_kernel_mode, 1, done_in_kernel_mode);
-  throwExcpPriviledgeV();
-  gen_set_label(done_in_kernel_mode);
-  getRegister(temp_1, R_STATUS32);
-  tcg_gen_mov_tl(status32, temp_1);
-  tcg_gen_andi_tl(ie, status32, 2147483648);
-  tcg_gen_shri_tl(ie, ie, 27);
-  tcg_gen_andi_tl(temp_2, status32, 30);
-  tcg_gen_shri_tl(e, temp_2, 1);
-  tcg_gen_movi_tl(a, 32);
-  tcg_gen_or_tl(temp_3, ie, e);
-  tcg_gen_or_tl(c, temp_3, a);
-  tcg_gen_movi_tl(mask, 2147483648);
-  tcg_gen_not_tl(mask, mask);
-  tcg_gen_and_tl(status32, status32, mask);
-  setRegister(R_STATUS32, status32);
-  tcg_temp_free(temp_1);
-  tcg_temp_free(status32);
-  tcg_temp_free(ie);
-  tcg_temp_free(temp_2);
-  tcg_temp_free(e);
-  tcg_temp_free(a);
-  tcg_temp_free(temp_3);
-  tcg_temp_free(mask);
-  tcg_temp_free(in_kernel_mode);
+    TCGv cond = tcg_temp_new();
+    TCGLabel *cont = gen_new_label();
 
-  return ret;
+    assert(ctx->insn.n_ops == 0 || ctx->insn.n_ops == 1);
+
+    /* If in user mode, raise a privilege violation. */
+    tcg_gen_andi_tl(cond, cpu_pstate, STATUS32_U);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, cont);
+    tcg_temp_free(cond);
+    arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);
+
+    gen_set_label(cont);
+    if (ctx->insn.n_ops == 1 &&
+        ctx->insn.operands[0].type == ARC_OPERAND_IR) {
+        TCGv t = tcg_temp_new();
+
+        /* c[4] = status32 >> 31 */
+        tcg_gen_shri_tl(t, cpu_pstate, __builtin_ctz(STATUS32_IE));
+        tcg_gen_andi_tl(t, t, 1);
+        tcg_gen_shli_tl(c, t, 4);
+        /* c[3:0] = ((status32 & STATUS32_E_MSK) >> 1) & 0xF */
+        tcg_gen_andi_tl(t, cpu_pstate, STATUS32_E_MSK);
+        tcg_gen_shri_tl(t, t, __builtin_ctz(STATUS32_E_MSK));
+        tcg_gen_andi_tl(t, t, 0b1111);
+        tcg_gen_or_tl(c, c, t);
+        /* c[5] = 1 */
+        tcg_gen_ori_tl(c, c, 0b100000);
+
+        tcg_temp_free(t);
+    }
+
+    /* status32.ie = 0 */
+    tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_IE);
+
+    return DISAS_UPDATE;
 }
 
 
-
-
-
-/* SETI
- *    Variables: @c
- *    Functions: getRegister, setRegister, inKernelMode
---- code ---
-{
-  in_kernel_mode = inKernelMode();
-  if(in_kernel_mode != 1)
-    {
-      throwExcpPriviledgeV();
-    }
-  status32 = getRegister (R_STATUS32);
-  if((temp1 != 0))
-    {
-      status32 = ((status32 & e_mask) | e_value);
-      ie_mask = 2147483648;
-      ie_mask = ~ie_mask;
-      ie_value = ((@c & 16) << 27);
-      status32 = ((status32 & ie_mask) | ie_value);
-    }
-  else
-    {
-      status32 = (status32 | 2147483648);
-      temp2 = (@c & 16);
-      if((temp2 != 0))
-        {
-          status32 = ((status32 & e_mask) | e_value);
-        };
-    };
-  setRegister (R_STATUS32, status32);
-}
+/*
+ * SETI
+ * --- code ---
+ * if (status32.u)
+ *   raise privilege violation
+ *
+ * c_4   = (c & 0b010000) >> 4
+ * c_5   = (c & 0b100000) >> 5
+ * e_new = (c & 0b001111) << 1
+ *
+ * ie = ((c_5 == 1) ? c_4 : 1) << 31
+ * status32 &= ~STATUS32_IE
+ * status32 |= ie
+ *
+ * change_e = c_4 | c_5
+ * e_old = status32 & STATUS32_E_MSK
+ * e_new = ((change_e == 1) ? e_new : e_old)
+ * status32 &= ~STATUS32_E_MSK
+ * status32 |= e_new
  */
-
 int
-arc_gen_SETI (DisasCtxt *ctx, TCGv c)
+arc_gen_SETI(DisasCtxt *ctx, TCGv c)
 {
-  int ret = DISAS_NEXT;
-  TCGv temp_5 = tcg_temp_local_new();
-  TCGv status32 = tcg_temp_local_new();
-  TCGv e_mask = tcg_temp_local_new();
-  TCGv temp_6 = tcg_temp_local_new();
-  TCGv e_value = tcg_temp_local_new();
-  TCGv temp1 = tcg_temp_local_new();
-  TCGv temp_1 = tcg_temp_local_new();
-  TCGv temp_2 = tcg_temp_local_new();
-  TCGv temp_7 = tcg_temp_local_new();
-  TCGv ie_mask = tcg_temp_local_new();
-  TCGv temp_8 = tcg_temp_local_new();
-  TCGv ie_value = tcg_temp_local_new();
-  TCGv temp_9 = tcg_temp_local_new();
-  TCGv temp2 = tcg_temp_local_new();
-  TCGv temp_3 = tcg_temp_local_new();
-  TCGv temp_4 = tcg_temp_local_new();
-  TCGv temp_10 = tcg_temp_local_new();
-  TCGv in_kernel_mode = tcg_temp_local_new();
-  inKernelMode(in_kernel_mode);
-  TCGLabel *done_in_kernel_mode = gen_new_label();
-  tcg_gen_brcondi_tl(TCG_COND_EQ, in_kernel_mode, 1, done_in_kernel_mode);
-  throwExcpPriviledgeV();
-  gen_set_label(done_in_kernel_mode);
-  getRegister(temp_5, R_STATUS32);
-  tcg_gen_mov_tl(status32, temp_5);
-  tcg_gen_movi_tl(e_mask, 30);
-  tcg_gen_not_tl(e_mask, e_mask);
-  tcg_gen_andi_tl(temp_6, c, 15);
-  tcg_gen_shli_tl(e_value, temp_6, 1);
-  tcg_gen_andi_tl(temp1, c, 32);
-  TCGLabel *else_1 = gen_new_label();
-  TCGLabel *done_1 = gen_new_label();
-  tcg_gen_setcondi_tl(TCG_COND_NE, temp_1, temp1, 0);
-  tcg_gen_xori_tl(temp_2, temp_1, 1); tcg_gen_andi_tl(temp_2, temp_2, 1);;
-  tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, else_1);;
-  tcg_gen_and_tl(temp_7, status32, e_mask);
-  tcg_gen_or_tl(status32, temp_7, e_value);
-  tcg_gen_movi_tl(ie_mask, 2147483648);
-  tcg_gen_not_tl(ie_mask, ie_mask);
-  tcg_gen_andi_tl(temp_8, c, 16);
-  tcg_gen_shli_tl(ie_value, temp_8, 27);
-  tcg_gen_and_tl(temp_9, status32, ie_mask);
-  tcg_gen_or_tl(status32, temp_9, ie_value);
-  tcg_gen_br(done_1);
-  gen_set_label(else_1);
-  tcg_gen_ori_tl(status32, status32, 2147483648);
-  tcg_gen_andi_tl(temp2, c, 16);
-  TCGLabel *done_2 = gen_new_label();
-  tcg_gen_setcondi_tl(TCG_COND_NE, temp_3, temp2, 0);
-  tcg_gen_xori_tl(temp_4, temp_3, 1); tcg_gen_andi_tl(temp_4, temp_4, 1);;
-  tcg_gen_brcond_tl(TCG_COND_EQ, temp_4, arc_true, done_2);;
-  tcg_gen_and_tl(temp_10, status32, e_mask);
-  tcg_gen_or_tl(status32, temp_10, e_value);
-  gen_set_label(done_2);
-  gen_set_label(done_1);
-  setRegister(R_STATUS32, status32);
-  tcg_temp_free(temp_5);
-  tcg_temp_free(status32);
-  tcg_temp_free(e_mask);
-  tcg_temp_free(temp_6);
-  tcg_temp_free(e_value);
-  tcg_temp_free(temp1);
-  tcg_temp_free(temp_1);
-  tcg_temp_free(temp_2);
-  tcg_temp_free(temp_7);
-  tcg_temp_free(ie_mask);
-  tcg_temp_free(temp_8);
-  tcg_temp_free(ie_value);
-  tcg_temp_free(temp_9);
-  tcg_temp_free(temp2);
-  tcg_temp_free(temp_3);
-  tcg_temp_free(temp_4);
-  tcg_temp_free(temp_10);
-  tcg_temp_free(in_kernel_mode);
+    TCGv cond = tcg_temp_new();
+    TCGLabel *cont = gen_new_label();
+    TCGv one;
+    TCGv c_4;
+    TCGv c_5;
+    TCGv ie;
+    TCGv e_old;
+    TCGv e_new;
+    TCGv change_e;
 
-  return ret;
+    /* If in user mode, raise a privilege violation. */
+    tcg_gen_andi_tl(cond, cpu_pstate, STATUS32_U);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, cont);
+    tcg_temp_free(cond);
+    arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);
+
+    gen_set_label(cont);
+    one      = tcg_const_tl(1);
+    c_4      = tcg_temp_new();
+    c_5      = tcg_temp_new();
+    ie       = tcg_temp_new();
+    e_old    = tcg_temp_new();
+    e_new    = tcg_temp_new();
+    change_e = tcg_temp_new();
+
+    /* extract bits */
+    tcg_gen_andi_tl(c_4  , c, 0b010000);
+    tcg_gen_andi_tl(c_5  , c, 0b100000);
+    tcg_gen_andi_tl(e_new, c, 0b001111);
+    /* align bits */
+    tcg_gen_shri_tl(c_4, c_4, 4);
+    tcg_gen_shri_tl(c_5, c_5, 5);
+    tcg_gen_shli_tl(e_new, e_new, 1);
+    /* ie = ((c_5 == 1) ? c_4 : 1) */
+    tcg_gen_movcond_tl(TCG_COND_EQ, ie, c_5, one, c_4, one);
+    tcg_gen_shli_tl(ie, ie, __builtin_ctz(STATUS32_IE));
+    /* status32.ie = ie */
+    tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_IE);
+    tcg_gen_or_tl(cpu_pstate, cpu_pstate, ie);
+    /* status32.e = e   (only if not both c_4 and c_5 are zero) */
+    tcg_gen_or_tl(change_e, c_4, c_5);
+    tcg_gen_andi_tl(e_old, cpu_pstate, STATUS32_E_MSK);
+    /* e_new = ((change_e == 1) ? e_new : e_old) */
+    tcg_gen_movcond_tl(TCG_COND_EQ, e_new, change_e, one, e_new, e_old);
+    tcg_gen_andi_tl(cpu_pstate, cpu_pstate, ~STATUS32_E_MSK);
+    tcg_gen_or_tl(cpu_pstate, cpu_pstate, e_new);
+
+    tcg_temp_free(change_e);
+    tcg_temp_free(e_new);
+    tcg_temp_free(e_old);
+    tcg_temp_free(ie);
+    tcg_temp_free(c_5);
+    tcg_temp_free(c_4);
+    tcg_temp_free(one);
+
+    return DISAS_UPDATE;
 }
-
-
-
 
 
 /* NOP

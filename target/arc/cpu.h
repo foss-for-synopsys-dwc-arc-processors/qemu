@@ -63,8 +63,13 @@ typedef struct CPUArchState CPUARCState;
 #define CPU_IMM(env)    ((env)->r[62])
 #define CPU_PCL(env)    ((env)->r[63])
 
-/* The DE flag in status32 register. */
-#define STATUS32_DE            (1 << 6)
+/* Relevant flags in status32 register. */
+#define STATUS32_DE            (1 <<  6)
+#define STATUS32_U             (1 <<  7)
+#define STATUS32_IE            (1 << 31)
+
+/* Relevant masks in status32 register. */
+#define STATUS32_E_MSK         0x1E
 
 /* Indicate if a branching instruction with a delay slot is met. */
 #define BRANCH_DELAY     (1 << 21)
