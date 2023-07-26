@@ -69,7 +69,7 @@ static void cpu_arc_timer_update(CPUARCState *env, uint32_t timer)
     delta = env->timer[timer].T_Limit - t_count;
 
 #ifndef CONFIG_USER_ONLY
-    timer_mod_ns(env->cpu_timer[timer], now + CYCLES_TO_NS((uint64_t)delta));
+    timer_mod_anticipate_ns(env->cpu_timer[timer], now + CYCLES_TO_NS((uint64_t)delta));
 #endif
 
     qemu_log_mask(LOG_UNIMP,
@@ -87,10 +87,14 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
     assert(timer == 1 || timer == 0);
     qemu_log_mask(LOG_UNIMP, "[TMR%d] Timer expired\n", timer);
 
-    uint32_t overflow = env->timer[timer].T_Cntrl & TMR_IP;
+    uint32_t overflow = get_t_count(env, timer) >= env->timer[timer].T_Limit;
     /* Set the IP bit. */
 
     bool unlocked = !qemu_mutex_iothread_locked();
+
+    if (!overflow)
+        return;
+
     if (unlocked) {
         qemu_mutex_lock_iothread();
     }
@@ -101,7 +105,7 @@ static void cpu_arc_timer_expire(CPUARCState *env, uint32_t timer)
     }
 
     /* Raise an interrupt if enabled. */
-    if ((env->timer[timer].T_Cntrl & TMR_IE) && !overflow) {
+    if (env->timer[timer].T_Cntrl & TMR_IE) {
         qemu_log_mask(CPU_LOG_INT, "[TMR%d] Rising IRQ\n", timer);
         qemu_irq_raise(env->irq[TIMER0_IRQ + (timer & 0x01)]);
     }
@@ -237,7 +241,7 @@ static void cpu_arc_count_set(CPUARCState *env, uint32_t timer, uint32_t val)
     if (unlocked) {
         qemu_mutex_lock_iothread();
     }
-    env->timer[timer].last_clk = get_ns(env) - CYCLES_TO_NS(val);
+    env->timer[timer].last_clk = get_ns(env) + CYCLES_TO_NS(val);
     cpu_arc_timer_update(env, timer);
     if (unlocked) {
         qemu_mutex_unlock_iothread();
