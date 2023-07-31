@@ -93,14 +93,14 @@ arc_autogen_base32_##NAME(DisasCtxt *ctx, TCGv a, TCGv b, TCGv c)          \
 /*
  * FLAG
  *    Variables: @src
- *    Functions: getCCFlag, getRegister, getBit, hasInterrupts, Halt, ReplMask,
+ *    Functions: getCCFlag, arc_gen_get_register, getBit, hasInterrupts, Halt, ReplMask,
  *               targetHasOption, setRegister
  * --- code ---
  * {
  *   cc_flag = getCCFlag ();
  *   if((cc_flag == true))
  *     {
- *       status32 = getRegister (R_STATUS32);
+ *       status32 = arc_gen_get_register (R_STATUS32);
  *       if(((getBit (@src, 0) == 1) && (getBit (status32, 7) == 0)))
  *         {
  *           if((hasInterrupts () > 0))
@@ -176,7 +176,7 @@ arc_gen_FLAG(DisasCtxt *ctx, TCGv src)
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    getRegister(temp_14, R_STATUS32);
+    gen_helper_get_status32(temp_14, cpu_env);
     tcg_gen_mov_tl(status32, temp_14);
     TCGLabel *else_2 = gen_new_label();
     TCGLabel *done_2 = gen_new_label();
@@ -231,7 +231,7 @@ arc_gen_FLAG(DisasCtxt *ctx, TCGv src)
     ReplMask(status32, src, temp_28);
     gen_set_label(done_4);
     gen_set_label(done_2);
-    setRegister(R_STATUS32, status32);
+    gen_helper_set_status32(cpu_env, status32);
     gen_set_label(done_1);
     tcg_temp_free(temp_13);
     tcg_temp_free(cc_flag);
@@ -271,14 +271,14 @@ arc_gen_FLAG(DisasCtxt *ctx, TCGv src)
 /*
  * KFLAG
  *    Variables: @src
- *    Functions: getCCFlag, getRegister, getBit, hasInterrupts, Halt, ReplMask,
+ *    Functions: getCCFlag, arc_gen_get_register, getBit, hasInterrupts, Halt, ReplMask,
  *               targetHasOption, setRegister
  * --- code ---
  * {
  *   cc_flag = getCCFlag ();
  *   if((cc_flag == true))
  *     {
- *       status32 = getRegister (R_STATUS32);
+ *       status32 = arc_gen_get_register (R_STATUS32);
  *       if(((getBit (@src, 0) == 1) && (getBit (status32, 7) == 0)))
  *         {
  *           if((hasInterrupts () > 0))
@@ -358,7 +358,7 @@ arc_gen_KFLAG(DisasCtxt *ctx, TCGv src)
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    getRegister(temp_14, R_STATUS32);
+    gen_helper_get_status32(temp_14, cpu_env);
     tcg_gen_mov_tl(status32, temp_14);
     TCGLabel *else_2 = gen_new_label();
     TCGLabel *done_2 = gen_new_label();
@@ -417,7 +417,7 @@ arc_gen_KFLAG(DisasCtxt *ctx, TCGv src)
     ReplMask(status32, src, temp_30);
     gen_set_label(done_4);
     gen_set_label(done_2);
-    setRegister(R_STATUS32, status32);
+    gen_helper_set_status32(cpu_env, status32);
     gen_set_label(done_1);
     tcg_temp_free(temp_13);
     tcg_temp_free(cc_flag);
@@ -4871,19 +4871,19 @@ arc_gen_REMU(DisasCtxt *ctx, TCGv src2, TCGv dest, TCGv src1)
 /*
  * MAC
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getRegister, MAC, getFFlag, setNFlag, OverflowADD,
+ *    Functions: getCCFlag, arc_gen_get_register, MAC, getFFlag, setNFlag, OverflowADD,
  *               setVFlag
  * --- code ---
  * {
  *   cc_flag = getCCFlag ();
  *   if((cc_flag == true))
  *     {
- *       old_acchi = getRegister (R_ACCHI);
+ *       old_acchi = arc_gen_get_register (R_ACCHI);
  *       high_mul = MAC (@b, @c);
- *       @a = getRegister (R_ACCLO);
+ *       @a = arc_gen_get_register (R_ACCLO);
  *       if((getFFlag () == true))
  *         {
- *           new_acchi = getRegister (R_ACCHI);
+ *           new_acchi = arc_gen_get_register (R_ACCHI);
  *           setNFlag (new_acchi);
  *           if((OverflowADD (new_acchi, old_acchi, high_mul) == true))
  *             {
@@ -4920,14 +4920,14 @@ arc_gen_MAC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    getRegister(temp_6, R_ACCHI);
+    tcg_gen_mov_tl(temp_6, cpu_acchi);
     tcg_gen_mov_tl(old_acchi, temp_6);
     MAC(temp_7, b, c);
     tcg_gen_mov_tl(high_mul, temp_7);
-    getRegister(temp_8, R_ACCLO);
+    tcg_gen_mov_tl(temp_8, cpu_acclo);
     tcg_gen_mov_tl(a, temp_8);
     if ((getFFlag () == true)) {
-        getRegister(temp_9, R_ACCHI);
+        tcg_gen_mov_tl(temp_9, cpu_acchi);
         tcg_gen_mov_tl(new_acchi, temp_9);
         setNFlag(new_acchi);
         TCGLabel *done_2 = gen_new_label();
@@ -4964,18 +4964,18 @@ arc_gen_MAC(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 /*
  * MACU
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getRegister, MACU, getFFlag, CarryADD, setVFlag
+ *    Functions: getCCFlag, arc_gen_get_register, MACU, getFFlag, CarryADD, setVFlag
  * --- code ---
  * {
  *   cc_flag = getCCFlag ();
  *   if((cc_flag == true))
  *     {
- *       old_acchi = getRegister (R_ACCHI);
+ *       old_acchi = arc_gen_get_register (R_ACCHI);
  *       high_mul = MACU (@b, @c);
- *       @a = getRegister (R_ACCLO);
+ *       @a = arc_gen_get_register (R_ACCLO);
  *       if((getFFlag () == true))
  *         {
- *           new_acchi = getRegister (R_ACCHI);
+ *           new_acchi = arc_gen_get_register (R_ACCHI);
  *           if((CarryADD (new_acchi, old_acchi, high_mul) == true))
  *             {
  *               setVFlag (1);
@@ -5011,14 +5011,14 @@ arc_gen_MACU(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    getRegister(temp_6, R_ACCHI);
+    tcg_gen_mov_tl(temp_6, cpu_acchi);
     tcg_gen_mov_tl(old_acchi, temp_6);
     MACU(temp_7, b, c);
     tcg_gen_mov_tl(high_mul, temp_7);
-    getRegister(temp_8, R_ACCLO);
+    tcg_gen_mov_tl(temp_8, cpu_acclo);
     tcg_gen_mov_tl(a, temp_8);
     if ((getFFlag () == true)) {
-        getRegister(temp_9, R_ACCHI);
+        tcg_gen_mov_tl(temp_9, cpu_acchi);
         tcg_gen_mov_tl(new_acchi, temp_9);
         TCGLabel *done_2 = gen_new_label();
         CarryADD(temp_10, new_acchi, old_acchi, high_mul);
@@ -5054,21 +5054,21 @@ arc_gen_MACU(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 /*
  * MACD
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getRegister, MAC, nextReg, getFFlag, setNFlag,
+ *    Functions: getCCFlag, arc_gen_get_register, MAC, nextReg, getFFlag, setNFlag,
  *               OverflowADD, setVFlag
  * --- code ---
  * {
  *   cc_flag = getCCFlag ();
  *   if((cc_flag == true))
  *     {
- *       old_acchi = getRegister (R_ACCHI);
+ *       old_acchi = arc_gen_get_register (R_ACCHI);
  *       high_mul = MAC (@b, @c);
- *       @a = getRegister (R_ACCLO);
+ *       @a = arc_gen_get_register (R_ACCLO);
  *       pair = nextReg (a);
- *       pair = getRegister (R_ACCHI);
+ *       pair = arc_gen_get_register (R_ACCHI);
  *       if((getFFlag () == true))
  *         {
- *           new_acchi = getRegister (R_ACCHI);
+ *           new_acchi = arc_gen_get_register (R_ACCHI);
  *           setNFlag (new_acchi);
  *           if((OverflowADD (new_acchi, old_acchi, high_mul) == true))
  *             {
@@ -5107,17 +5107,17 @@ arc_gen_MACD(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    getRegister(temp_6, R_ACCHI);
+    tcg_gen_mov_tl(temp_6, cpu_acchi);
     tcg_gen_mov_tl(old_acchi, temp_6);
     MAC(temp_7, b, c);
     tcg_gen_mov_tl(high_mul, temp_7);
-    getRegister(temp_8, R_ACCLO);
+    tcg_gen_mov_tl(temp_8, cpu_acclo);
     tcg_gen_mov_tl(a, temp_8);
     pair = nextReg (a);
-    getRegister(temp_9, R_ACCHI);
+    tcg_gen_mov_tl(temp_9, cpu_acchi);
     tcg_gen_mov_tl(pair, temp_9);
     if ((getFFlag () == true)) {
-        getRegister(temp_10, R_ACCHI);
+        tcg_gen_mov_tl(temp_10, cpu_acchi);
         tcg_gen_mov_tl(new_acchi, temp_10);
         setNFlag(new_acchi);
         TCGLabel *done_2 = gen_new_label();
@@ -5155,21 +5155,21 @@ arc_gen_MACD(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
 /*
  * MACDU
  *    Variables: @b, @c, @a
- *    Functions: getCCFlag, getRegister, MACU, nextReg, getFFlag, CarryADD,
+ *    Functions: getCCFlag, arc_gen_get_register, MACU, nextReg, getFFlag, CarryADD,
  *               setVFlag
  * --- code ---
  * {
  *   cc_flag = getCCFlag ();
  *   if((cc_flag == true))
  *     {
- *       old_acchi = getRegister (R_ACCHI);
+ *       old_acchi = arc_gen_get_register (R_ACCHI);
  *       high_mul = MACU (@b, @c);
- *       @a = getRegister (R_ACCLO);
+ *       @a = arc_gen_get_register (R_ACCLO);
  *       pair = nextReg (a);
- *       pair = getRegister (R_ACCHI);
+ *       pair = arc_gen_get_register (R_ACCHI);
  *       if((getFFlag () == true))
  *         {
- *           new_acchi = getRegister (R_ACCHI);
+ *           new_acchi = arc_gen_get_register (R_ACCHI);
  *           if((CarryADD (new_acchi, old_acchi, high_mul) == true))
  *             {
  *               setVFlag (1);
@@ -5207,17 +5207,17 @@ arc_gen_MACDU(DisasCtxt *ctx, TCGv b, TCGv c, TCGv a)
     tcg_gen_xori_tl(temp_2, temp_1, 1);
     tcg_gen_andi_tl(temp_2, temp_2, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_2, arc_true, done_1);
-    getRegister(temp_6, R_ACCHI);
+    tcg_gen_mov_tl(temp_6, cpu_acchi);
     tcg_gen_mov_tl(old_acchi, temp_6);
     MACU(temp_7, b, c);
     tcg_gen_mov_tl(high_mul, temp_7);
-    getRegister(temp_8, R_ACCLO);
+    tcg_gen_mov_tl(temp_8, cpu_acclo);
     tcg_gen_mov_tl(a, temp_8);
     pair = nextReg (a);
-    getRegister(temp_9, R_ACCHI);
+    tcg_gen_mov_tl(temp_9, cpu_acchi);
     tcg_gen_mov_tl(pair, temp_9);
     if ((getFFlag () == true)) {
-        getRegister(temp_10, R_ACCHI);
+        tcg_gen_mov_tl(temp_10, cpu_acchi);
         tcg_gen_mov_tl(new_acchi, temp_10);
         TCGLabel *done_2 = gen_new_label();
         CarryADD(temp_11, new_acchi, old_acchi, high_mul);
@@ -6904,7 +6904,7 @@ arc_gen_DMB (DisasCtxt *ctx, TCGv a)
  * LD
  *    Variables: @src1, @src2, @dest
  *    Functions: getAAFlag, getZZFlag, setDebugLD, getMemory, getFlagX,
- *               SignExtend, NoFurtherLoadsPending
+ *               SignExtend, arc_gen_no_further_loads_pending
  * --- code ---
  * {
  *   AA = getAAFlag ();
@@ -6934,11 +6934,11 @@ arc_gen_DMB (DisasCtxt *ctx, TCGv a)
  *     {
  *       @src1 = (l_src1 + l_src2);
  *     };
- *   if((getFlagX () == 1))
+ *   if((ctx->insn.x == 1))
  *     {
  *       new_dest = SignExtend (new_dest, ZZ);
  *     };
- *   if(NoFurtherLoadsPending ())
+ *   if(arc_gen_no_further_loads_pending ())
  *     {
  *       setDebugLD (0);
  *     };
@@ -6984,16 +6984,14 @@ arc_gen_LD(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
     tcg_gen_mov_tl(l_src2, src2);
     tcg_gen_movi_tl(temp_4, 1);
     setDebugLD(temp_4);
-    getMemory(temp_5, address, ZZ);
+    tcg_gen_qemu_ld_tl(temp_5, address, ctx->mem_idx,
+        memop_for_size_sign[ctx->insn.x][ZZ]);
     tcg_gen_mov_tl(new_dest, temp_5);
     if (((AA == 1) || (AA == 2))) {
         tcg_gen_add_tl(src1, l_src1, l_src2);
     }
-    if ((getFlagX () == 1)) {
-        new_dest = SignExtend (new_dest, ZZ);
-    }
     TCGLabel *done_1 = gen_new_label();
-    NoFurtherLoadsPending(temp_6);
+    arc_gen_no_further_loads_pending(temp_6);
     tcg_gen_xori_tl(temp_1, temp_6, 1);
     tcg_gen_andi_tl(temp_1, temp_1, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_1, arc_true, done_1);
@@ -7021,7 +7019,7 @@ arc_gen_LD(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
  * LDD
  *    Variables: @src1, @src2, @dest
  *    Functions: getAAFlag, getZZFlag, setDebugLD, getMemory, nextReg,
- *               NoFurtherLoadsPending
+ *               arc_gen_no_further_loads_pending
  * --- code ---
  * {
  *   AA = getAAFlag ();
@@ -7053,7 +7051,7 @@ arc_gen_LD(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
  *     {
  *       @src1 = (l_src1 + l_src2);
  *     };
- *   if(NoFurtherLoadsPending ())
+ *   if(arc_gen_no_further_loads_pending ())
  *     {
  *       setDebugLD (0);
  *     };
@@ -7102,17 +7100,17 @@ arc_gen_LDD(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
     tcg_gen_mov_tl(l_src2, src2);
     tcg_gen_movi_tl(temp_4, 1);
     setDebugLD(temp_4);
-    getMemory(temp_5, address, LONG);
+    tcg_gen_qemu_ld_tl(temp_5, address, ctx->mem_idx, MO_UL);
     tcg_gen_mov_tl(new_dest, temp_5);
     pair = nextReg (dest);
     tcg_gen_addi_tl(temp_7, address, 4);
-    getMemory(temp_6, temp_7, LONG);
+    tcg_gen_qemu_ld_tl(temp_6, temp_7, ctx->mem_idx, MO_UL);
     tcg_gen_mov_tl(pair, temp_6);
     if (((AA == 1) || (AA == 2))) {
         tcg_gen_add_tl(src1, l_src1, l_src2);
     }
     TCGLabel *done_1 = gen_new_label();
-    NoFurtherLoadsPending(temp_8);
+    arc_gen_no_further_loads_pending(temp_8);
     tcg_gen_xori_tl(temp_1, temp_8, 1);
     tcg_gen_andi_tl(temp_1, temp_1, 1);
     tcg_gen_brcond_tl(TCG_COND_EQ, temp_1, arc_true, done_1);
@@ -7197,7 +7195,8 @@ arc_gen_ST(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
         tcg_gen_shli_tl(temp_2, src2, 1);
         tcg_gen_add_tl(address, src1, temp_2);
     }
-    setMemory(address, ZZ, dest);
+    tcg_gen_qemu_st_tl(dest, address, ctx->mem_idx,
+        memop_for_size_sign[ctx->insn.x][ZZ]);
     if (((AA == 1) || (AA == 2))) {
         tcg_gen_add_tl(src1, src1, src2);
     }
@@ -7291,11 +7290,11 @@ arc_gen_STD(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
         tcg_gen_shli_tl(temp_4, src2, 1);
         tcg_gen_add_tl(address, src1, temp_4);
     }
-    setMemory(address, LONG, dest);
+    tcg_gen_qemu_st_tl(dest, address, ctx->mem_idx, MO_UL);
     if (instructionHasRegisterOperandIn (0)) {
         pair = nextReg (dest);
         tcg_gen_addi_tl(temp_5, address, 4);
-        setMemory(temp_5, LONG, pair);
+        tcg_gen_qemu_st_tl(pair, temp_5, ctx->mem_idx, MO_UL);
     } else {
         tcg_gen_movi_tl(tmp, 0);
         TCGLabel *done_1 = gen_new_label();
@@ -7308,7 +7307,7 @@ arc_gen_STD(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
         tcg_gen_movi_tl(tmp, 4294967295);
         gen_set_label(done_1);
         tcg_gen_addi_tl(temp_8, address, 4);
-        setMemory(temp_8, LONG, tmp);
+        tcg_gen_qemu_st_tl(tmp, temp_8, ctx->mem_idx, MO_UL);
     }
     if (((AA == 1) || (AA == 2))) {
         tcg_gen_add_tl(src1, src1, src2);
@@ -7331,11 +7330,11 @@ arc_gen_STD(DisasCtxt *ctx, TCGv src1, TCGv src2, TCGv dest)
 /*
  * POP
  *    Variables: @dest
- *    Functions: getMemory, getRegister, setRegister
+ *    Functions: getMemory, arc_gen_get_register, setRegister
  * --- code ---
  * {
- *   new_dest = getMemory (getRegister (R_SP), LONG);
- *   setRegister (R_SP, (getRegister (R_SP) + 4));
+ *   new_dest = getMemory (arc_gen_get_register (R_SP), LONG);
+ *   setRegister (R_SP, (arc_gen_get_register (R_SP) + 4));
  *   @dest = new_dest;
  * }
  */
@@ -7351,14 +7350,14 @@ arc_gen_POP(DisasCtxt *ctx, TCGv dest)
     TCGv temp_6 = tcg_temp_local_new();
     TCGv temp_5 = tcg_temp_local_new();
     TCGv temp_4 = tcg_temp_local_new();
-    getRegister(temp_3, R_SP);
+    tcg_gen_mov_tl(temp_3, cpu_sp);
     tcg_gen_mov_tl(temp_2, temp_3);
-    getMemory(temp_1, temp_2, LONG);
+    tcg_gen_qemu_ld_tl(temp_1, temp_2, ctx->mem_idx, MO_UL);
     tcg_gen_mov_tl(new_dest, temp_1);
-    getRegister(temp_6, R_SP);
+    tcg_gen_mov_tl(temp_6, cpu_sp);
     tcg_gen_mov_tl(temp_5, temp_6);
     tcg_gen_addi_tl(temp_4, temp_5, 4);
-    setRegister(R_SP, temp_4);
+    tcg_gen_mov_tl(cpu_sp, temp_4);
     tcg_gen_mov_tl(dest, new_dest);
     tcg_temp_free(temp_3);
     tcg_temp_free(temp_2);
@@ -7375,12 +7374,12 @@ arc_gen_POP(DisasCtxt *ctx, TCGv dest)
 /*
  * PUSH
  *    Variables: @src
- *    Functions: setMemory, getRegister, setRegister
+ *    Functions: setMemory, arc_gen_get_register, setRegister
  * --- code ---
  * {
  *   local_src = @src;
- *   setMemory ((getRegister (R_SP) - 4), LONG, local_src);
- *   setRegister (R_SP, (getRegister (R_SP) - 4));
+ *   setMemory ((arc_gen_get_register (R_SP) - 4), LONG, local_src);
+ *   setRegister (R_SP, (arc_gen_get_register (R_SP) - 4));
  * }
  */
 
@@ -7396,14 +7395,14 @@ arc_gen_PUSH(DisasCtxt *ctx, TCGv src)
     TCGv temp_5 = tcg_temp_local_new();
     TCGv temp_4 = tcg_temp_local_new();
     tcg_gen_mov_tl(local_src, src);
-    getRegister(temp_3, R_SP);
+    tcg_gen_mov_tl(temp_3, cpu_sp);
     tcg_gen_mov_tl(temp_2, temp_3);
     tcg_gen_subi_tl(temp_1, temp_2, 4);
-    setMemory(temp_1, LONG, local_src);
-    getRegister(temp_6, R_SP);
+    tcg_gen_qemu_st_tl(local_src, temp_1, ctx->mem_idx, MO_UL);
+    tcg_gen_mov_tl(temp_6, cpu_sp);
     tcg_gen_mov_tl(temp_5, temp_6);
     tcg_gen_subi_tl(temp_4, temp_5, 4);
-    setRegister(R_SP, temp_4);
+    tcg_gen_mov_tl(cpu_sp, temp_4);
     tcg_temp_free(local_src);
     tcg_temp_free(temp_3);
     tcg_temp_free(temp_2);

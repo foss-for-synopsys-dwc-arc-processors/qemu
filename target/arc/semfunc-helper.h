@@ -104,22 +104,10 @@ static inline void update_delay_flag(DisasContext *ctx)
 void to_implement(const DisasCtxt *ctx);
 void to_implement_wo_abort(const DisasCtxt *ctx);
 
-void arc_gen_set_memory(
-        const DisasCtxt *ctx, TCGv addr, int size, TCGv src, bool sign_extend);
-#define setMemory(ADDRESS, SIZE, VALUE) \
-    arc_gen_set_memory(ctx, ADDRESS, SIZE, VALUE, getFlagX())
-void arc_gen_get_memory(
-        const DisasCtxt *ctx, TCGv ret, TCGv addr, int size, bool sign_extend);
-#define getMemory(R, ADDRESS, SIZE) \
-    arc_gen_get_memory(ctx, R, ADDRESS, SIZE, getFlagX())
-
-#define getFlagX()  (ctx->insn.x)
 #define getZZFlag() (ctx->insn.zz)
 #define getAAFlag() (ctx->insn.aa)
 
-#define SignExtend(VALUE, SIZE) VALUE
 void arc_gen_no_further_loads_pending(const DisasCtxt *ctx, TCGv ret);
-#define NoFurtherLoadsPending(R)    arc_gen_no_further_loads_pending(ctx, R)
 void arc_gen_set_debug(const DisasCtxt *ctx, bool value);
 #define setDebugLD(A)   arc_gen_set_debug(ctx, A)
 
@@ -273,14 +261,6 @@ void arc_gen_macu(TCGv phi, TCGv b, TCGv c);
 void arc_gen_extract_bits(TCGv ret, TCGv a, TCGv start, TCGv end);
 #define extractBits(R, ELEM, START, END) \
     arc_gen_extract_bits(R, ELEM, START, END)
-void arc_gen_get_register(TCGv ret, enum arc_registers reg);
-#define getRegister(R, REG) arc_gen_get_register(R, REG)
-void arc_gen_set_register(enum arc_registers reg, TCGv value);
-#define setRegister(REG, VALUE) \
-    arc_gen_set_register(REG, VALUE); \
-    if (REG == R_STATUS32) { \
-        ret = DISAS_UPDATE; \
-    } \
 
 #define inKernelMode(R) { \
   TCG_GET_STATUS_FIELD_MASKED(R, cpu_pstate, Uf); \
@@ -398,6 +378,14 @@ void tcg_gen_shlfi_tl(TCGv a, int b, TCGv c);
   } \
 }
 
+#endif
+
+#ifdef TARGET_ARC32
+extern const MemOp memop_for_size_sign[2][3];
+#endif
+
+#ifdef TARGET_ARC64
+extern const MemOp memop_for_size_sign[2][4];
 #endif
 
 enum ato_op {

@@ -196,44 +196,6 @@ gen_branch(DisasCtxt *ctx, TCGv target)
     }
 }
 
-#define MEMIDX (ctx->mem_idx)
-
-#ifdef TARGET_ARC32
-const MemOp memop_for_size_sign[2][3] = {
-    { MO_UL, MO_UB, MO_UW }, /* non sign-extended */
-    { MO_UL, MO_SB, MO_SW } /* sign-extended */
-};
-#endif
-
-#ifdef TARGET_ARC64
-const MemOp memop_for_size_sign[2][4] = {
-    { MO_UL, MO_UB, MO_UW, MO_UQ }, /* non sign-extended */
-    { MO_SL, MO_SB, MO_SW, MO_SQ } /* sign-extended */
-};
-#endif
-
-void arc_gen_set_memory(const DisasCtxt *ctx, TCGv vaddr, int size,
-        TCGv src, bool sign_extend)
-{
-#ifdef TARGET_ARC32
-    assert(size != 0x3);
-#endif
-
-    tcg_gen_qemu_st_tl(src, vaddr, MEMIDX,
-                       memop_for_size_sign[sign_extend][size]);
-}
-
-void arc_gen_get_memory(const DisasCtxt *ctx, TCGv dest, TCGv vaddr,
-        int size, bool sign_extend)
-{
-#ifdef TARGET_ARC32
-    assert(size != 0x3);
-#endif
-
-    tcg_gen_qemu_ld_tl(dest, vaddr, MEMIDX,
-                       memop_for_size_sign[sign_extend][size]);
-}
-
 void arc_gen_no_further_loads_pending(const DisasCtxt *ctx, TCGv ret)
 {
     /* TODO: To complete on SMP support. */
@@ -318,53 +280,27 @@ void arc_gen_extract_bits(TCGv ret, TCGv a, TCGv start, TCGv end)
     tcg_temp_free(tmp1);
 }
 
-void arc_gen_get_register(TCGv ret, enum arc_registers reg)
-{
-    switch (reg) {
-    case R_SP:
-        tcg_gen_mov_tl(ret, cpu_sp);
-        break;
-    case R_STATUS32:
-        gen_helper_get_status32(ret, cpu_env);
-        break;
-    case R_ACCLO:
-        tcg_gen_mov_tl(ret, cpu_acclo);
-        break;
-    case R_ACCHI:
-        tcg_gen_mov_tl(ret, cpu_acchi);
-        break;
-    default:
-        g_assert_not_reached();
-    }
-}
-
-
-void arc_gen_set_register(enum arc_registers reg, TCGv value)
-{
-    switch (reg) {
-    case R_SP:
-        tcg_gen_mov_tl(cpu_sp, value);
-        break;
-    case R_STATUS32:
-        gen_helper_set_status32(cpu_env, value);
-        break;
-    case R_ACCLO:
-        tcg_gen_mov_tl(cpu_acclo, value);
-        break;
-    case R_ACCHI:
-        tcg_gen_mov_tl(cpu_acchi, value);
-        break;
-    default:
-        g_assert_not_reached();
-    }
-}
-
-
 /* TODO: Get this from props ... */
 void arc_has_interrupts(const DisasCtxt *ctx, TCGv ret)
 {
     tcg_gen_movi_tl(ret, 1);
 }
+
+#ifdef TARGET_ARC32
+const MemOp memop_for_size_sign[2][3] = {
+    { MO_UL, MO_UB, MO_UW }, /* non sign-extended */
+    { MO_UL, MO_SB, MO_SW } /* sign-extended */
+};
+#endif
+
+#ifdef TARGET_ARC64
+const MemOp memop_for_size_sign[2][4] = {
+    { MO_UL, MO_UB, MO_UW, MO_UQ }, /* non sign-extended */
+    { MO_SL, MO_SB, MO_SW, MO_SQ } /* sign-extended */
+};
+#endif
+
+
 
 /*
  ***************************************
