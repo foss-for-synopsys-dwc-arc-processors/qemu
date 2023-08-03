@@ -25,9 +25,11 @@
 #include "target/arc/cpu.h"
 #include "target/arc/arconnect.h"
 #include "hw/irq.h"
+#include "target/arc/timer.h"
 
 struct lpa_lf_entry lpa_lfs[LPA_LFS_SIZE];
 static QemuMutex idu_mutex;
+static QemuMutex gfrc_mutex;
 static uint64_t first_acknowledge_status[MAX_IDU_CIRQS];
 
 enum arconnect_commands {
@@ -111,6 +113,7 @@ void arc_arconnect_init(ARCCPU *cpu)
     memset(cpu->env.arconnect.idu_data, 0, sizeof(cpu->env.arconnect.idu_data));
     memset(first_acknowledge_status, 0, sizeof(first_acknowledge_status));
     qemu_mutex_init(&idu_mutex);
+    qemu_mutex_init(&gfrc_mutex);
 }
 
 /* TODO: Find a better way to get cpu for core. */
@@ -308,6 +311,63 @@ static void arconnect_idu_cmd(CPUARCState *env, enum arconnect_commands cmd, uin
     }
 }
 
+static void arconnect_gfrc_cmd(CPUARCState *env, enum arconnect_commands cmd, uint16_t param)
+{
+    ARCCPU *cpu = env_archcpu(env);
+    static uint64_t offset_timer = 0;
+    static bool disabled = false;
+    static uint32_t core = 0;
+
+    switch(cmd) {
+    case CMD_GFRC_CLEAR:
+        qemu_mutex_lock(&gfrc_mutex);
+        offset_timer += get_global_cycles();
+        qemu_mutex_unlock(&gfrc_mutex);
+        break;
+    case CMD_GFRC_READ_LO:
+        qemu_mutex_lock(&gfrc_mutex);
+        env->arconnect.gfrc_snapshots[cpu->core_id] = get_global_cycles() - offset_timer;
+        qemu_mutex_unlock(&gfrc_mutex);
+        env->readback = (uint32_t) (env->arconnect.gfrc_snapshots[cpu->core_id] & 0xffffffff);
+        break;
+    case CMD_GFRC_READ_HI:
+        env->readback = (uint32_t) ((env->arconnect.gfrc_snapshots[cpu->core_id] >> 32) & 0xffffffff);
+        break;
+    case CMD_GFRC_ENABLE:
+        qemu_mutex_lock(&gfrc_mutex);
+        disabled = false;
+        qemu_mutex_unlock(&gfrc_mutex);
+        break;
+    case CMD_GFRC_DISABLE:
+        qemu_mutex_lock(&gfrc_mutex);
+        disabled = true;
+        qemu_mutex_unlock(&gfrc_mutex);
+        break;
+    case CMD_GFRC_READ_DISABLE:
+        qemu_mutex_lock(&gfrc_mutex);
+        env->readback = disabled;
+        qemu_mutex_unlock(&gfrc_mutex);
+        break;
+    case CMD_GFRC_SET_CORE:
+        qemu_mutex_lock(&gfrc_mutex);
+        core = env->arconnect.wdata;
+        qemu_mutex_unlock(&gfrc_mutex);
+        break;
+    case CMD_GFRC_READ_CORE:
+        qemu_mutex_lock(&gfrc_mutex);
+        env->readback = core;
+        qemu_mutex_unlock(&gfrc_mutex);
+        break;
+    case CMD_GFRC_READ_HALT:
+        qemu_mutex_lock(&gfrc_mutex);
+        env->readback = (core >> cpu->core_id) & 0x1;
+        qemu_mutex_unlock(&gfrc_mutex);
+        break;
+    default:
+        assert(0);
+    }
+}
+
 static void arconnect_command_process(CPUARCState *env, uint32_t data)
 {
     enum arconnect_commands cmd = ARCON_COMMAND(data);
@@ -335,10 +395,35 @@ static void arconnect_command_process(CPUARCState *env, uint32_t data)
 
     case CMD_IDU_ENABLE:
     case CMD_IDU_DISABLE:
+    case CMD_IDU_READ_ENABLE:
+    case CMD_IDU_SET_MODE:
+    case CMD_IDU_READ_MODE:
+    case CMD_IDU_SET_DEST:
+    case CMD_IDU_READ_DEST:
+    case CMD_IDU_GEN_CIRQ:
+    case CMD_IDU_ACK_CIRQ:
+    case CMD_IDU_CHECK_STATUS:
+    case CMD_IDU_CHECK_SOURCE:
     case CMD_IDU_SET_MASK:
-    default:
-	arconnect_idu_cmd(env, cmd, param);
+    case CMD_IDU_READ_MASK:
+    case CMD_IDU_CHECK_FIRST:
+    case CMD_IDU_SET_PM:
+    case CMD_IDU_READ_PSTATUS:
+        arconnect_idu_cmd(env, cmd, param);
         break;
+    case CMD_GFRC_CLEAR:
+    case CMD_GFRC_READ_LO:
+    case CMD_GFRC_READ_HI:
+    case CMD_GFRC_ENABLE:
+    case CMD_GFRC_DISABLE:
+    case CMD_GFRC_READ_DISABLE:
+    case CMD_GFRC_SET_CORE:
+    case CMD_GFRC_READ_CORE:
+    case CMD_GFRC_READ_HALT:
+        arconnect_gfrc_cmd(env, cmd, param);
+        break;
+    default:
+        assert(0);
     };
 }
 
@@ -349,7 +434,8 @@ arconnect_regs_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
     switch(aux_reg_detail->id) {
     case AUX_ID_mcip_bcr:
         return 0x00800000 /* IDU */
-               | 0x00040000;
+               | 0x00040000 /* Number of cores*/;
+            //    | (1 << 14) /* GFRC */;
     case AUX_ID_mcip_idu_bcr:
 	return 0x300;
     case AUX_ID_mcip_cmd:
