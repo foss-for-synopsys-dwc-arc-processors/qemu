@@ -32,10 +32,11 @@
 #define TIMER_PERIOD(hz) (1000000000LL / (hz))
 #define TIMEOUT_LIMIT 1000000
 
-#define FREQ_HZ (env_archcpu(env)->freq_hz)
-
-#define CYCLES_TO_NS(VAL) (muldiv64(VAL, NANOSECONDS_PER_SECOND, FREQ_HZ))
-#define NS_TO_CYCLE(VAL)  (muldiv64(VAL, FREQ_HZ, NANOSECONDS_PER_SECOND))
+uint64_t get_global_cycles(void) {
+    return muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
+                    ARC_CPU(first_cpu)->cfg.freq_hz,
+                    NANOSECONDS_PER_SECOND);
+}
 
 static uint64_t get_ns(CPUARCState *env)
 {
