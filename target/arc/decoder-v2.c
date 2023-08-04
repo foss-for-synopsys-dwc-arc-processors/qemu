@@ -187,7 +187,7 @@ load_insninfo_if_valid_v2(uint64_t insn,
                         ret.zz = 2;
                         break;
                     default:
-                        ret.zz = 4;
+                        ret.zz = 0;
                         break;
                     }
                 }

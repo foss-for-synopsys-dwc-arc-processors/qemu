@@ -59,8 +59,8 @@ typedef struct {
     uint8_t n_ops;
     uint8_t cc;
     uint8_t op;
-    uint8_t aa;
-    uint8_t zz;
+    uint8_t aa : 2;
+    uint8_t zz : 2;
 #define zz_as_data_size zz
     bool aq;
     bool rl;
