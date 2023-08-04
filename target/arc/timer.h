@@ -21,7 +21,16 @@
 #ifndef __ARC_TIMER_H__
 #define __ARC_TIMER_H__
 
+#include "qemu/osdep.h"
+#include "qemu/timer.h"
+
+#define FREQ_HZ (env_archcpu(env)->freq_hz)
+
+#define CYCLES_TO_NS(VAL) (muldiv64(VAL, NANOSECONDS_PER_SECOND, FREQ_HZ))
+#define NS_TO_CYCLE(VAL)  (muldiv64(VAL, FREQ_HZ, NANOSECONDS_PER_SECOND))
+
 void arc_initializeTIMER(ARCCPU *);
 void arc_resetTIMER(ARCCPU *);
+uint64_t get_global_cycles(void);
 
 #endif
