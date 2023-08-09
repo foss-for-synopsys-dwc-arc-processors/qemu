@@ -94,6 +94,8 @@ TESTCASES += check_qmach.tst
 #TESTCASES += check_swapl.tst
 TESTCASES += check_lddl.tst
 TESTCASES += check_stdl.tst
+TESTCASES += check_popdl.tst
+TESTCASES += check_pushdl.tst
 
 all: $(TESTCASES)
 OBJECTS = ivt.o
