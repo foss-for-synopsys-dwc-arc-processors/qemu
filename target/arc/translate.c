@@ -456,6 +456,15 @@ static TCGv arc_decode_operand(const struct arc_opcode *opcode,
             ret = cpu_r[operand.value];
             if (operand.value == 63) {
                 tcg_gen_movi_tl(cpu_pcl, ctx->pcl);
+            } else if (operand.value == 29) {
+                /* ilink access in user mode raises a privilege violation */
+                TCGv cond = tcg_temp_new();
+                TCGLabel *cont = gen_new_label();
+                tcg_gen_andi_tl(cond, cpu_pstate, STATUS32_U);
+                tcg_gen_brcondi_tl(TCG_COND_EQ, cond, 0, cont);
+                tcg_temp_free(cond);
+                arc_gen_excp(ctx, EXCP_PRIVILEGEV, 0, 0);
+                gen_set_label(cont);
             }
         } else {
             int64_t limm = operand.value;
