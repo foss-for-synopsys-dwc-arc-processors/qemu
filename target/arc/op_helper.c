@@ -76,6 +76,8 @@ static void set_status32(CPUARCState *env, target_ulong value)
 #endif
 }
 
+static pthread_t last_thread_access;
+
 target_ulong helper_llock(CPUARCState *env, target_ulong addr)
 {
     assert((addr & 0x3) == 0);
@@ -94,6 +96,11 @@ target_ulong helper_llock(CPUARCState *env, target_ulong addr)
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
+
+    #ifdef CONFIG_USER_ONLY
+    last_thread_access = pthread_self();
+    #endif
+
     qemu_mutex_unlock(&entry->mutex);
     return ret;
 }
@@ -114,6 +121,15 @@ target_ulong helper_scond(CPUARCState *env, target_ulong addr, target_ulong valu
                   (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
     qemu_mutex_lock(env->arconnect.locked_mutex);
     struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+
+    // usermode interrupts don't clear Lock Flag, so we must do so ourselves
+    #ifdef CONFIG_USER_ONLY
+    pthread_t current_thread = pthread_self();
+    if (last_thread_access != current_thread) {
+        entry->lpa_lf &= -2;
+    }
+    #endif
+
     haddr = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     target_ulong ret = 1;
     target_ulong rvalue = cpu_ldl_data_ra(env, addr, GETPC());
@@ -151,6 +167,11 @@ target_ulong helper_llockl(CPUARCState *env, target_ulong addr)
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
+
+    #ifdef CONFIG_USER_ONLY
+    last_thread_access = pthread_self();
+    #endif
+
     qemu_mutex_unlock(&entry->mutex);
     return ret;
 }
@@ -163,8 +184,17 @@ target_ulong helper_scondl(CPUARCState *env, target_ulong addr, target_ulong val
     qemu_log_mask(LOG_UNIMP, "0x" TARGET_FMT_lx "SCONDL at addr 0x" TARGET_FMT_lx " at index %d\n",
                   env->pc,
                   (target_ulong) haddr, (int) LPA_LFS_ENTRY_FOR_PA(haddr));
-    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
     qemu_mutex_lock(env->arconnect.locked_mutex);
+    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+
+    // usermode interrupts don't clear Lock Flag, so we must do so ourselves
+    #ifdef CONFIG_USER_ONLY
+    pthread_t current_thread = pthread_self();
+    if (last_thread_access != current_thread) {
+        entry->lpa_lf &= -2;
+    }
+    #endif
+
     target_ulong ret = 1;
     haddr = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
     target_ulong rvalue = cpu_ldq_data_ra(env, addr, GETPC());
@@ -197,6 +227,10 @@ uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
     entry->lpa_lf += 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
 
+    #ifdef CONFIG_USER_ONLY
+    last_thread_access = pthread_self();
+    #endif
+
     qemu_mutex_unlock(&entry->mutex);
 
     return ret;
@@ -207,8 +241,17 @@ target_ulong helper_scondd(CPUARCState *env, target_ulong addr, uint64_t value)
     hwaddr haddr;
     CPUState *cs = env_cpu(env);
     arc_get_physical_addr(cs, &haddr, addr, MMU_MEM_WRITE, false, GETPC());
-    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
     qemu_mutex_lock(env->arconnect.locked_mutex);
+    struct lpa_lf_entry *entry = env->arconnect.lpa_lf;
+
+    // usermode interrupts don't clear Lock Flag, so we must do so ourselves
+    #ifdef CONFIG_USER_ONLY
+    pthread_t current_thread = pthread_self();
+    if (last_thread_access != current_thread) {
+        entry->lpa_lf &= -2;
+    }
+    #endif
+
     target_ulong ret = 1;
     addr = (addr & (~LPA_LFS_ALIGNEMENT_MASK));
 
