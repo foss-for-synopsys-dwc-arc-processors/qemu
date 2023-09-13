@@ -100,42 +100,6 @@ struct mmu_version_info *mmu_v6_version;
   (EXCP).parameter = P; \
 }
 
-uint32_t mmu_ctrl;
-
-#define MMU_ENABLED_BIT 0
-#define MMU_ENABLED_MASK (1 << MMU_ENABLED_BIT)
-#define MMU_ENABLED ((mmu_ctrl & MMU_ENABLED_MASK) != 0)
-#define MMU_IN_USER_KERNEL_MODE ((mmu_ctrl >> 1) & 1)
-
-static void disable_mmuv6(void)
-{
-    mmu_ctrl &= ~MMU_ENABLED_MASK;
-}
-int mmuv6_enabled(void)
-{
-    return MMU_ENABLED;
-}
-
-
-uint32_t mmu_ttbcr;
-
-#define MMU_TTBCR_TNSZ(I) ((mmu_ttbcr        >> (I * 16)) & 0x1f)
-#define MMU_TTBCR_TNSH(I) (((mmu_ttbcr >> 4) >> (I * 16)) & 0x3)
-
-#define MMU_TTBCR_A1  ((mmu_ttbcr >> 15) & 0x1)
-
-/*
-static void init_mmu_ttbcr(void)
-{
-    // TODO BE DONE
-}
-*/
-
-uint64_t mmu_rtp0;
-uint64_t mmu_rtp1;
-
-uint64_t mmu_fault_status;
-
 //static target_ulong mask_for_root_address(char x) {
 //    switch(mmu_v6_version->id) {
 //    case MMUV6_52_64K:
@@ -150,34 +114,6 @@ uint64_t mmu_fault_status;
 //
 //    }
 //}
-#define MASK_FOR_ROOT_ADDRESS(X) \
-    (((1ull << VADDR_SIZE()) - 1) & (~((1 << X) - 1)))
-
-/* TODO: This is for MMU48 only. */
-
-#ifndef CONFIG_USER_ONLY
-static char x_for_ttbc(unsigned char i)
-{
-    const char xs[MMUV6_VERSION_SIZE][2] = {
-        [MMUV6_52_64K] = { 13, 16 },
-        [MMUV6_48_4K]  = { 12, 12 },
-        [MMUV6_48_16K] = {4, 6 },
-        [MMUV6_48_64K] = { 9, 13 },
-    };
-    switch(mmu_v6_version->id) {
-    case MMUV6_32_4K:
-        if(MMU_TTBCR_TNSZ(i) > 1)
-            return (14 - MMU_TTBCR_TNSZ(i));
-        else
-            return (5 - MMU_TTBCR_TNSZ(i));
-        break;
-    default:
-        return xs[mmu_v6_version->id][i];
-        break;
-    }
-    assert("This should not happen !!!" == 0);
-}
-#endif
 
 // Grab Root Table Address for RTPN
 #ifndef CONFIG_USER_ONLY
@@ -193,13 +129,6 @@ static uint64_t root_address(uint64_t rtp)
     assert("This should not happen !!!" == 0);
 }
 #endif
-
-#define MMU_RTPN_ROOT_ADDRESS(N) \
-    (root_address(mmu_rtp##N) & MASK_FOR_ROOT_ADDRESS(x_for_ttbc(N)))
-
-/* TODO: This is for MMU48/52 only. */
-#define MMU_RTPN_ASID(VADDR, N) \
-  ((mmu_rtp##N >> 48) & 0xffff)
 
 /* Table descriptors accessor macros */
 
@@ -313,48 +242,51 @@ mmuv6_tlb_command(CPUARCState *env, enum MMUv6_TLBCOMMAND command)
 target_ulong
 arc_mmuv6_aux_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
 {
-  target_ulong reg = 0;
-  switch(aux_reg_detail->id)
-  {
-  case AUX_ID_mmuv6_build:
-      reg = 0;
-      reg |= (0x10 << 24);   /* Version: 0x10 (MMUv6) */
-                          /* Type:    1 (MMUv48) */
-      reg |= (mmu_v6_version->type << 21);
-      reg |= (0 << 9);    /* TC:      0 (no translation cache) */
-      reg |= (0 << 6);    /* L2TLB:   0 (256 entries) */
-      reg |= (1 << 3);    /* ITLB:    1 (4 entries) */
-      reg |= 2;           /* DTLB:    2 (8 entries) */
+    CPUARCState *env = (CPUARCState *) data;
+    target_ulong reg = 0;
 
-      qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] BUILD read " TARGET_FMT_lu " \n\n", reg);
-      break;
-  case AUX_ID_mmu_rtp0:
-      reg = mmu_rtp0;
-      qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] RTP0 read %lx\n\n", mmu_rtp0);
-      break;
-  case AUX_ID_mmu_rtp0hi:
-      reg = (mmu_rtp0 >> 32);
-      break;
-  case AUX_ID_mmu_rtp1:
-      qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] RTP1 read %lx\n\n", mmu_rtp1);
-      reg = mmu_rtp1;
-      break;
-  case AUX_ID_mmu_rtp1hi:
-      reg = (mmu_rtp1 >> 32);
-      break;
-  case AUX_ID_mmu_ctrl:
-      reg = mmu_ctrl;
-      break;
-  case AUX_ID_mmu_ttbcr:
-      reg = mmu_ttbcr;
-      break;
-  case AUX_ID_mmu_fault_status:
-      reg = mmu_fault_status;
-      break;
-  default:
-      break;
-  }
-  return reg;
+    switch(aux_reg_detail->id)
+    {
+    case AUX_ID_mmuv6_build:
+        reg = 0;
+        reg |= (0x10 << 24);   /* Version: 0x10 (MMUv6) */
+                               /* Type:    1 (MMUv48) */
+        reg |= (mmu_v6_version->type << 21);
+        reg |= (0 << 9);    /* TC:      0 (no translation cache) */
+        reg |= (0 << 6);    /* L2TLB:   0 (256 entries) */
+        reg |= (1 << 3);    /* ITLB:    1 (4 entries) */
+        reg |= 2;           /* DTLB:    2 (8 entries) */
+
+        qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] BUILD read " TARGET_FMT_lu " \n\n", reg);
+        break;
+    case AUX_ID_mmu_rtp0:
+        reg = env->mmu.v6.rtp0;
+        qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] RTP0 read %lx\n\n", env->mmu.v6.rtp1);
+        break;
+    case AUX_ID_mmu_rtp0hi:
+        reg = (env->mmu.v6.rtp0 >> 32);
+        break;
+    case AUX_ID_mmu_rtp1:
+        reg = env->mmu.v6.rtp1;
+        qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] RTP1 read %lx\n\n", env->mmu.v6.rtp1);
+        break;
+    case AUX_ID_mmu_rtp1hi:
+        reg = (env->mmu.v6.rtp1 >> 32);
+        break;
+    case AUX_ID_mmu_ctrl:
+        reg = env->mmu.v6.ctrl;
+        break;
+    case AUX_ID_mmu_ttbcr:
+        reg = env->mmu.v6.ttbcr;
+        break;
+    case AUX_ID_mmu_fault_status:
+        reg = env->mmu.v6.fault_status;
+        break;
+    default:
+        break;
+    }
+
+    return reg;
 }
 
 void
@@ -369,36 +301,36 @@ arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
     {
     case AUX_ID_mmu_rtp0:
         qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] RTP0 update %lx"
-                      " ==> " TARGET_FMT_lx "\n\n", mmu_rtp0, val);
-        if (mmu_rtp0 != u64_val)
+                      " ==> " TARGET_FMT_lx "\n\n", env->mmu.v6.rtp0, val);
+        if (env->mmu.v6.rtp0 != u64_val)
             tlb_flush(cs);
-        mmu_rtp0 =  u64_val;
+        env->mmu.v6.rtp0 = u64_val;
         break;
     case AUX_ID_mmu_rtp0hi:
-        if ((mmu_rtp0 >> 32) != u64_val)
+        if ((env->mmu.v6.rtp0 >> 32) != u64_val)
             tlb_flush(cs);
-        mmu_rtp0 &= ~0xffffffff00000000;
-        mmu_rtp0 |= (u64_val << 32);
+        env->mmu.v6.rtp0 &= ~0xffffffff00000000;
+        env->mmu.v6.rtp0 |= (u64_val << 32);
         break;
     case AUX_ID_mmu_rtp1:
-        if (mmu_rtp1 != u64_val)
+        if (env->mmu.v6.rtp1 != u64_val)
             tlb_flush(cs);
-        mmu_rtp1 =  u64_val;
+        env->mmu.v6.rtp1 = u64_val;
         break;
     case AUX_ID_mmu_rtp1hi:
-        if ((mmu_rtp1 >> 32) != u64_val)
+        if ((env->mmu.v6.rtp1 >> 32) != u64_val)
             tlb_flush(cs);
-        mmu_rtp1 &= ~0xffffffff00000000;
-        mmu_rtp1 |= (u64_val << 32);
+        env->mmu.v6.rtp1 &= ~0xffffffff00000000;
+        env->mmu.v6.rtp1 |= (u64_val << 32);
         break;
     case AUX_ID_mmu_ctrl:
-        if (mmu_ctrl != val)
+        if (env->mmu.v6.ctrl != val)
             tlb_flush(cs);
-        mmu_ctrl =  val;
+        env->mmu.v6.ctrl = val;
         qemu_log_mask(CPU_LOG_MMU, "mmu_ctrl = 0x" TARGET_FMT_lx "\n", val);
         break;
     case AUX_ID_mmu_ttbcr:
-        mmu_ttbcr = val;
+        env->mmu.v6.ttbcr = val;
         break;
     case AUX_ID_mmuv6_tlbcommand:
         mmuv6_tlb_command(env, val);
@@ -415,30 +347,76 @@ arc_mmuv6_aux_set(const struct arc_aux_reg_detail *aux_reg_detail,
 
 #define ALL1_64BIT (0xffffffffffffffff)
 
-static uint64_t
-root_ptr_for_vaddr(uint64_t vaddr, bool *valid)
+/* TODO: This is for MMU48 only. */
+static char x_for_ttbc(CPUARCState *env, unsigned char i)
 {
+    uint32_t tnsz;
+    const char xs[MMUV6_VERSION_SIZE][2] = {
+        [MMUV6_52_64K] = { 13, 16 },
+        [MMUV6_48_4K]  = { 12, 12 },
+        [MMUV6_48_16K] = {4, 6 },
+        [MMUV6_48_64K] = { 9, 13 },
+    };
+
+    switch (i) {
+    case 0:
+        tnsz = FIELD_EX32(env->mmu.v6.ttbcr, MMU_TTBC, T0SZ);
+        break;
+    case 1:
+        tnsz = FIELD_EX32(env->mmu.v6.ttbcr, MMU_TTBC, T1SZ);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+
+    switch(mmu_v6_version->id) {
+    case MMUV6_32_4K:
+        if(tnsz > 1)
+            return (14 - tnsz);
+        else
+            return (5 - tnsz);
+        break;
+    default:
+        return xs[mmu_v6_version->id][i];
+        break;
+    }
+
+    assert("This should not happen !!!" == 0);
+}
+
+#define MASK_FOR_ROOT_ADDRESS(X) \
+    (((1ull << VADDR_SIZE()) - 1) & (~((1 << X) - 1)))
+
+#define MMU_RTPN_ROOT_ADDRESS(N) \
+    (root_address(env->mmu.v6.rtp##N) & MASK_FOR_ROOT_ADDRESS(x_for_ttbc(env, N)))
+
+static uint64_t
+root_ptr_for_vaddr(CPUARCState *env, uint64_t vaddr, bool *valid)
+{
+    uint32_t t0sz = FIELD_EX32(env->mmu.v6.ttbcr, MMU_TTBC, T0SZ);
+    uint32_t t1sz = FIELD_EX32(env->mmu.v6.ttbcr, MMU_TTBC, T1SZ);
+
     /* TODO: This is only for MMUv48 */
     assert(mmu_v6_version->id != MMUV6_48_4K || (
-           MMU_TTBCR_TNSZ(0) == MMU_TTBCR_TNSZ(1)
-           && (MMU_TTBCR_TNSZ(0) == 16 || MMU_TTBCR_TNSZ(0) == 25)));
+           t0sz == t1sz && (t0sz == 16 || t0sz == 25)));
 
     switch(mmu_v6_version->id) {
     case MMUV6_52_64K:
     case MMUV6_48_4K:
     case MMUV6_48_16K:
     case MMUV6_48_64K:
-        if ((vaddr >> (64-MMU_TTBCR_TNSZ(0))) == 0)
+        if ((vaddr >> (64 - t0sz)) == 0)
             return MMU_RTPN_ROOT_ADDRESS(0);
 
-        if ((vaddr >> (64-MMU_TTBCR_TNSZ(1))) == ((1 << MMU_TTBCR_TNSZ(1)) - 1))
+        if ((vaddr >> (64 - t1sz)) == ((1 << t1sz) - 1))
             return MMU_RTPN_ROOT_ADDRESS(1);
         break;
     case MMUV6_32_4K:
-        if ((vaddr >> (32-MMU_TTBCR_TNSZ(0))) == 0)
+        if ((vaddr >> (32 - t0sz)) == 0)
             return MMU_RTPN_ROOT_ADDRESS(0);
 
-        if ((vaddr >> (32-MMU_TTBCR_TNSZ(1))) == ((1 << MMU_TTBCR_TNSZ(1)) - 1))
+        if ((vaddr >> (32 - t1sz)) == ((1 << t1sz) - 1))
             return MMU_RTPN_ROOT_ADDRESS(1);
         break;
     default:
@@ -567,10 +545,10 @@ page_table_traverse(CPUARCState *env,
 {
     bool found_block_descriptor = false;
     uint64_t pte, pte_addr;
-    int l;
+    int level;
     int overwrite_permitions = 0;
     bool valid_root = true;
-    uint64_t root = root_ptr_for_vaddr(vaddr, &valid_root);
+    uint64_t root = root_ptr_for_vaddr(env, vaddr, &valid_root);
     ARCCPU *cpu = env_archcpu (env);
     unsigned char remainig_bits = VADDR_SIZE();
 
@@ -589,8 +567,8 @@ page_table_traverse(CPUARCState *env,
         }
     }
 
-    for(l = 0; l < NLEVELS(); l++) {
-        unsigned char bits_to_compare = N_BITS_ON_LEVEL(l);
+    for(level = 0; level < NLEVELS(); level++) {
+        unsigned char bits_to_compare = N_BITS_ON_LEVEL(level);
         remainig_bits = remainig_bits - bits_to_compare;
         unsigned offset = (vaddr >> remainig_bits) & ((1<<bits_to_compare)-1);
 
@@ -598,15 +576,15 @@ page_table_traverse(CPUARCState *env,
         pte = LOAD_DATA_IN(pte_addr);
 
         if(rwe != MMU_MEM_IRRELEVANT_TYPE) {
-            qemu_log_mask(CPU_LOG_MMU, "[MMUV3] == Level: %d, offset: %d, pte_addr: %lx ==> %lx\n", l, offset, pte_addr, pte);
+            qemu_log_mask(CPU_LOG_MMU, "[MMUV3] == Level: %d, offset: %d, pte_addr: %lx ==> %lx\n", level, offset, pte_addr, pte);
         }
 
-        if(pte_is_invalid(pte, l)) {
+        if(pte_is_invalid(pte, level)) {
             if(rwe != MMU_MEM_IRRELEVANT_TYPE) {
                 qemu_log_mask(CPU_LOG_MMU, "[MMUV3] PTE seems invalid\n");
             }
 
-            mmu_fault_status = (l & 0x7);
+            env->mmu.v6.fault_status = (level & 0x7);
             if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
                 SET_MMU_EXCEPTION(*excp, EXCP_IMMU_FAULT, 0x00, 0x00);
                 return -1;
@@ -617,13 +595,13 @@ page_table_traverse(CPUARCState *env,
         }
 
 
-        if(PTE_IS_BLOCK_DESCRIPTOR(pte, l) || PTE_IS_PAGE_DESCRIPTOR(pte, l)) {
+        if(PTE_IS_BLOCK_DESCRIPTOR(pte, level) || PTE_IS_PAGE_DESCRIPTOR(pte, level)) {
             if(PTE_BLK_AF(pte) != 0) {
                 found_block_descriptor = true;
                 break;
             } else {
                 qemu_log_mask(CPU_LOG_MMU, "[MMUV3] PTE AF is not set\n");
-                mmu_fault_status = (l & 0x7);
+                env->mmu.v6.fault_status = (level & 0x7);
                 if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
                     SET_MMU_EXCEPTION(*excp, EXCP_IMMU_FAULT, 0x10, 0x00);
                     return -1;
@@ -634,7 +612,7 @@ page_table_traverse(CPUARCState *env,
             }
         }
 
-        if(PTE_IS_TABLE_DESCRIPTOR(pte, l)) {
+        if(PTE_IS_TABLE_DESCRIPTOR(pte, level)) {
             if(PTE_TBL_KERNEL_EXECUTE_NEVER_NEXT(pte)) {
                 overwrite_permitions |= RESTRICT_TBL_KERNEL_EXECUTE_NEVER;
             }
@@ -652,7 +630,7 @@ page_table_traverse(CPUARCState *env,
             }
         }
 
-        if(pte_is_invalid(pte, l)) {
+        if(pte_is_invalid(pte, level)) {
             if(rwe == MMU_MEM_FETCH || rwe == MMU_MEM_IRRELEVANT_TYPE) {
                 SET_MMU_EXCEPTION(*excp, EXCP_IMMU_FAULT, 0x00, 0x00);
                 return -1;
@@ -662,12 +640,12 @@ page_table_traverse(CPUARCState *env,
             }
         }
 
-        root = pte_tbl_next_level_table_address(l, pte);
+        root = pte_tbl_next_level_table_address(level, pte);
     }
 
     if(found_block_descriptor) {
 
-        if(protv_violation(env, pte, l, overwrite_permitions, rwe)) {
+        if(protv_violation(env, pte, level, overwrite_permitions, rwe)) {
             qemu_log_mask(CPU_LOG_MMU, "\n[MMUV3] [PC "TARGET_FMT_lx
                           "] PTE Protection violation: vaddr "TARGET_FMT_lx
                           " pte [addr %lx val %lx]\n", env->pc, vaddr, pte_addr, pte);
@@ -694,10 +672,14 @@ void arc_mmu_init_v6(CPUARCState *env)
 {
     ARCCPU *cpu = env_archcpu(env);
 
+    cpu->env.mmu.v6.ctrl = 0;
+    cpu->env.mmu.v6.ttbcr = 0;
+    cpu->env.mmu.v6.fault_status = 0;
+    cpu->env.mmu.v6.rtp0 = 0;
+    cpu->env.mmu.v6.rtp1 = 0;
+
     switch(cpu->family) {
     case ARC_OPCODE_ARC64:
-        //mmu_v6_version = &mmuv6_info[MMUV6_48_4K];
-
         if(cpu->cfg.mmuv6_version == NULL) {
             mmu_v6_version = &mmuv6_info[MMUV6_48_4K];
         } else if(!g_strcmp0(cpu->cfg.mmuv6_version, "48_4k")) {
@@ -736,12 +718,13 @@ arc_mmuv6_translate(CPUARCState *env,
                     int *prot, struct mem_exception *excp)
 {
     target_ulong paddr;
+    uint32_t enabled = FIELD_EX32(env->mmu.v6.ctrl, MMU_CTRL, EN);
 
     /* This is really required. Fail in non singlestep without in_asm. */
     env->mmu.v6.exception.number = EXCP_NO_EXCEPTION;
 
-    if(!MMU_ENABLED) {
-      paddr = vaddr;
+    if(!enabled) {
+        paddr = vaddr;
     }
 
    paddr = (target_ulong) page_table_traverse(env, vaddr, rwe, prot, excp);
@@ -760,14 +743,14 @@ typedef enum {
     MMU_ACTION,
 } ACTION;
 
-static int mmuv6_decide_action(const CPUARCState *env,
-                  target_ulong       addr,
-                  int                mmu_idx)
+static int mmuv6_decide_action(const CPUARCState *env, target_ulong addr, int mmu_idx)
 {
-  if (MMU_ENABLED)
-    return MMU_ACTION;
-  else
-    return DIRECT_ACTION;
+    uint32_t enabled = FIELD_EX32(env->mmu.v6.ctrl, MMU_CTRL, EN);
+
+    if (enabled)
+        return MMU_ACTION;
+    else
+        return DIRECT_ACTION;
 }
 
 #endif
@@ -902,8 +885,9 @@ bool arc_cpu_tlb_fill_v6(CPUState *cs, vaddr address, int size,
 hwaddr arc_mmu_debug_translate_v6(CPUARCState *env, vaddr addr)
 {
     struct mem_exception excp;
+    uint32_t enabled = FIELD_EX32(env->mmu.v6.ctrl, MMU_CTRL, EN);
 
-    if(mmuv6_enabled()) {
+    if(enabled) {
         return arc_mmuv6_translate(env, addr, MMU_MEM_IRRELEVANT_TYPE, NULL, &excp);
     } else {
         return addr;
@@ -912,7 +896,7 @@ hwaddr arc_mmu_debug_translate_v6(CPUARCState *env, vaddr addr)
 #endif /* CONFIG_USER_ONLY */
 
 void arc_mmu_disable_v6(CPUARCState *env) {
-    disable_mmuv6();
+    env->mmu.v6.ctrl = FIELD_DP32(env->mmu.v6.ctrl, MMU_CTRL, EN, 0);
 }
 
 /*-*-indent-tabs-mode:nil;tab-width:4;indent-line-function:'insert-tab'-*-*/
