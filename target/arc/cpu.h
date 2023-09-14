@@ -289,9 +289,9 @@ struct CPUArchState {
       struct arc_mmu v3;
       struct arc_mmuv6 v6;
     } mmu;
-    struct ARCMPU mpu;        /* mpu.h */
-    struct arc_arcconnect_info arconnect; /* arconnect.h */
-    struct arc_cache cache;   /* cache.h */
+    struct ARCMPU mpu;              /* mpu.h */
+    ARCArconnectCPUState arconnect; /* arconnect.h */
+    struct arc_cache cache;         /* cache.h */
 
     bool      stopped;
 
@@ -306,8 +306,6 @@ struct CPUArchState {
 #ifdef CONFIG_USER_ONLY
     target_ulong tls_backup;
 #endif
-
-    target_ulong readback;
 
     target_ulong exclusive_addr;
     target_ulong exclusive_val;
