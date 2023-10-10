@@ -213,6 +213,15 @@ typedef struct {
     uint64_t last_clk;
 } ARCTimer;
 
+typedef struct {
+    uint32_t low;
+    uint32_t high;
+    uint32_t ctrl;
+    uint64_t stop_cycles;
+    uint64_t stop_time_ns;
+    uint64_t base_time_ns;
+} ARCRealTimeCounter;
+
 /* ARC PIC interrupt bancked regs. */
 typedef struct {
     target_ulong priority;
@@ -259,6 +268,7 @@ struct CPUArchState {
 #define TMR_IP  (1 << 3)
 #define TMR_PD  (1 << 4)
     ARCTimer timer[2];    /* ARC CPU-Timer 0/1 */
+    ARCRealTimeCounter rtc;
 
     /* TODO: Verify correctness of this types for both ARCv2 and v3. */
     ARCIrq irq_bank[256]; /* IRQ register bank */
@@ -269,9 +279,6 @@ struct CPUArchState {
     uint32_t aux_irq_hint;   /* AUX register, used to trigger soft irq */
     target_ulong aux_user_sp;
     uint32_t aux_irq_ctrl;
-    uint32_t aux_rtc_ctrl;
-    uint32_t aux_rtc_low;
-    uint32_t aux_rtc_high;
 
     /* TODO: This one in particular. */
     /* Fields required by exception handling. */
@@ -282,28 +289,23 @@ struct CPUArchState {
       struct arc_mmu v3;
       struct arc_mmuv6 v6;
     } mmu;
-    struct ARCMPU mpu;        /* mpu.h */
-    struct arc_arcconnect_info arconnect; /* arconnect.h */
-    struct arc_cache cache;   /* cache.h */
+    struct ARCMPU mpu;              /* mpu.h */
+    ARCArconnectCPUState arconnect; /* arconnect.h */
+    struct arc_cache cache;         /* cache.h */
 
     bool      stopped;
 
     /* Fields up to this point are cleared by a CPU reset */
     struct {} end_reset_fields;
 
-    uint64_t last_clk_rtc;
-
     void *irq[256];
     QEMUTimer *cpu_timer[2]; /* Internal timer. */
-    QEMUTimer *cpu_rtc;      /* Internal RTC. */
 
     const struct arc_boot_info *boot_info;
 
 #ifdef CONFIG_USER_ONLY
     target_ulong tls_backup;
 #endif
-
-    target_ulong readback;
 
     target_ulong exclusive_addr;
     target_ulong exclusive_val;

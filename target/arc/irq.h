@@ -34,6 +34,8 @@ void arc_resetIRQ(ARCCPU *);
 #define NR_OF_EXCEPTIONS  16
 #define TIMER0_IRQ 16
 #define TIMER1_IRQ 17
+#define ICI_IRQ 19
+#define PMU_IRQ 23
 
 #if defined(TARGET_ARC32)
 #define OFFSET_FOR_VECTOR(VECNO) (VECNO << 2)

@@ -46,6 +46,27 @@ static uint64_t get_ns(CPUARCState *env)
 #endif
 }
 
+uint64_t arc_get_cycles(CPUARCState *env)
+{
+    uint64_t diff = get_ns(env) - env->rtc.base_time_ns;
+
+    /*
+     * In user mode host's cycles are stored in base_time_ns and get_ns()
+     * returns host cycles. Thus, return just a difference in this case
+     * without converting from nanoseconds to cycles.
+     */
+#ifndef CONFIG_USER_ONLY
+    return NS_TO_CYCLE(diff);
+#else
+    return diff;
+#endif
+}
+
+uint64_t arc_get_global_cycles(void)
+{
+    return arc_get_cycles(&ARC_CPU(first_cpu)->env);
+}
+
 static uint32_t get_t_count(CPUARCState *env, uint32_t t)
 {
 #ifndef CONFIG_USER_ONLY
@@ -141,78 +162,6 @@ static void arc_timer1_cb(void *opaque)
 }
 #endif
 
-/* RTC counter update. */
-static void cpu_rtc_count_update(CPUARCState *env)
-{
-    uint64_t now;
-    uint64_t llreg;
-
-    assert((env_archcpu(env)->timer_build & TB_RTC) && env->cpu_rtc);
-    now = get_ns(env);
-
-    if (!(env->aux_rtc_ctrl & 0x01)) {
-        return;
-    }
-
-    llreg = ((now - env->last_clk_rtc) / TIMER_PERIOD(FREQ_HZ));
-    llreg += env->aux_rtc_low + ((uint64_t)env->aux_rtc_high << 32);
-    env->aux_rtc_high = llreg >> 32;
-    env->aux_rtc_low = (uint32_t) llreg;
-
-    env->last_clk_rtc = now;
-    qemu_log_mask(LOG_UNIMP, "[RTC] RTC count-regs update\n");
-}
-
-#ifndef CONFIG_USER_ONLY
-/* Update the next timeout time as difference between Count and Limit */
-static void cpu_rtc_update(CPUARCState *env)
-{
-    uint64_t wait = 0;
-    uint64_t now, period;
-    uint64_t next;
-
-    assert(env->cpu_rtc);
-    now = get_ns(env);
-
-    if (!(env->aux_rtc_ctrl & 0x01)) {
-        return;
-    }
-
-    period = TIMER_PERIOD(FREQ_HZ);
-    wait = UINT64_MAX - ((((uint64_t) env->aux_rtc_high) << 32)
-                       + env->aux_rtc_low);
-    wait -= (now - env->last_clk_rtc) / period;
-
-    /* Limit timeout rate. */
-    if ((wait * period) < TIMEOUT_LIMIT) {
-        period = TIMEOUT_LIMIT / wait;
-    }
-
-    next = now + (uint64_t) wait * period;
-    timer_mod(env->cpu_rtc, next);
-    qemu_log_mask(LOG_UNIMP, "[RTC] RTC update\n");
-}
-#endif
-
-#ifndef CONFIG_USER_ONLY
-/* RTC call back routine. */
-static void arc_rtc_cb(void *opaque)
-{
-    CPUARCState *env = (CPUARCState *) opaque;
-
-    if (!(env_archcpu(env)->timer_build & TB_RTC)) {
-        return;
-    }
-
-    qemu_log_mask(LOG_UNIMP, "[RTC] RTC expired\n");
-
-    env->aux_rtc_high = 0;
-    env->aux_rtc_low = 0;
-    env->last_clk_rtc = get_ns(env);
-    cpu_rtc_update(env);
-}
-#endif
-
 /* Helper used when resetting the system. */
 static void cpu_arc_count_reset(CPUARCState *env, uint32_t timer)
 {
@@ -284,35 +233,88 @@ static void cpu_arc_control_set(CPUARCState *env,
     }
 }
 
-/* Get The RTC count value. */
-static uint32_t arc_rtc_count_get(CPUARCState *env, bool lower)
+#if defined(TARGET_ARC64)
+static uint64_t arc_rtc_count_get_low(CPUARCState *env)
 {
-    cpu_rtc_count_update(env);
-    return lower ? env->aux_rtc_low : env->aux_rtc_high;
+    uint8_t enabled = FIELD_EX32(env->rtc.ctrl, ARC_RTC_CTRL, ENABLE);
+
+    if (enabled) {
+        return arc_get_cycles(env);
+    } else {
+        return env->rtc.stop_cycles;
+    }
 }
+#else
+static uint32_t arc_rtc_count_get_low(CPUARCState *env)
+{
+    uint8_t enabled = FIELD_EX32(env->rtc.ctrl, ARC_RTC_CTRL, ENABLE);
+    uint64_t cycles;
+
+    if (enabled) {
+        cycles = arc_get_cycles(env);
+    } else {
+        cycles = env->rtc.stop_cycles;
+    }
+
+    /*
+     * If RTC is enabled then update (high,low) pair with the latest cycles
+     * count. Otherwise, don't update it and use the old value.
+     */
+    env->rtc.low = cycles & 0xFFFFFFFF;
+    env->rtc.high = (cycles >> 32) & 0xFFFFFFFF;
+
+    return env->rtc.low;
+}
+
+static uint32_t arc_rtc_count_get_high(CPUARCState *env)
+{
+    return env->rtc.high;
+}
+#endif
 
 /* Set the RTC control bits. */
 static void arc_rtc_ctrl_set(CPUARCState *env, uint32_t val)
 {
 #ifndef CONFIG_USER_ONLY
+    uint8_t enable = FIELD_EX32(val, ARC_RTC_CTRL, ENABLE);
+    uint8_t enabled = FIELD_EX32(env->rtc.ctrl, ARC_RTC_CTRL, ENABLE);
+    uint8_t clear = FIELD_EX32(val, ARC_RTC_CTRL, CLEAR);
+
     assert(GET_STATUS_BIT(env->stat, Uf) == 0);
 
-    if (val & 0x02) {
-        env->aux_rtc_low = 0;
-        env->aux_rtc_high = 0;
-        env->last_clk_rtc = get_ns(env);
-    }
-    if (!(val & 0x01)) {
-        timer_del(env->cpu_rtc);
-    }
-
-    /* Restart RTC, update last clock. */
-    if ((env->aux_rtc_ctrl & 0x01) == 0 && (val & 0x01)) {
-        env->last_clk_rtc = get_ns(env);
+    /* Case: RTC is enabled and it's going to be disabled.
+     * Remember stop time and save the latest cycles count for further using.
+     */
+    if (enabled && !enable) {
+        env->rtc.stop_time_ns = get_ns(env);
+        env->rtc.stop_cycles = arc_get_cycles(env);
     }
 
-    env->aux_rtc_ctrl = 0xc0000000 | (val & 0x01);
-    cpu_rtc_update(env);
+    if (clear) {
+        env->rtc.base_time_ns = get_ns(env);
+
+        /*
+         * If RTC is stopped then remember stop time - it will allow to reset
+         * the counter after reactivating the RTC.
+         */
+        if (!enabled) {
+            env->rtc.stop_time_ns = env->rtc.base_time_ns;
+            env->rtc.stop_cycles = 0;
+        }
+    }
+
+    /*
+     * Case: RTC is disabled and it's going to be enabled.
+     * Increase base time to fill the gap between stop and now.
+     */
+    if (!enabled && enable) {
+        env->rtc.base_time_ns += get_ns(env) - env->rtc.stop_time_ns;
+    }
+
+    /* Always set atomicity bits since. */
+    env->rtc.ctrl = FIELD_DP32(env->rtc.ctrl, ARC_RTC_CTRL, ENABLE, enable);
+    env->rtc.ctrl = FIELD_DP32(env->rtc.ctrl, ARC_RTC_CTRL, A0, 1);
+    env->rtc.ctrl = FIELD_DP32(env->rtc.ctrl, ARC_RTC_CTRL, A1, 1);
 #endif
 }
 
@@ -324,19 +326,12 @@ cpu_arc_clock_init(ARCCPU *cpu)
     CPUARCState *env = &cpu->env;
 
 #ifndef CONFIG_USER_ONLY
-    if (env_archcpu(env)->timer_build & TB_T0) {
-        env->cpu_timer[0] =
-            timer_new_ns(QEMU_CLOCK_VIRTUAL, &arc_timer0_cb, env);
+    if (FIELD_EX32(cpu->timer_build, ARC_TIMER_BUILD, T0)) {
+        env->cpu_timer[0] = timer_new_ns(QEMU_CLOCK_VIRTUAL, &arc_timer0_cb, env);
     }
 
-    if (env_archcpu(env)->timer_build & TB_T1) {
-        env->cpu_timer[1] =
-            timer_new_ns(QEMU_CLOCK_VIRTUAL, &arc_timer1_cb, env);
-    }
-
-    if (env_archcpu(env)->timer_build & TB_RTC) {
-        env->cpu_rtc =
-            timer_new_ns(QEMU_CLOCK_VIRTUAL, &arc_rtc_cb, env);
+    if (FIELD_EX32(cpu->timer_build, ARC_TIMER_BUILD, T1)) {
+        env->cpu_timer[1] = timer_new_ns(QEMU_CLOCK_VIRTUAL, &arc_timer1_cb, env);
     }
 #endif
 
@@ -344,27 +339,52 @@ cpu_arc_clock_init(ARCCPU *cpu)
     env->timer[1].last_clk = get_ns(env);
 }
 
-void
-arc_initializeTIMER(ARCCPU *cpu)
-{
-    CPUARCState *env = &cpu->env;
+/*
+ * TODO: Implement setting default interrupt priorities for Timer 0 and Timer 1.
+ */
 
-    /* FIXME! add default timer priorities. */
-    env_archcpu(env)->timer_build = 0x04 | (cpu->cfg.has_timer_0 ? TB_T0 : 0) |
-                       (cpu->cfg.has_timer_1 ? TB_T1 : 0) |
-                       (cpu->cfg.rtc_option ? TB_RTC : 0);
+void arc_initializeTIMER(ARCCPU *cpu)
+{
+    uint32_t build = 0;
+    uint8_t version;
+
+    switch (cpu->family) {
+    case ARC_OPCODE_ARC64:
+        version = 0x7;
+        break;
+    case ARC_OPCODE_ARC32:
+        version = 0x6;
+        break;
+    default:
+        version = 0x4;
+    }
+
+    build = FIELD_DP32(build, ARC_TIMER_BUILD, VERSION, version);
+
+    if (cpu->cfg.has_timer_0) {
+        build = FIELD_DP32(build, ARC_TIMER_BUILD, T0, 1);
+    }
+
+    if (cpu->cfg.has_timer_1) {
+        build = FIELD_DP32(build, ARC_TIMER_BUILD, T1, 1);
+    }
+
+    if (cpu->cfg.rtc_option) {
+        build = FIELD_DP32(build, ARC_TIMER_BUILD, RTC, 1);
+    }
+
+    cpu->timer_build = build;
 }
 
-void
-arc_resetTIMER(ARCCPU *cpu)
+void arc_resetTIMER(ARCCPU *cpu)
 {
     CPUARCState *env = &cpu->env;
 
-    if (env_archcpu(env)->timer_build & TB_T0) {
+    if (FIELD_EX32(cpu->timer_build, ARC_TIMER_BUILD, T0)) {
         cpu_arc_count_reset(env, 0);
     }
 
-    if (env_archcpu(env)->timer_build & TB_T1) {
+    if (FIELD_EX32(cpu->timer_build, ARC_TIMER_BUILD, T1)) {
         cpu_arc_count_reset(env, 1);
     }
 }
@@ -405,15 +425,18 @@ aux_timer_get(const struct arc_aux_reg_detail *aux_reg_detail, void *data)
         break;
 
     case AUX_ID_aux_rtc_low:
-        return arc_rtc_count_get(env, true);
+        return arc_rtc_count_get_low(env);
         break;
 
+#if !defined(TARGET_ARC64)
+    /* AUX_RTC_HIGH register is not presented on ARC HS6x processors. */
     case AUX_ID_aux_rtc_high:
-        return arc_rtc_count_get(env, false);
+        return arc_rtc_count_get_high(env);
         break;
+#endif
 
     case AUX_ID_aux_rtc_ctrl:
-        return env->aux_rtc_ctrl;
+        return env->rtc.ctrl;
         break;
 
     default:

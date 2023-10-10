@@ -65,7 +65,7 @@ static Property arc_cpu_properties[] = {
     DEFINE_PROP_UINT32("pc-size", ARCCPU, cfg.pc_size, 32),
     DEFINE_PROP_UINT32("num-regs", ARCCPU, cfg.rgf_num_regs, 32),
     DEFINE_PROP_UINT32("num-banks", ARCCPU, cfg.rgf_num_banks, 0),
-    DEFINE_PROP_BOOL("rtc-opt", ARCCPU, cfg.rtc_option, false),
+    DEFINE_PROP_BOOL("rtc-opt", ARCCPU, cfg.rtc_option, true),
     DEFINE_PROP_UINT32("freq_hz", ARCCPU, cfg.freq_hz, 4600000),
 
     DEFINE_PROP_STRING("mmuv6-version", ARCCPU, cfg.mmuv6_version),

@@ -92,7 +92,7 @@ target_ulong helper_llock(CPUARCState *env, target_ulong addr)
 
     target_ulong ret = cpu_ldl_data_ra(env, addr, GETPC());
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
-    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    entry->lpa_lf |= 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
     qemu_mutex_unlock(&entry->mutex);
     return ret;
@@ -149,7 +149,7 @@ target_ulong helper_llockl(CPUARCState *env, target_ulong addr)
 
     target_ulong ret = cpu_ldq_data_ra(env, addr, GETPC());
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
-    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    entry->lpa_lf |= 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
     qemu_mutex_unlock(&entry->mutex);
     return ret;
@@ -194,7 +194,7 @@ uint64_t helper_llockd(CPUARCState *env, target_ulong addr)
     uint64_t ret = cpu_ldq_data_ra(env, addr, GETPC());
 
     entry->lpa_lf = (haddr & (~LPA_LFS_ALIGNEMENT_MASK));
-    entry->lpa_lf += 1;     /* least significant bit is LF flag */
+    entry->lpa_lf |= 1;     /* least significant bit is LF flag */
     entry->read_value = ret;
 
     qemu_mutex_unlock(&entry->mutex);

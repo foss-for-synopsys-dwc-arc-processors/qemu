@@ -26,6 +26,8 @@
 #include "hw/pci-host/gpex.h"
 #include "hw/sysbus.h"
 #include "hw/arc/virt.h"
+#include "target/arc/arconnect.h"
+#include "target/arc/cpu.h"
 
 #define VIRT_IO_BASE       0xf0000000
 #define VIRT_IO_SIZE       0x10000000
@@ -124,6 +126,17 @@ static void virt_init(MachineState *machine)
     boot_info.kernel_filename = machine->kernel_filename;
     boot_info.kernel_cmdline = machine->kernel_cmdline;
 
+    /* 
+     * HS4x and HS5x reside in one TARGET_ARC32 machine class. Maximum number
+     * of CPUs in MachineClass is the highest number for all ARC families (12).
+     * For HS4x it's 4. Thus, we have to check whether a valid CPUs number is
+     * passed for HS4x.
+     */
+    if (!g_strcmp0(machine->cpu_type, TYPE_ARC_CPU_ARCHS) && smp_cpus > 4) {
+        error_report("ARCv2 supports only up to 4 cores! %u is passed.", smp_cpus);
+        exit(EXIT_FAILURE);
+    }
+
     for (n = 0; n < smp_cpus; n++) {
 #if defined(TARGET_ARC32)
         cpu = ARC_CPU(cpu_create(machine->cpu_type));
@@ -133,9 +146,11 @@ static void virt_init(MachineState *machine)
 #error "Should not happen. Something is wrong."
 #endif
         if (cpu == NULL) {
-            fprintf(stderr, "Unable to find CPU definition!\n");
-            exit(1);
+            error_report("Unable to find CPU definition!");
+            exit(EXIT_FAILURE);
         }
+
+        cpu->core_id = n;
 
        /* Initialize internal devices. */
         cpu_arc_pic_init(cpu);
@@ -157,32 +172,38 @@ static void virt_init(MachineState *machine)
 
     /* Init IO area */
     system_io = g_new(MemoryRegion, 1);
-    memory_region_init_io(system_io, NULL, NULL, NULL, "arc.io",
-                          VIRT_IO_SIZE);
+    memory_region_init_io(system_io, NULL, NULL, NULL, "arc.io", VIRT_IO_SIZE);
     memory_region_add_subregion(system_memory, VIRT_IO_BASE, system_io);
+
+    /*
+     * Initialize all devices on the fist CPU since there is no complete
+     * support of IDU in ARConnect in case of SMP configuration. In real
+     * hardware such interrupts are connect to the distinct IDU interrupt
+     * controller.
+     */
 
     for (n = 0; n < VIRT_UART_NUMBER; n++) {
         serial_mm_init(system_io, VIRT_UART_OFFSET + VIRT_UART_SIZE * n, 2,
-                       cpu->env.irq[VIRT_UART_IRQ + n], 115200, serial_hd(n),
-                       DEVICE_NATIVE_ENDIAN);
+                       ARC_CPU(first_cpu)->env.irq[VIRT_UART_IRQ + n], 115200,
+                       serial_hd(n), DEVICE_NATIVE_ENDIAN);
     }
 
     for (n = 0; n < VIRT_VIRTIO_NUMBER; n++) {
         sysbus_create_simple("virtio-mmio",
                              VIRT_VIRTIO_BASE + VIRT_VIRTIO_SIZE * n,
-                             cpu->env.irq[VIRT_VIRTIO_IRQ + n]);
+                             ARC_CPU(first_cpu)->env.irq[VIRT_VIRTIO_IRQ + n]);
     }
 
-    create_pcie(cpu);
+    create_pcie(ARC_CPU(first_cpu));
 
-    arc_load_kernel(cpu, &boot_info);
+    arc_load_kernel(ARC_CPU(first_cpu), &boot_info);
 }
 
 static void virt_machine_init(MachineClass *mc)
 {
     mc->desc = "ARC Virtual Machine";
     mc->init = virt_init;
-    mc->max_cpus = 1;
+    mc->max_cpus = ARC_MAX_CORES_NUMBER;
     mc->is_default = true;
     mc->default_ram_size = 2 * GiB;
 }
