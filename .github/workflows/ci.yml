@@ -11,7 +11,7 @@ env:
   BUILD_DIR: ${{ github.workspace }}/build
 
 jobs:
-  pre_job:
+  before:
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -22,7 +22,7 @@ jobs:
           skip_after_successful_duplicate: 'true'
 
   build:
-    needs: pre_job
+    needs: before
     if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
 
     name: Build QEMU for ${{ matrix.host.name }}
@@ -43,6 +43,7 @@ jobs:
             ninja \
             pkg-config
           echo "TAR=gtar" >> $GITHUB_ENV
+
       - name: Set up build environment (Linux)
         if: ${{ runner.os == 'Linux' }}
         run: |
@@ -59,9 +60,9 @@ jobs:
             ninja-build \
             tar \
             texinfo
+
       - name: Checkout sources
         uses: actions/checkout@v3
-      - run: git fetch --prune --unshallow --tags --force
 
       - name: Build QEMU
         run: |
@@ -77,11 +78,23 @@ jobs:
             --prefix="${{ env.BUILD_DIR }}"
           make -j $(nproc)
 
-      - name: Upload artifacts
+      - name: Run acceptance tests
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          GITLAB_CI=1 make check-avocado
+
+      - name: Upload binaries
+        if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: qemu-${{ matrix.host.name }}
           path: |
             ${{ env.BUILD_DIR }}/qemu-*arc*
             !${{ env.BUILD_DIR }}/*.p
-        if: ${{ always() }}
+
+      - name: Upload logs
+        if: ${{ runner.os == 'Linux' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.host.name }}.log
+          path: ${{ env.BUILD_DIR }}/tests/results/job-*/job.log
