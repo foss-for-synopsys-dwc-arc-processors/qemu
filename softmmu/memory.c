@@ -449,6 +449,32 @@ static MemTxResult  memory_region_read_accessor(MemoryRegion *mr,
     return MEMTX_OK;
 }
 
+/* FIXME: Remove */
+static MemTxResult memory_region_read_accessor_attr(MemoryRegion *mr,
+                                                    hwaddr addr,
+                                                    uint64_t *value,
+                                                    unsigned size,
+                                                    signed shift,
+                                                    uint64_t mask,
+                                                    MemTxAttrs attrs)
+{
+    MemoryTransaction tr = {{0}};
+    MemTxResult ret;
+
+    if (mr->flush_coalesced_mmio) {
+        qemu_flush_coalesced_mmio_buffer();
+    }
+
+    tr.opaque = mr->opaque;
+    tr.addr = addr;
+    tr.size = size;
+    tr.attr = attrs;
+    ret = mr->ops->access(&tr);
+    *value |= (tr.data.u64 & mask) << shift;
+
+    return ret;
+}
+
 static MemTxResult memory_region_read_with_attrs_accessor(MemoryRegion *mr,
                                                           hwaddr addr,
                                                           uint64_t *value,
@@ -470,6 +496,32 @@ static MemTxResult memory_region_read_with_attrs_accessor(MemoryRegion *mr,
     }
     memory_region_shift_read_access(value, shift, mask, tmp);
     return r;
+}
+
+/* FIXME: Remove */
+static MemTxResult memory_region_write_accessor_attr(MemoryRegion *mr,
+                                                     hwaddr addr,
+                                                     uint64_t *value,
+                                                     unsigned size,
+                                                     signed shift,
+                                                     uint64_t mask,
+                                                     MemTxAttrs attrs)
+{
+    MemoryTransaction tr = {{0}};
+
+    if (mr->flush_coalesced_mmio) {
+        qemu_flush_coalesced_mmio_buffer();
+    }
+
+    tr.opaque = mr->opaque;
+    tr.rw = true;
+    tr.addr = addr;
+    tr.size = size;
+    tr.attr = attrs;
+    tr.data.u64 = (*value >> shift) & mask;
+    trace_memory_region_ops_write(get_cpu_index(), mr, tr.addr, tr.data.u64, tr.size,
+                                  memory_region_name(mr));
+    return mr->ops->access(&tr);
 }
 
 static MemTxResult memory_region_write_accessor(MemoryRegion *mr,
@@ -1420,7 +1472,13 @@ static MemTxResult memory_region_dispatch_read1(MemoryRegion *mr,
 {
     *pval = 0;
 
-    if (mr->ops->read) {
+    if (mr->ops->access) {
+        return access_with_adjusted_size(addr, pval, size,
+                                         mr->ops->impl.min_access_size,
+                                         mr->ops->impl.max_access_size,
+                                         memory_region_read_accessor_attr,
+                                         mr, attrs);
+    } else if (mr->ops->read) {
         return access_with_adjusted_size(addr, pval, size,
                                          mr->ops->impl.min_access_size,
                                          mr->ops->impl.max_access_size,
@@ -1510,7 +1568,13 @@ MemTxResult memory_region_dispatch_write(MemoryRegion *mr,
         return MEMTX_OK;
     }
 
-    if (mr->ops->write) {
+    if (mr->ops->access) {
+        return access_with_adjusted_size(addr, &data, size,
+                                         mr->ops->impl.min_access_size,
+                                         mr->ops->impl.max_access_size,
+                                         memory_region_write_accessor_attr,
+                                         mr, attrs);
+    } else if (mr->ops->write) {
         return access_with_adjusted_size(addr, &data, size,
                                          mr->ops->impl.min_access_size,
                                          mr->ops->impl.max_access_size,

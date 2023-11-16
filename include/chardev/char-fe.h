@@ -164,6 +164,16 @@ void qemu_chr_fe_set_echo(CharBackend *be, bool echo);
 void qemu_chr_fe_set_open(CharBackend *be, int fe_open);
 
 /**
+ * @qemu_chr_fe_set_blocking:
+ *
+ * Ask the backend to override its normal blocking setting.  This only really
+ * applies to socket IO not handled by QEMU's main-loop.
+ *
+ * @blocking true to enable blocking, false to disable blocking mode
+ */
+void qemu_chr_fe_set_blocking(CharBackend *be, bool blocking);
+
+/**
  * qemu_chr_fe_printf:
  * @fmt: see #printf
  *

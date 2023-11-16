@@ -28,6 +28,7 @@
 #include "qom/object.h"
 #include "qemu/rcu.h"
 
+extern const char *machine_path;
 #define RAM_ADDR_INVALID (~(ram_addr_t)0)
 
 #define MAX_PHYS_ADDR_SPACE_BITS 62
@@ -74,6 +75,28 @@ static inline void fuzz_dma_read_cb(size_t addr,
 extern unsigned int global_dirty_tracking;
 
 typedef struct MemoryRegionOps MemoryRegionOps;
+
+typedef struct MemoryTransaction
+{
+    union {
+        /*
+         * Data is passed by values up to 64bit sizes. Beyond
+         * that, a pointer is passed in p8.
+         *
+         * Note that p8 has no alignment restrictions.
+         */
+        uint8_t *p8;
+        uint64_t u64;
+        uint32_t u32;
+        uint16_t u16;
+        uint8_t  u8;
+    } data;
+    bool rw;
+    hwaddr addr;
+    unsigned int size;
+    MemTxAttrs attr;
+    void *opaque;
+} MemoryTransaction;
 
 struct ReservedRegion {
     hwaddr low;
@@ -219,6 +242,9 @@ static inline void iommu_notifier_init(IOMMUNotifier *n, IOMMUNotify fn,
  * Memory region callbacks
  */
 struct MemoryRegionOps {
+    /* FIXME: Remove */
+    MemTxResult (*access)(MemoryTransaction *tr);
+
     /* Read from the memory region. @addr is relative to @mr; @size is
      * in bytes. */
     uint64_t (*read)(void *opaque,

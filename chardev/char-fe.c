@@ -353,6 +353,15 @@ void qemu_chr_fe_set_open(CharBackend *be, int fe_open)
     }
 }
 
+void qemu_chr_fe_set_blocking(CharBackend *be, bool blocking)
+{
+    Chardev *chr = be->chr;
+
+    if (chr && CHARDEV_GET_CLASS(chr)->chr_set_blocking) {
+        CHARDEV_GET_CLASS(chr)->chr_set_blocking(chr, blocking);
+    }
+}
+
 guint qemu_chr_fe_add_watch(CharBackend *be, GIOCondition cond,
                             FEWatchFunc func, void *user_data)
 {
