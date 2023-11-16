@@ -52,6 +52,9 @@
 #define VIRT_PCI_PIO_SIZE  0x00004000
 #define PCIE_IRQ           40  /* IRQs 40-43 as GPEX_NUM_IRQS=4 */
 
+#define VIRT_COSIM_BASE 0x40000000
+#define VIRT_COSIM_SIZE 0x01000000
+
 static void create_pcie(ARCCPU *cpu)
 {
     hwaddr base_ecam = VIRT_PCI_ECAM_BASE;
@@ -105,6 +108,62 @@ static void create_pcie(ARCCPU *cpu)
         sysbus_connect_irq(SYS_BUS_DEVICE(dev), i, cpu->env.irq[PCIE_IRQ + i]);
         gpex_set_irq_num(GPEX_HOST(dev), i, PCIE_IRQ + i);
     }
+}
+
+static void remote_port(MachineState *machine, MemoryRegion *system_memory){
+    SysBusDevice *sbd;
+    DeviceClass *dc;
+    Object *rp_obj;
+    Object *rpm_obj;
+    Object *rpms_obj;
+    // Object *rpirq_obj;
+
+    rp_obj = object_new("remote-port");
+    object_property_add_child(OBJECT(machine), "cosim", rp_obj);
+    object_property_set_str(rp_obj, "chrdev-id", "cosim", &error_fatal);
+    object_property_set_bool(rp_obj, "sync", true, &error_fatal);
+
+    rpm_obj = object_new("remote-port-memory-master");
+    object_property_add_child(OBJECT(machine), "cosim-mmap-0", rpm_obj);
+    object_property_set_int(rpm_obj, "map-num", 1, &error_fatal);
+    object_property_set_int(rpm_obj, "map-offset", VIRT_COSIM_BASE, &error_fatal);
+    object_property_set_int(rpm_obj, "map-size", VIRT_COSIM_SIZE, &error_fatal);
+    object_property_set_int(rpm_obj, "rp-chan0", 7, &error_fatal);
+
+    rpms_obj = object_new("remote-port-memory-slave");
+    object_property_add_child(OBJECT(machine), "cosim-mmap-slave-0", rpms_obj);
+//    object_property_set_int(rpms_obj, 0, "rp-chan0", &error_fatal);
+
+    // rpirq_obj = object_new("remote-port-gpio");
+    // object_property_add_child(OBJECT(machine), "cosim-irq-0", rpirq_obj);
+    // object_property_set_int(rpirq_obj, "rp-chan0", 12, &error_fatal);
+
+
+    object_property_set_link(rpm_obj, "rp-adaptor0", rp_obj, &error_abort);
+    object_property_set_link(rpms_obj, "rp-adaptor0", rp_obj, &error_abort);
+    // object_property_set_link(rpirq_obj, "rp-adaptor0", rp_obj, &error_abort);
+    object_property_set_link(rp_obj, "remote-port-dev0", rpms_obj, &error_abort);
+    object_property_set_link(rp_obj, "remote-port-dev7", rpm_obj, &error_abort);
+    // object_property_set_link(rp_obj, "remote-port-dev12", rpirq_obj, &error_abort);
+
+    object_property_set_bool(rp_obj, "realized", true, &error_fatal);
+    dc = DEVICE_GET_CLASS(DEVICE(rp_obj));
+    if (dc->reset) {
+        /*
+         * RP adaptors don't connect to busses that reset them,
+         * manually register the handler.
+         */
+        qemu_register_reset((void (*)(void *))dc->reset, rp_obj);
+    }
+
+    qdev_realize(DEVICE(rpms_obj), NULL, &error_fatal);
+    sysbus_realize(SYS_BUS_DEVICE(rpm_obj), &error_fatal);
+    // sysbus_realize(SYS_BUS_DEVICE(rpirq_obj), &error_fatal);
+
+    /* Connect things to the machine.  */
+    sbd = SYS_BUS_DEVICE(rpm_obj);
+    memory_region_add_subregion(system_memory, VIRT_COSIM_BASE,
+                                sysbus_mmio_get_region(sbd, 0));
 }
 
 static void virt_init(MachineState *machine)
@@ -174,6 +233,8 @@ static void virt_init(MachineState *machine)
     }
 
     create_pcie(cpu);
+
+    remote_port(machine, system_memory);
 
     arc_load_kernel(cpu, &boot_info);
 }
