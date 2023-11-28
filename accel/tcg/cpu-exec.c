@@ -179,6 +179,10 @@ static inline TranslationBlock *tb_lookup(CPUState *cpu, target_ulong pc,
     TranslationBlock *tb;
     uint32_t hash;
 
+    if (qemu_loglevel_mask(CPU_LOG_TB_NOREUSE)) {
+        return NULL;
+    }
+
     /* we should never be trying to look up an INVALID tb */
     tcg_debug_assert(!(cflags & CF_INVALID));
 
