@@ -186,6 +186,10 @@ typedef struct mips_elf_abiflags_v0 {
 
 #define EM_RX               173 /* Renesas RX family */
 
+#define EM_ARC_COMPACT2     195 /* Synopsys ARCv2 Compact ISA */
+#define EM_ARC_COMPACT3_64  253 /* Synopsys ARCompact V3 ARC64 */
+#define EM_ARC_COMPACT3_32  255 /* Synopsys ARCompact V3 ARC64 */
+
 #define EM_RISCV            243 /* RISC-V */
 
 #define EM_NANOMIPS         249 /* Wave Computing nanoMIPS */

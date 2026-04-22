@@ -1,4 +1,9 @@
 common_ss.add(when: 'CONFIG_ALPHA_DIS', if_true: files('alpha.c'))
+common_ss.add(when: 'CONFIG_ARC_DIS', if_true: [
+    files('arc.c'),
+    decodetree.process('../target/arc/insn16.decode', extra_args: ['--static-decode=decode_insn16', '--insnwidth=16']),
+    decodetree.process('../target/arc/insn32.decode', extra_args: '--static-decode=decode_insn32')
+])
 common_ss.add(when: 'CONFIG_HEXAGON_DIS', if_true: files('hexagon.c'))
 common_ss.add(when: 'CONFIG_HPPA_DIS', if_true: files('hppa.c'))
 common_ss.add(when: 'CONFIG_M68K_DIS', if_true: files('m68k.c'))

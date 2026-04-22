@@ -1,0 +1,369 @@
+%a   0:3
+%b   8:3
+%c   5:3
+%h   0:2 5:3
+%g   3:2 8:3
+%u5  0:5 # F16_SH_SUB_BIT, F16_SP_OPS
+%u6  4:3 0:3 # F16_LD_ADD_SUB -> REG_U6 -> U[5:0]
+%u7  0:5 !function=ex_shl2
+%s3  8:3 !function=ex_insn16_simm3
+%s9  0:s9
+
+%f16_gp_ld_add_s9  0:s9
+%f16_gp_ld_add_s10 0:s9 !function=ex_shl1
+%f16_gp_ld_add_s11 0:s9 !function=ex_shl2
+
+@dop        01111 b:3 c:3 ..... # MAJOR=0x0F
+@sh_sub_bit 10111 b:3 ... imm:5 # MAJOR=0x17
+@hreg_reg   ..... b:3 ........  %h
+@hreg_s3    ................    %h imm=%s3
+
+### Various formats
+
+nop_s 0111100011100000
+unimp_s 0111100111100000
+
+### ADD_S
+
+%addl_s_u9 9:2 0:5 !function=ex_shl2
+
+add_s_a_b_c       01100 b:3 c:3 11 a:3
+add_s_b_b_h       01110 ...... 000 ..     @hreg_reg
+add_s_h_h_s3      01110 ...... 001 ..     @hreg_s3
+add_s_b_b_u7      11100 b:3 0             imm:7
+add_s_c_b_u3      01101 b:3 c:3 00        imm:3
+add_s_r01_b_u6    01001 b:3 a:1 ... 1 ... imm=%u6
+
+addl_s_b_b_c      01111 ...... 00001 %b %c
+addl_s_h_h_limm   01110001 ... 110 .. %h
+addl_s_h_pcl_limm 01110011 ... 110 .. %h
+
+addhl_s_h_h_limm   01110001 ... 010 .. %h
+addhl_s_h_pcl_limm 01110011 ... 010 .. %h
+
+{
+  addl_s_b_sp_u7  11000 b:3 100 ..... imm=%u7
+  add_s_b_sp_u7   11000 b:3 100 ..... imm=%u7
+}
+
+{
+  addl_s_sp_sp_u9   11000 .. 0101 ..... imm=%addl_s_u9
+  add_s_sp_sp_u7    11000 00 0101 ..... imm=%u7
+}
+
+{
+  addl_s_r0_gp_s11  1100111 ......... imm=%f16_gp_ld_add_s11
+  add_s_r0_gp_s11   1100111 ......... imm=%f16_gp_ld_add_s11
+}
+
+# ASL (multiple)
+
+# | Format            | Major | Instruction                      |
+# | ----------------- | ----- | -------------------------------- |
+# | F16_ADD_IMM       | 0x0D  | ASL_S c,b,u3 01101bbbccc10uuu    |
+# | F16_GEN_OP:DOP    | 0x0F  | ASL_S b,b,c 01111bbbccc11000     |
+# | F16_SH_SUB_BIT    | 0x17  | ASL_S b,b,u5 10111bbb000uuuuu    |
+
+aslm_s_c_b_u3 01101 ...... 10 imm:3 %c %b
+aslm_s_b_b_c  ........... 11000     @dop
+aslm_s_b_b_u5 ........ 000 .....    @sh_sub_bit
+
+# ASR (multiple)
+
+# | Format            | Major | Instruction                      |
+# | ----------------- | ----- | -------------------------------- |
+# | F16_ADD_IMM       | 0x0D  | ASR_S c,b,u3 01101bbbccc11uuu    |
+# | F16_GEN_OP:DOP    | 0x0F  | ASR_S b,b,c 01111bbbccc11010     |
+# | F16_SH_SUB_BIT    | 0x17  | ASR_S b,b,u5 10111bbb010uuuuu    |
+
+asrm_s_c_b_u3 01101 ...... 11 imm:3 %c %b
+asrm_s_b_b_c  ........... 11010     @dop
+asrm_s_b_b_u5 ........ 010 .....    @sh_sub_bit
+
+### CMP_S
+
+cmp_s_b_h  01110 ...... 100 .. @hreg_reg
+cmp_s_h_s3 01110 ...... 101 .. @hreg_s3
+cmp_s_b_u7 11100 b:3 1 imm:7
+
+### MOV_S
+
+mov_s_b_h   01110 ...... 111 .. @hreg_reg
+mov_s_h_s3  01110 ...... 011 .. @hreg_s3
+mov_s_g_h   01000 ........ 0 .. %g %h
+mov_s_b_u8  11011 b:3 imm:8
+movhl_s_h_limm 01110000 ... 010 .. %h
+
+### ORL_S
+
+orl_s_b_b_c      01111 ...... 10111 %b %c
+orl_s_h_h_limm   01110000 ... 110 .. %h
+orl_s_h_pcl_limm 01110010 ... 110 .. %h
+
+### B_S, Bcc_S, BL_S
+
+# | Format            | Major | Instruction                      |
+# | ----------------- | ----- | -------------------------------- |
+# | F16_BCC:F16_B_S   | 0x1E  | B_S s10 1111000sssssssss         |
+# | F16_BCC:F16_BEQ_S | 0x1E  | BEQ_S s10 1111001sssssssss       |
+# | F16_BCC:F16_BNE_S | 0x1E  | BEQ_S s10 1111010sssssssss       |
+# | F16_BCC:F16_BCC_S | 0x1E  | Bcc_S s7 1111011cccssssss        |
+# | F16_BL            | 0x1F  | BL_S s13 11111sssssssssss        |
+
+%f16_bcc_s10  0:s9 !function=ex_shl1
+%f16_bcc_s7   0:s6 !function=ex_shl1
+%f16_bcc_cond 6:3 !function=ex_bcc_s_cond
+%f16_bl_s13   0:s11 !function=ex_shl2
+
+&f16_bcc_b_s   imm
+&f16_bcc_beq_s imm
+&f16_bcc_bne_s imm
+&f16_bcc_bcc_s imm cond
+&f16_bl        imm
+
+b_s         1111000 ......... &f16_bcc_b_s imm=%f16_bcc_s10
+beq_s       1111001 ......... &f16_bcc_beq_s imm=%f16_bcc_s10
+bne_s       1111010 ......... &f16_bcc_bne_s imm=%f16_bcc_s10
+bcc_s       1111011 ......... &f16_bcc_bcc_s imm=%f16_bcc_s7 cond=%f16_bcc_cond
+bl_s_limm   01111 011 111 00000
+bl_s        11111 ........... &f16_bl imm=%f16_bl_s13
+
+### BRCC_S
+
+# | Format         | Major | Instruction                    |
+# | -------------- | ----- | ------------------------------ |
+# | F16_BCC_REG    | 0x1D  | BRNE_S b,0,s8 11101bbb1sssssss |
+# | F16_BCC_REG    | 0x1D  | BREQ_S b,0,s8 11101bbb0sssssss |
+
+%brcc_s_s8   0:s7 !function=ex_shl1
+%brcc_s_cond 7:1 !function=ex_brcc_s_cond
+
+brcc_s 11101 ........... %b offset=%brcc_s_s8 cond=%brcc_s_cond
+
+### J_S
+
+# | Format         | Major | Instruction                      |
+# | -------------- | ----- | -------------------------------- |
+# | F16_GEN_OP:SOP | 0x1E  | J_S<.d> [b] 01111bbb00N00000     |
+# | F16_GEN_OP:ZOP | 0x1E  | J_S<.d> [BLINK] 0111111N11100000 |
+# | F16_GEN_OP:ZOP | 0x1E  | JEQ_S [BLINK] 0111110011100000   |
+# | F16_GEN_OP:ZOP | 0x1E  | JNE_S [BLINK] 0111110111100000   |
+# | F16_GEN_OP:SOP | 0x1E  | JL_S<.d> [b] 01111bbb01N00000    |
+
+j_s_reg     01111 b:3 00 delay:1 00000
+j_s_blink   0111111 delay:1 11100000
+jeq_s_blink 0111110011100000
+jne_s_blink 0111110111100000
+jl_s_reg    01111 b:3 01 delay:1 00000
+
+### Instructions with F16_SH_SUB_BIT format
+
+# | Format                 | Major | Instruction                      |
+# | ---------------------- | ----- | -------------------------------- |
+# | F16_SH_SUB_BIT         | 0x17  | <insn>_S b,b,u5 10111bbb110uuuuu |
+
+btst_s ........ 111 ..... @sh_sub_bit
+bclr_s ........ 101 ..... @sh_sub_bit
+bmsk_s ........ 110 ..... @sh_sub_bit
+bset_s ........ 100 ..... @sh_sub_bit
+
+### Instructions with F16_GEN_OP:DOP format
+
+# | Format                 | Major | Instruction                      |
+# | ---------------------- | ----- | -------------------------------- |
+# | F16_GEN_OP_DOP         | 0x0F  | <insn>_S b,c 01111bbbccciiiii    |
+
+abs_s_dop   ........... 10001 @dop
+add1_s_dop  ........... 10100 @dop
+add2_s_dop  ........... 10101 @dop
+add3_s_dop  ........... 10110 @dop
+and_s_dop   ........... 00100 @dop
+andl_s_dop  ........... 01000 @dop
+asl_s_dop   ........... 11011 @dop
+asr_s_dop   ........... 11100 @dop
+bic_s_dop   ........... 00110 @dop
+extb_s_dop  ........... 01111 @dop
+exth_s_dop  ........... 10000 @dop
+lsr_s_dop   ........... 11101 @dop
+neg_s_dop   ........... 10011 @dop
+not_s_dop   ........... 10010 @dop
+or_s_dop    ........... 00101 @dop
+sexb_s_dop  ........... 01101 @dop
+sexh_s_dop  ........... 01110 @dop
+tst_s_dop   ........... 01011 @dop
+xor_s_dop   ........... 00111 @dop
+
+### SUB_S
+
+# | Format                 | Major | Instruction                      |
+# | ---------------------- | ----- | -------------------------------- |
+# | F16_ADD_IMM            | 0x0D  | SUB_S c,b,u3 01101bbbccc01uuu    |
+# | F16_GEN_OP:SOP         | 0x0F  | SUB_S.NE b,b,b 01111bbb11000000  |
+# | F16_GEN_OP:DOP         | 0x0F  | SUB_S b,b,c 01111bbbccc00010     |
+# | F16_SH_SUB_BIT         | 0x17  | SUB_S b,b,u5 10111bbb011uuuuu    |
+# | F16_SP_OPS             | 0x18  | SUB_S SP,SP,u7 11000001101uuuuu  |
+# | F16_LD_ADD_SUB:REG_REG | 0x09  | SUB_S a,b,c 01001bbbccc10aaa     |
+
+sub_s_c_b_u3   01101 ...... 01 imm:3 %b %c
+sub_s_ne_b_b_b 01111 ... 11000000    %b
+sub_s_b_b_c    01111 ...... 00010    %b %c
+sub_s_b_b_u5   10111 ... 011 .....   %b imm=%u5
+sub_s_a_b_c    01001 ...... 10 ...   %a %b %c
+
+subl_s_b_b_c   01111 ...... 00011    %b %c
+
+%subl_s_u9 9:2 0:5 !function=ex_shl2
+
+{
+  subl_s_sp_sp_u9 11000 .. 1101 ..... imm=%subl_s_u9
+  sub_s_sp_sp_u7  11000 00 1101 ..... imm=%u7
+}
+
+### LD_S
+
+# | Format                 | Major | Instruction                        |
+# | ---------------------- | ----- | ---------------------------------- |
+# | F16_LD_ADD_RR          | 0x0C  | LD_S a,[b,c] 01100bbbccc00aaa      |
+# | F16_SP_OPS             | 0x18  | LD_S b,[SP,u7] 11000bbb000uuuuu    |
+# | F16_PCL_LD             | 0x1A  | LD_S b,[PCL,u10] 11010bbbuuuuuuuu  |
+# | F16_LD_WORD            | 0x10  | LD_S c,[b,u7] 10000bbbcccuuuuu     |
+# | F16_GP_LD_ADD          | 0x19  | LD_S R0,[GP,s11] 1100100sssssssss  |
+# | F16_LD_ADD_RR          | 0x0C  | LDB_S a,[b,c] 01100bbbccc01aaa     |
+# | F16_SP_OPS             | 0x18  | LDB_S b,[SP,u7] 11000bbb001uuuuu   |
+# | F16_LD_BYTE            | 0x11  | LDB_S c,[b,u5] 10001bbbcccuuuuu    |
+# | F16_GP_LD_ADD          | 0x19  | LDB_S R0,[GP,s9] 1100101sssssssss  |
+# | F16_LD_ADD_RR          | 0x0C  | LDH_S a,[b,c] 01100bbbccc10aaa     |
+# | F16_LD_HALF            | 0x12  | LDH_S c,[b,u6] 10010bbbcccuuuuu    |
+# | F16_GP_LD_ADD          | 0x19  | LDH_S R0,[GP,s10] 1100110sssssssss |
+# | F16_LDX_HALF           | 0x13  | LDH_S.X c,[b,u6] 10011bbbcccuuuuu  |
+
+%f16_sp_ops_u7     0:5 !function=ex_shl2
+%f16_pcl_ld_u10    0:8 !function=ex_shl2
+%f16_ld_byte_u5    0:5
+%f16_ld_half_u6    0:5 !function=ex_shl1
+%f16_ld_word_u7    0:5 !function=ex_shl2
+
+ld_s_a_b_c      01100 ...... 00 ... %a %b %c
+ld_s_b_sp_u7    11000 ... 000 ..... %b imm=%f16_sp_ops_u7
+ld_s_b_pcl_u10  11010 ...........   %b imm=%f16_pcl_ld_u10
+ld_s_c_b_u7     10000 ...........   %b %c imm=%f16_ld_word_u7
+ld_s_r0_gp_s11  1100100 .........   imm=%f16_gp_ld_add_s11
+ldb_s_a_b_c     01100 ...... 01 ... %a %b %c
+ldb_s_b_sp_u7   11000 ... 001 ..... %b imm=%f16_sp_ops_u7
+ldb_s_c_b_u5    10001 ...........   %b %c imm=%f16_ld_byte_u5
+ldb_s_r0_gp_s9  1100101 .........   imm=%f16_gp_ld_add_s9
+ldh_s_a_b_c     01100 ...... 10 ... %a %b %c
+ldh_s_c_b_u6    10010 ...........   %b %c imm=%f16_ld_half_u6
+ldh_s_r0_gp_s10 1100110 .........   imm=%f16_gp_ld_add_s10
+ldh_s_x_c_b_u6  10011 ...........   %b %c imm=%f16_ld_half_u6
+
+### LD_S, LDI_S (code density)
+
+# | Format                 | Major | Instruction                        |
+# | ---------------------- | ----- | ---------------------------------- |
+# | F16_COMPACT:LD         | 0x08  | LD_S R0-R3,[h,u5] 01000Uaahhhuu1HH |
+# | F16_LD_ADD_SUB:REG_REG | 0x09  | LD_S.AS a,[b,c] 01001bbbccc00aaa   |
+# | F16_LD_ST_1:LD_ST_R01  | 0x0A  | LD_S R1,[GP,s11] 01010SSSSSS00sss  |
+# | F16_LD_ST_1:LDI_S      | 0x0A  | LDI_S b,u7 01010bbbUUUU1uuu        |
+
+%f16_compact_ld_u5 10:1 3:2 !function=ex_shl2
+%ld_s_r1_gp_s11 5:s6 0:3 !function=ex_shl2
+%ldi_s_u7 4:4 0:3
+
+{
+  movl_s_g_h   01000 . ..  ..... 1 .. %g %h
+  ld_s_a_h_u5  01000 . a:2 ..... 1 .. %h offset=%f16_compact_ld_u5
+}
+
+ld_s_as_a_b_c  01001 ...... 00 ...    %a %b %c
+
+# LSR (multiple)
+
+# | Format            | Major | Instruction                      |
+# | ----------------- | ----- | -------------------------------- |
+# | F16_GEN_OP:DOP    | 0x0F  | LSR_S b,b,c 01111bbbccc11001     |
+# | F16_SH_SUB_BIT    | 0x17  | LSR_S b,b,u5 10111bbb010uuuuu    |
+
+lsrm_s_dop    ........... 11001     @dop
+lsrm_s_b_b_u5 ........ 001 .....    @sh_sub_bit
+
+### POP_S, PUSH_S
+
+%popl_s_b 1:3 8:3
+%pushl_s_b 1:3 8:3
+
+{
+  popl_s     11000 ... 1100 ... 1 b=%popl_s_b
+  pop_s      11000 ... 1100 000 1 %b
+}
+
+{
+  popdl_s     11000 ... 1101 ... 1 b=%popl_s_b
+  pop_s_blink 1100000011010001
+}
+
+{
+  pushl_s    11000 ... 1110 ... 1 b=%pushl_s_b
+  push_s     11000 ... 1110 000 1 %b
+}
+
+{
+  pushdl_s     11000 ... 1111 ... 1 b=%pushl_s_b
+  push_s_blink 1100000011110001
+}
+
+### ST_S
+
+# | Format                 | Major | Instruction                        |
+# | ---------------------- | ----- | ---------------------------------- |
+# | F16_SP_OPS             | 0x18  | ST_S b,[SP,u7] 11000bbb010uuuuu    |
+# | F16_ST_WORD            | 0x14  | ST_S c,[b,u7] 10100bbbcccuuuuu     |
+# | F16_SP_OPS             | 0x18  | STB_S b,[SP,u7] 11000bbb011uuuuu   |
+# | F16_LD_ST_1:LD_ST_R01  | 0x0A  | ST_S R0,[GP,s11] 01010SSSSSS10sss  |
+# | F16_ST_BYTE            | 0x15  | STB_S c,[b,u5] 10101bbbcccuuuuu    |
+# | F16_ST_HALF            | 0x16  | STH_S c,[b,u6] 10110bbbcccuuuuu    |
+
+%f16_st_word_u7 0:5 !function=ex_shl2
+%st_s_r0_gp_s11 5:s6 0:3 !function=ex_shl2
+%stb_s_c_b_u5   0:5
+%sth_s_c_b_u6   0:5 !function=ex_shl1
+
+st_s_b_sp_u7   11000 ... 010 .....  %b imm=%f16_sp_ops_u7
+st_s_c_b_u7    10100 ...........    %b %c imm=%f16_st_word_u7
+stb_s_b_sp_u7  11000 ... 011 .....  %b imm=%f16_sp_ops_u7
+stb_s_c_b_u5   10101 ...........    %b %c imm=%stb_s_c_b_u5
+sth_s_c_b_u6   10110 ...........    %b %c imm=%sth_s_c_b_u6
+
+### SWI_S, BRK_S
+
+swi_s     0111101011100000
+
+{
+  brk_s 0111111111111111
+  swi_s_imm 01111 imm:6 11111
+}
+
+### TRAP_S
+
+trap_s 01111 imm:6 11110
+
+### MPY
+
+mpy_s_dop   ........... 01100 @dop
+mpyw_s_dop  ........... 01001 @dop
+mpyuw_s_dop ........... 01010 @dop
+
+### JLI_S
+
+%jli_s_64_offset 0:3 4:7
+
+{
+  # In 32-bit and 64-bit targets
+  jli_s_64       01010 ....... 1 ... offset=%jli_s_64_offset
+  ld_s_r1_gp_s11 01010 ...... 00 ... offset=%ld_s_r1_gp_s11
+  st_s_r0_gp_s11 01010 ...... 10 ... imm=%st_s_r0_gp_s11
+
+  # Only in 32-bit targets
+  ldi_s_b_u      01010 ....... 1 ... %b offset=%ldi_s_u7
+  jli_s          010110 offset:10
+}

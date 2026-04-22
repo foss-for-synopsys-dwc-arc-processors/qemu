@@ -1,0 +1,11 @@
+config ARCV2
+    bool
+    imply SEMIHOSTING if TCG
+
+config ARCV3_32
+    bool
+    imply SEMIHOSTING if TCG
+
+config ARCV3_64
+    bool
+    imply SEMIHOSTING if TCG

@@ -1,0 +1,13 @@
+config ARC_SIM
+    bool
+    default y
+    depends on ARCV2 || ARCV3_32 || ARCV3_64
+
+config ARC_VIRT
+    bool
+    default y
+    depends on ARCV2 || ARCV3_32 || ARCV3_64
+    select SERIAL_MM
+    select VIRTIO_MMIO
+    select PCI_EXPRESS_GENERIC_BRIDGE
+    select PCI_DEVICES

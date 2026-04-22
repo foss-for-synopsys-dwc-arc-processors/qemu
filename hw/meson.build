@@ -1,5 +1,6 @@
 # Enter target code first to reuse variables associated
 subdir('alpha')
+subdir('arc')
 subdir('arm')
 subdir('avr')
 subdir('hppa')

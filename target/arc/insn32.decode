@@ -1,0 +1,1257 @@
+%f     15:1
+%a     0:6
+%b     12:3 24:3
+%c     6:6
+%cond  0:5
+%u6    6:6
+%s12   0:s6 6:6
+%delay 5:1
+
+%u6_dword  6:6      !function=ex_imm_dword
+%s12_dword 0:s6 6:6 !function=ex_imm_dword
+
+%u6_dhalf  6:6      !function=ex_imm_dhalf
+%s12_dhalf 0:s6 6:6 !function=ex_imm_dhalf
+
+%u6_qhalf  6:6      !function=ex_imm_qhalf
+%s12_qhalf 0:s6 6:6 !function=ex_imm_qhalf
+
+&dop_reg_reg  a b c f:bool
+@dop_reg_reg  ........ 00 ......................   &dop_reg_reg %a %b %c %f
+
+&dop_reg_u6   a b imm f:bool
+@dop_reg_u6   ........ 01 ......................   &dop_reg_u6 %a %b imm=%u6 %f
+
+&dop_reg_s12  b imm f:bool
+@dop_reg_s12  ........ 10 ......................   &dop_reg_s12 %b imm=%s12 %f
+
+&dop_cond_reg b c f:bool cond
+@dop_cond_reg ........ 11 ................ 0 ..... &dop_cond_reg %b %c %f %cond
+
+&dop_cond_u6  b imm f:bool cond
+@dop_cond_u6  ........ 11 ................ 1 ..... &dop_cond_u6 %b imm=%u6 %f %cond
+
+&sop_reg_reg  b c f:bool
+@sop_reg_reg  ........ 00 101111 ................  &sop_reg_reg %b %c %f
+
+&sop_reg_u6   b imm f:bool
+@sop_reg_u6   ........ 01 101111 ................  &sop_reg_u6 %b imm=%u6 %f
+
+# DMPY/DMAC variants of DOP general formats
+
+&dop_reg_u6_dmpy   a b imm f:bool
+@dop_reg_u6_dmpy   ........ 01 ......................   &dop_reg_u6_dmpy %a %b imm=%u6_dhalf %f
+
+&dop_reg_s12_dmpy  b imm f:bool
+@dop_reg_s12_dmpy  ........ 10 ......................   &dop_reg_s12_dmpy %b imm=%s12_dhalf %f
+
+&dop_cond_u6_dmpy  b imm f:bool cond
+@dop_cond_u6_dmpy  ........ 11 ................ 1 ..... &dop_cond_u6_dmpy %b imm=%u6_dhalf %f %cond
+
+# QMPY/QMAC variants of DOP general formats
+
+%u6_qmpy           6:6 !function=ex_imm_qhalf
+%s12_qmpy          0:s6 6:6 !function=ex_imm_qhalf
+
+&dop_reg_u6_qmpy   a b imm:int64_t f:bool
+@dop_reg_u6_qmpy   ........ 01 ......................   &dop_reg_u6_qmpy %a %b imm=%u6_qmpy %f
+
+&dop_reg_s12_qmpy  b imm:int64_t f:bool
+@dop_reg_s12_qmpy  ........ 10 ......................   &dop_reg_s12_qmpy %b imm=%s12_qmpy %f
+
+&dop_cond_u6_qmpy  b imm:int64_t f:bool cond
+@dop_cond_u6_qmpy  ........ 11 ................ 1 ..... &dop_cond_u6_qmpy %b imm=%u6_qmpy %f %cond
+
+# *** ARCv2 Baseline Instruction Set ***
+
+abs_sop_reg_reg        00100 ..................... 001001 @sop_reg_reg
+abs_sop_reg_u6         00100 ..................... 001001 @sop_reg_u6
+
+absl_sop_reg_reg 01011 ..................... 001001 @sop_reg_reg
+absl_sop_reg_u6  01011 ..................... 001001 @sop_reg_u6
+
+adc_dop_reg_reg        00100 ..... 000001 ................ @dop_reg_reg
+adc_dop_reg_u6         00100 ..... 000001 ................ @dop_reg_u6
+adc_dop_reg_s12        00100 ..... 000001 ................ @dop_reg_s12
+adc_dop_cond_reg       00100 ..... 000001 ................ @dop_cond_reg
+adc_dop_cond_u6        00100 ..... 000001 ................ @dop_cond_u6
+
+adcl_dop_reg_reg       01011 ..... 000001 ................ @dop_reg_reg
+adcl_dop_reg_u6        01011 ..... 000001 ................ @dop_reg_u6
+adcl_dop_reg_s12       01011 ..... 000001 ................ @dop_reg_s12
+adcl_dop_cond_reg      01011 ..... 000001 ................ @dop_cond_reg
+adcl_dop_cond_u6       01011 ..... 000001 ................ @dop_cond_u6
+
+add_dop_reg_reg        00100 ..... 000000 ................ @dop_reg_reg
+add_dop_reg_u6         00100 ..... 000000 ................ @dop_reg_u6
+add_dop_reg_s12        00100 ..... 000000 ................ @dop_reg_s12
+add_dop_cond_reg       00100 ..... 000000 ................ @dop_cond_reg
+add_dop_cond_u6        00100 ..... 000000 ................ @dop_cond_u6
+
+addl_dop_reg_reg       01011 ..... 000000 ................ @dop_reg_reg
+addl_dop_reg_u6        01011 ..... 000000 ................ @dop_reg_u6
+addl_dop_reg_s12       01011 ..... 000000 ................ @dop_reg_s12
+addl_dop_cond_reg      01011 ..... 000000 ................ @dop_cond_reg
+addl_dop_cond_u6       01011 ..... 000000 ................ @dop_cond_u6
+
+addhl_dop_reg_reg      01011 ... 00 101110 0 ............... %a %b %c f=0
+addhl_dop_reg_u6       01011 ... 01 101110 0 ............... %a %b imm=%u6 f=0
+addhl_dop_reg_s12      01011 ... 10 101110 0 ............... %b imm=%s12 f=0
+addhl_dop_cond_reg     01011 ... 11 101110 0 ......... 0 ..... %b %c f=0 %cond
+addhl_dop_cond_u6      01011 ... 11 101110 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+add1_dop_reg_reg       00100 ..... 010100 ................ @dop_reg_reg
+add1_dop_reg_u6        00100 ..... 010100 ................ @dop_reg_u6
+add1_dop_reg_s12       00100 ..... 010100 ................ @dop_reg_s12
+add1_dop_cond_reg      00100 ..... 010100 ................ @dop_cond_reg
+add1_dop_cond_u6       00100 ..... 010100 ................ @dop_cond_u6
+
+add1l_dop_reg_reg      01011 ..... 010100 ................ @dop_reg_reg
+add1l_dop_reg_u6       01011 ..... 010100 ................ @dop_reg_u6
+add1l_dop_reg_s12      01011 ..... 010100 ................ @dop_reg_s12
+add1l_dop_cond_reg     01011 ..... 010100 ................ @dop_cond_reg
+add1l_dop_cond_u6      01011 ..... 010100 ................ @dop_cond_u6
+
+add2_dop_reg_reg       00100 ..... 010101 ................ @dop_reg_reg
+add2_dop_reg_u6        00100 ..... 010101 ................ @dop_reg_u6
+add2_dop_reg_s12       00100 ..... 010101 ................ @dop_reg_s12
+add2_dop_cond_reg      00100 ..... 010101 ................ @dop_cond_reg
+add2_dop_cond_u6       00100 ..... 010101 ................ @dop_cond_u6
+
+add2l_dop_reg_reg      01011 ..... 010101 ................ @dop_reg_reg
+add2l_dop_reg_u6       01011 ..... 010101 ................ @dop_reg_u6
+add2l_dop_reg_s12      01011 ..... 010101 ................ @dop_reg_s12
+add2l_dop_cond_reg     01011 ..... 010101 ................ @dop_cond_reg
+add2l_dop_cond_u6      01011 ..... 010101 ................ @dop_cond_u6
+
+add3_dop_reg_reg       00100 ..... 010110 ................ @dop_reg_reg
+add3_dop_reg_u6        00100 ..... 010110 ................ @dop_reg_u6
+add3_dop_reg_s12       00100 ..... 010110 ................ @dop_reg_s12
+add3_dop_cond_reg      00100 ..... 010110 ................ @dop_cond_reg
+add3_dop_cond_u6       00100 ..... 010110 ................ @dop_cond_u6
+
+add3l_dop_reg_reg      01011 ..... 010110 ................ @dop_reg_reg
+add3l_dop_reg_u6       01011 ..... 010110 ................ @dop_reg_u6
+add3l_dop_reg_s12      01011 ..... 010110 ................ @dop_reg_s12
+add3l_dop_cond_reg     01011 ..... 010110 ................ @dop_cond_reg
+add3l_dop_cond_u6      01011 ..... 010110 ................ @dop_cond_u6
+
+aex_dop_reg_reg        00100 ... 001001110 ......... 000000  %b %c
+aex_dop_reg_u6         00100 ... 011001110 ......... 000000  %b imm=%u6
+aex_dop_reg_s12        00100 ... 101001110 ...............   %b imm=%s12
+aex_dop_cond_reg       00100 ... 111001110 ......... 0 ..... %b %c %cond
+aex_dop_cond_u6        00100 ... 111001110 ......... 1 ..... %b imm=%u6 %cond
+
+aexl_dop_reg_reg       01011 ... 001001110 ......... 000000  %b %c
+aexl_dop_reg_u6        01011 ... 011001110 ......... 000000  %b imm=%u6
+aexl_dop_reg_s12       01011 ... 101001110 ...............   %b imm=%s12
+aexl_dop_cond_reg      01011 ... 111001110 ......... 0 ..... %b %c %cond
+aexl_dop_cond_u6       01011 ... 111001110 ......... 1 ..... %b imm=%u6 %cond
+
+and_dop_reg_reg        00100 ..... 000100 ................ @dop_reg_reg
+and_dop_reg_u6         00100 ..... 000100 ................ @dop_reg_u6
+and_dop_reg_s12        00100 ..... 000100 ................ @dop_reg_s12
+and_dop_cond_reg       00100 ..... 000100 ................ @dop_cond_reg
+and_dop_cond_u6        00100 ..... 000100 ................ @dop_cond_u6
+
+andl_dop_reg_reg       01011 ..... 000100 ................ @dop_reg_reg
+andl_dop_reg_u6        01011 ..... 000100 ................ @dop_reg_u6
+andl_dop_reg_s12       01011 ..... 000100 ................ @dop_reg_s12
+andl_dop_cond_reg      01011 ..... 000100 ................ @dop_cond_reg
+andl_dop_cond_u6       01011 ..... 000100 ................ @dop_cond_u6
+
+asl_sop_reg_reg        00100 ..................... 000000 @sop_reg_reg
+asl_sop_reg_u6         00100 ..................... 000000 @sop_reg_u6
+
+asll_sop_reg_reg       01011 ..................... 000000 @sop_reg_reg
+asll_sop_reg_u6        01011 ..................... 000000 @sop_reg_u6
+
+aslm_dop_reg_reg       00101 ..... 000000 ................ @dop_reg_reg
+aslm_dop_reg_u6        00101 ..... 000000 ................ @dop_reg_u6
+aslm_dop_reg_s12       00101 ..... 000000 ................ @dop_reg_s12
+aslm_dop_cond_reg      00101 ..... 000000 ................ @dop_cond_reg
+aslm_dop_cond_u6       00101 ..... 000000 ................ @dop_cond_u6
+
+aslml_dop_reg_reg      01011 ..... 100000 ................ @dop_reg_reg
+aslml_dop_reg_u6       01011 ..... 100000 ................ @dop_reg_u6
+aslml_dop_reg_s12      01011 ..... 100000 ................ @dop_reg_s12
+aslml_dop_cond_reg     01011 ..... 100000 ................ @dop_cond_reg
+aslml_dop_cond_u6      01011 ..... 100000 ................ @dop_cond_u6
+
+asr_sop_reg_reg        00100 ..................... 000001 @sop_reg_reg
+asr_sop_reg_u6         00100 ..................... 000001 @sop_reg_u6
+
+asrl_sop_reg_reg       01011 ..................... 000001 @sop_reg_reg
+asrl_sop_reg_u6        01011 ..................... 000001 @sop_reg_u6
+
+asrm_dop_reg_reg       00101 ..... 000010 ................ @dop_reg_reg
+asrm_dop_reg_u6        00101 ..... 000010 ................ @dop_reg_u6
+asrm_dop_reg_s12       00101 ..... 000010 ................ @dop_reg_s12
+asrm_dop_cond_reg      00101 ..... 000010 ................ @dop_cond_reg
+asrm_dop_cond_u6       00101 ..... 000010 ................ @dop_cond_u6
+
+asrml_dop_reg_reg      01011 ..... 100010 ................ @dop_reg_reg
+asrml_dop_reg_u6       01011 ..... 100010 ................ @dop_reg_u6
+asrml_dop_reg_s12      01011 ..... 100010 ................ @dop_reg_s12
+asrml_dop_cond_reg     01011 ..... 100010 ................ @dop_cond_reg
+asrml_dop_cond_u6      01011 ..... 100010 ................ @dop_cond_u6
+
+asr16_sop_reg_reg      00101 ..................... 001100 @sop_reg_reg
+asr16_sop_reg_u6       00101 ..................... 001100 @sop_reg_u6
+asr8_sop_reg_reg       00101 ..................... 001101 @sop_reg_reg
+asr8_sop_reg_u6        00101 ..................... 001101 @sop_reg_u6
+
+# B, Bcc, BL, BLcc
+
+# | Format                 | Major | Instruction                                      |
+# | ---------------------- | ----- | ------------------------------------------------ |
+# | F32_BR0:UCOND_FAR      | 0x0   | B<.d> s25 00000ssssssssss1SSSSSSSSSSNRtttt       |
+# | F32_BR0:COND           | 0x0   | B<cc><.d> s21 00000ssssssssss0SSSSSSSSSSNQQQQQ   |
+# | F32_BR1:BL:UCOND_FAR   | 0x1   | BL<.d> s25 00001sssssssss10SSSSSSSSSSNRtttt      |
+# | F32_BR1:BL:COND        | 0x1   | BL<.cc><.d> s21 00001sssssssss00SSSSSSSSSSNQQQQQ |
+
+%f32_br0_ucond_far_s25    0:s4 6:10 17:10 !function=ex_shl1
+%f32_br0_cond_s21         6:s10 17:10 !function=ex_shl1
+%f32_br1_bl_ucond_far_s25 0:s4 6:10 18:9 !function=ex_shl2
+%f32_br1_bl_cond_s21      6:s10 18:9 !function=ex_shl2
+
+&f32_br0_ucond_far     imm delay:bool
+&f32_br0_cond          imm cond delay:bool
+&f32_br1_bl_ucond_far  imm delay:bool
+&f32_br1_bl_cond       imm cond delay:bool
+
+b_far                  00000 .......... 1 ........... 0 .... &f32_br0_ucond_far imm=%f32_br0_ucond_far_s25 %delay
+b_cond                 00000 .......... 0 ................   &f32_br0_cond imm=%f32_br0_cond_s21 %cond %delay
+bl_far                 00001 ......... 10 ........... 0 .... &f32_br1_bl_ucond_far imm=%f32_br1_bl_ucond_far_s25 %delay
+bl_cond                00001 ......... 00 ................   &f32_br1_bl_cond imm=%f32_br1_bl_cond_s21 %cond %delay
+
+# BBIT0, BBIT1, BRCC
+
+# | Format                 | Major | Instruction                                             |
+# | ---------------------- | ----- | ------------------------------------------------------- |
+# | F32_BR1:BCC:REG_REG    | 0x01  | <insn><.d><.T> b,c,s9  00001bbbsssssss1SBBBCCCCCCN0Yiii |
+# | F32_BR1:BCC:REG_U6     | 0x01  | <insn><.d><.T> b,u6,s9 00001bbbsssssss1SBBBuuuuuuN1Yiii |
+
+%bbit_s9    15:s1 17:7 !function=ex_shl1
+%brcc_cond  0:3 !function=ex_brcc_cond
+
+{
+  bbit0l_reg 00001 .......... 1 .......... delay:1 0 1   110 %b %c offset=%bbit_s9
+  bbit0_reg  00001 .......... 1 .......... delay:1 0 t:1 110 %b %c offset=%bbit_s9
+  bbit1l_reg 00001 .......... 1 .......... delay:1 0 1   111 %b %c offset=%bbit_s9
+  bbit1_reg  00001 .......... 1 .......... delay:1 0 t:1 111 %b %c offset=%bbit_s9
+  brccl_reg  00001 .......... 1 .......... delay:1 0 1   ... %b %c offset=%bbit_s9 cond=%brcc_cond
+  brcc_reg   00001 .......... 1 .......... delay:1 0 t:1 ... %b %c offset=%bbit_s9 cond=%brcc_cond
+}
+
+{
+  bbit0l_imm 00001 .......... 1 .......... delay:1 1 1   110 %b imm=%u6 offset=%bbit_s9
+  bbit0_imm  00001 .......... 1 .......... delay:1 1 t:1 110 %b imm=%u6 offset=%bbit_s9
+  bbit1l_imm 00001 .......... 1 .......... delay:1 1 1   111 %b imm=%u6 offset=%bbit_s9
+  bbit1_imm  00001 .......... 1 .......... delay:1 1 t:1 111 %b imm=%u6 offset=%bbit_s9
+  brccl_u6   00001 .......... 1 .......... delay:1 1 1   ... %b imm=%u6 offset=%bbit_s9 cond=%brcc_cond
+  brcc_u6    00001 .......... 1 .......... delay:1 1 t:1 ... %b imm=%u6 offset=%bbit_s9 cond=%brcc_cond
+}
+
+bclr_dop_reg_reg       00100 ..... 010000 ................ @dop_reg_reg
+bclr_dop_reg_u6        00100 ..... 010000 ................ @dop_reg_u6
+bclr_dop_reg_s12       00100 ..... 010000 ................ @dop_reg_s12
+bclr_dop_cond_reg      00100 ..... 010000 ................ @dop_cond_reg
+bclr_dop_cond_u6       00100 ..... 010000 ................ @dop_cond_u6
+
+bclrl_dop_reg_reg      01011 ..... 010000 ................ @dop_reg_reg
+bclrl_dop_reg_u6       01011 ..... 010000 ................ @dop_reg_u6
+bclrl_dop_reg_s12      01011 ..... 010000 ................ @dop_reg_s12
+bclrl_dop_cond_reg     01011 ..... 010000 ................ @dop_cond_reg
+bclrl_dop_cond_u6      01011 ..... 010000 ................ @dop_cond_u6
+
+bi                     00100000001001000000 ...... 000000 %c
+bih                    00100000001001010000 ...... 000000 %c
+
+bic_dop_reg_reg        00100 ..... 000110 ................ @dop_reg_reg
+bic_dop_reg_u6         00100 ..... 000110 ................ @dop_reg_u6
+bic_dop_reg_s12        00100 ..... 000110 ................ @dop_reg_s12
+bic_dop_cond_reg       00100 ..... 000110 ................ @dop_cond_reg
+bic_dop_cond_u6        00100 ..... 000110 ................ @dop_cond_u6
+
+bicl_dop_reg_reg       01011 ..... 000110 ................ @dop_reg_reg
+bicl_dop_reg_u6        01011 ..... 000110 ................ @dop_reg_u6
+bicl_dop_reg_s12       01011 ..... 000110 ................ @dop_reg_s12
+bicl_dop_cond_reg      01011 ..... 000110 ................ @dop_cond_reg
+bicl_dop_cond_u6       01011 ..... 000110 ................ @dop_cond_u6
+
+bmsk_dop_reg_reg       00100 ..... 010011 ................ @dop_reg_reg
+bmsk_dop_reg_u6        00100 ..... 010011 ................ @dop_reg_u6
+bmsk_dop_reg_s12       00100 ..... 010011 ................ @dop_reg_s12
+bmsk_dop_cond_reg      00100 ..... 010011 ................ @dop_cond_reg
+bmsk_dop_cond_u6       00100 ..... 010011 ................ @dop_cond_u6
+
+bmskl_dop_reg_reg      01011 ..... 010011 ................ @dop_reg_reg
+bmskl_dop_reg_u6       01011 ..... 010011 ................ @dop_reg_u6
+bmskl_dop_reg_s12      01011 ..... 010011 ................ @dop_reg_s12
+bmskl_dop_cond_reg     01011 ..... 010011 ................ @dop_cond_reg
+bmskl_dop_cond_u6      01011 ..... 010011 ................ @dop_cond_u6
+
+bmskn_dop_reg_reg      00100 ..... 101100 ................ @dop_reg_reg
+bmskn_dop_reg_u6       00100 ..... 101100 ................ @dop_reg_u6
+bmskn_dop_reg_s12      00100 ..... 101100 ................ @dop_reg_s12
+bmskn_dop_cond_reg     00100 ..... 101100 ................ @dop_cond_reg
+bmskn_dop_cond_u6      00100 ..... 101100 ................ @dop_cond_u6
+
+bmsknl_dop_reg_reg     01011 ..... 101100 ................ @dop_reg_reg
+bmsknl_dop_reg_u6      01011 ..... 101100 ................ @dop_reg_u6
+bmsknl_dop_reg_s12     01011 ..... 101100 ................ @dop_reg_s12
+bmsknl_dop_cond_reg    01011 ..... 101100 ................ @dop_cond_reg
+bmsknl_dop_cond_u6     01011 ..... 101100 ................ @dop_cond_u6
+
+brk                    00100101011011110000000000111111
+
+bset_dop_reg_reg       00100 ..... 001111 ................ @dop_reg_reg
+bset_dop_reg_u6        00100 ..... 001111 ................ @dop_reg_u6
+bset_dop_reg_s12       00100 ..... 001111 ................ @dop_reg_s12
+bset_dop_cond_reg      00100 ..... 001111 ................ @dop_cond_reg
+bset_dop_cond_u6       00100 ..... 001111 ................ @dop_cond_u6
+
+bsetl_dop_reg_reg      01011 ..... 001111 ................ @dop_reg_reg
+bsetl_dop_reg_u6       01011 ..... 001111 ................ @dop_reg_u6
+bsetl_dop_reg_s12      01011 ..... 001111 ................ @dop_reg_s12
+bsetl_dop_cond_reg     01011 ..... 001111 ................ @dop_cond_reg
+bsetl_dop_cond_u6      01011 ..... 001111 ................ @dop_cond_u6
+
+btst_dop_reg_reg       00100 ... 000100011 ......... 000000  %b %c
+btst_dop_reg_u6        00100 ... 010100011 ......... 000000  %b imm=%u6
+btst_dop_reg_s12       00100 ... 100100011 ...............   %b imm=%s12
+btst_dop_cond_reg      00100 ... 110100011 ......... 0 ..... %b %c %cond
+btst_dop_cond_u6       00100 ... 110100011 ......... 1 ..... %b imm=%u6 %cond
+
+btstl_dop_reg_reg      01011 ... 000100011 ......... 000000  %b %c
+btstl_dop_reg_u6       01011 ... 010100011 ......... 000000  %b imm=%u6
+btstl_dop_reg_s12      01011 ... 100100011 ...............   %b imm=%s12
+btstl_dop_cond_reg     01011 ... 110100011 ......... 0 ..... %b %c %cond
+btstl_dop_cond_u6      01011 ... 110100011 ......... 1 ..... %b imm=%u6 %cond
+
+bxor_dop_reg_reg       00100 ..... 010010 ................ @dop_reg_reg
+bxor_dop_reg_u6        00100 ..... 010010 ................ @dop_reg_u6
+bxor_dop_reg_s12       00100 ..... 010010 ................ @dop_reg_s12
+bxor_dop_cond_reg      00100 ..... 010010 ................ @dop_cond_reg
+bxor_dop_cond_u6       00100 ..... 010010 ................ @dop_cond_u6
+
+bxorl_dop_reg_reg      01011 ..... 010010 ................ @dop_reg_reg
+bxorl_dop_reg_u6       01011 ..... 010010 ................ @dop_reg_u6
+bxorl_dop_reg_s12      01011 ..... 010010 ................ @dop_reg_s12
+bxorl_dop_cond_reg     01011 ..... 010010 ................ @dop_cond_reg
+bxorl_dop_cond_u6      01011 ..... 010010 ................ @dop_cond_u6
+
+clri_reg 00100111001011110000 ...... 111111 %c
+clri_imm 00100111011011110000 ...... 111111 imm=%u6
+
+cmp_dop_reg_reg        00100 ... 000011001 ......... 000000  %b %c
+cmp_dop_reg_u6         00100 ... 010011001 ......... 000000  %b imm=%u6
+cmp_dop_reg_s12        00100 ... 100011001 ...............   %b imm=%s12
+cmp_dop_cond_reg       00100 ... 110011001 ......... 0 ..... %b %c %cond
+cmp_dop_cond_u6        00100 ... 110011001 ......... 1 ..... %b imm=%u6 %cond
+
+cmpl_dop_reg_reg       01011 ... 000011001 ......... 000000  %b %c
+cmpl_dop_reg_u6        01011 ... 010011001 ......... 000000  %b imm=%u6
+cmpl_dop_reg_s12       01011 ... 100011001 ...............   %b imm=%s12
+cmpl_dop_cond_reg      01011 ... 110011001 ......... 0 ..... %b %c %cond
+cmpl_dop_cond_u6       01011 ... 110011001 ......... 1 ..... %b imm=%u6 %cond
+
+%dbnz_s13 0:s6 6:6 !function=ex_shl1
+
+dbnz                   00100 ... 1000110 delay:1 0 ............... %b imm=%dbnz_s13
+
+div_dop_reg_reg        00101 ..... 000100 ................ @dop_reg_reg
+div_dop_reg_u6         00101 ..... 000100 ................ @dop_reg_u6
+div_dop_reg_s12        00101 ..... 000100 ................ @dop_reg_s12
+div_dop_cond_reg       00101 ..... 000100 ................ @dop_cond_reg
+div_dop_cond_u6        00101 ..... 000100 ................ @dop_cond_u6
+
+divu_dop_reg_reg       00101 ..... 000101 ................ @dop_reg_reg
+divu_dop_reg_u6        00101 ..... 000101 ................ @dop_reg_u6
+divu_dop_reg_s12       00101 ..... 000101 ................ @dop_reg_s12
+divu_dop_cond_reg      00101 ..... 000101 ................ @dop_cond_reg
+divu_dop_cond_u6       00101 ..... 000101 ................ @dop_cond_u6
+
+dmb                    00100011011011110001000 imm:3 111111
+
+dsync                  00100010011011110001000000111111
+
+ex_sop_reg_reg         00100 ... 00101111 di:1 ......... 001100 %b %c
+ex_sop_reg_u6          00100 ... 01101111 di:1 ......... 001100 %b imm=%u6
+
+exl                    01011 ... 00101111 di:1 ......... 001100 %b %c
+
+extb_sop_reg_reg       00100 ..................... 000111 @sop_reg_reg
+extb_sop_reg_u6        00100 ..................... 000111 @sop_reg_u6
+
+exth_sop_reg_reg       00100 ..................... 001000 @sop_reg_reg
+exth_sop_reg_u6        00100 ..................... 001000 @sop_reg_u6
+
+ffs_sop_reg_reg        00101 ..................... 010010 @sop_reg_reg
+ffs_sop_reg_u6         00101 ..................... 010010 @sop_reg_u6
+
+ffsl_sop_reg_reg       01011 ..................... 010010 @sop_reg_reg
+ffsl_sop_reg_u6        01011 ..................... 010010 @sop_reg_u6
+
+flag_dop_reg_reg       00100000001010010000 ...... 000000  %c
+flag_dop_reg_u6        00100000011010010000 ...... 000000  imm=%u6
+flag_dop_reg_s12       00100000101010010000 ............   imm=%s12
+flag_dop_reg_reg_cond  00100000111010010000 ...... 0 ..... %c %cond
+flag_dop_reg_u6_cond   00100000111010010000 ...... 1 ..... imm=%u6 %cond
+
+fls_sop_reg_reg        00101 ..................... 010011 @sop_reg_reg
+fls_sop_reg_u6         00101 ..................... 010011 @sop_reg_u6
+
+flsl_sop_reg_reg       01011 ..................... 010011 @sop_reg_reg
+flsl_sop_reg_u6        01011 ..................... 010011 @sop_reg_u6
+
+&j_reg      c delay:bool
+&j_imm      imm delay:bool
+&j_simm     imm delay:bool
+&j_reg_cond c delay:bool cond
+&j_reg_imm  imm delay:bool cond
+
+j_reg                  001000000010000 delay:1 0000 ...... 000000  &j_reg %c
+j_u6                   001000000110000 delay:1 0000 ...... 000000  &j_imm imm=%u6
+j_s12                  001000001010000 delay:1 0000 ............   &j_simm imm=%s12
+jcc_reg                001000001110000 delay:1 0000 ...... 0 ..... &j_reg_cond %c %cond
+jcc_u6                 001000001110000 delay:1 0000 ...... 1 ..... &j_reg_imm imm=%u6 %cond
+
+jl_reg                 001000000010001 delay:1 0000 ...... 000000  &j_reg %c
+jl_u6                  001000000110001 delay:1 0000 ...... 000000  &j_imm imm=%u6
+jl_s12                 001000001010001 delay:1 0000 ............   &j_simm imm=%s12
+jlcc_reg               001000001110001 delay:1 0000 ...... 0 ..... &j_reg_cond %c %cond
+jlcc_u6                001000001110001 delay:1 0000 ...... 1 ..... &j_reg_imm imm=%u6 %cond
+
+kflag_dop_reg_reg      00100000001010011000 ...... 000000  %c
+kflag_dop_reg_u6       00100000011010011000 ...... 000000  imm=%u6
+kflag_dop_reg_s12      00100000101010011000 ............   imm=%s12
+kflag_dop_reg_reg_cond 00100000111010011000 ...... 0 ..... %c %cond
+kflag_dop_reg_u6_cond  00100000111010011000 ...... 1 ..... imm=%u6 %cond
+
+llock_reg              00100 ... 00101111 di:1 ......... 010000 %b %c
+llock_imm              00100 ... 01101111 di:1 ......... 010000 %b imm=%u6
+
+llockd_reg             00100 ... 00101111 di:1 ......... 010010 %b %c
+llockd_imm             00100 ... 01101111 di:1 ......... 010010 %b imm=%u6
+
+llockl                 01011 ... 00101111 aq:1 ......... 010000 %b %c
+
+%lp_u7  6:6 !function=ex_shl1
+%lp_s13 0:s6 6:6 !function=ex_shl1
+
+lp_u7      00100000011010000000 ...... 000000  imm=%lp_u7
+lp_u7_cond 00100000111010000000 ...... 1 ..... imm=%lp_u7 %cond
+lp_s13     00100000101010000000 ............   imm=%lp_s13
+
+lr_dop_reg_reg         00100 ... 001010100 ......... 000000 %b %c
+lr_dop_reg_u6          00100 ... 011010100 ......... 000000 %b imm=%u6
+lr_dop_reg_s12         00100 ... 101010100 ...............  %b imm=%s12
+
+lrl_dop_reg_reg        01011 ... 001010100 ......... 000000 %b %c
+lrl_dop_reg_u6         01011 ... 011010100 ......... 000000 %b imm=%u6
+lrl_dop_reg_s12        01011 ... 101010100 ...............  %b imm=%s12
+
+lsl16_sop_reg_reg      00101 ..................... 001010 @sop_reg_reg
+lsl16_sop_reg_u6       00101 ..................... 001010 @sop_reg_u6
+lsl8_sop_reg_reg       00101 ..................... 001111 @sop_reg_reg
+lsl8_sop_reg_u6        00101 ..................... 001111 @sop_reg_u6
+
+lsr_sop_reg_reg        00100 ..................... 000010 @sop_reg_reg
+lsr_sop_reg_u6         00100 ..................... 000010 @sop_reg_u6
+
+lsrl_sop_reg_reg       01011 ..................... 000010 @sop_reg_reg
+lsrl_sop_reg_u6        01011 ..................... 000010 @sop_reg_u6
+
+lsrm_dop_reg_reg       00101 ..... 000001 ................ @dop_reg_reg
+lsrm_dop_reg_u6        00101 ..... 000001 ................ @dop_reg_u6
+lsrm_dop_reg_s12       00101 ..... 000001 ................ @dop_reg_s12
+lsrm_dop_cond_reg      00101 ..... 000001 ................ @dop_cond_reg
+lsrm_dop_cond_u6       00101 ..... 000001 ................ @dop_cond_u6
+
+lsrml_dop_reg_reg      01011 ..... 100001 ................ @dop_reg_reg
+lsrml_dop_reg_u6       01011 ..... 100001 ................ @dop_reg_u6
+lsrml_dop_reg_s12      01011 ..... 100001 ................ @dop_reg_s12
+lsrml_dop_cond_reg     01011 ..... 100001 ................ @dop_cond_reg
+lsrml_dop_cond_u6      01011 ..... 100001 ................ @dop_cond_u6
+
+lsr16_sop_reg_reg      00101 ..................... 001011 @sop_reg_reg
+lsr16_sop_reg_u6       00101 ..................... 001011 @sop_reg_u6
+lsr8_sop_reg_reg       00101 ..................... 001110 @sop_reg_reg
+lsr8_sop_reg_u6        00101 ..................... 001110 @sop_reg_u6
+
+max_dop_reg_reg        00100 ..... 001000 ................ @dop_reg_reg
+max_dop_reg_u6         00100 ..... 001000 ................ @dop_reg_u6
+max_dop_reg_s12        00100 ..... 001000 ................ @dop_reg_s12
+max_dop_cond_reg       00100 ..... 001000 ................ @dop_cond_reg
+max_dop_cond_u6        00100 ..... 001000 ................ @dop_cond_u6
+
+maxl_dop_reg_reg       01011 ..... 001000 ................ @dop_reg_reg
+maxl_dop_reg_u6        01011 ..... 001000 ................ @dop_reg_u6
+maxl_dop_reg_s12       01011 ..... 001000 ................ @dop_reg_s12
+maxl_dop_cond_reg      01011 ..... 001000 ................ @dop_cond_reg
+maxl_dop_cond_u6       01011 ..... 001000 ................ @dop_cond_u6
+
+min_dop_reg_reg        00100 ..... 001001 ................ @dop_reg_reg
+min_dop_reg_u6         00100 ..... 001001 ................ @dop_reg_u6
+min_dop_reg_s12        00100 ..... 001001 ................ @dop_reg_s12
+min_dop_cond_reg       00100 ..... 001001 ................ @dop_cond_reg
+min_dop_cond_u6        00100 ..... 001001 ................ @dop_cond_u6
+
+minl_dop_reg_reg       01011 ..... 001001 ................ @dop_reg_reg
+minl_dop_reg_u6        01011 ..... 001001 ................ @dop_reg_u6
+minl_dop_reg_s12       01011 ..... 001001 ................ @dop_reg_s12
+minl_dop_cond_reg      01011 ..... 001001 ................ @dop_cond_reg
+minl_dop_cond_u6       01011 ..... 001001 ................ @dop_cond_u6
+
+mov_dop_reg_reg        00100 ... 00001010 .......... 000000 %f %b %c
+mov_dop_reg_u6         00100 ... 01001010 .......... 000000 %f %b imm=%u6
+mov_dop_reg_s12        00100 ..... 001010 ................  @dop_reg_s12
+mov_dop_cond_reg       00100 ..... 001010 ................  @dop_cond_reg
+mov_dop_cond_u6        00100 ..... 001010 ................  @dop_cond_u6
+
+movl_dop_reg_reg       01011 ... 00001010 .......... 000000 %f %b %c
+movl_dop_reg_u6        01011 ... 01001010 .......... 000000 %f %b imm=%u6
+movl_dop_reg_s12       01011 ..... 001010 ................  @dop_reg_s12
+movl_dop_cond_reg      01011 ..... 001010 ................  @dop_cond_reg
+movl_dop_cond_u6       01011 ..... 001010 ................  @dop_cond_u6
+
+movhl_dop_reg_reg      01011 ... 00001011 0 ......... 000000  %b %c f=0
+movhl_dop_reg_u6       01011 ... 01001011 0 ......... 000000  %b imm=%u6 f=0
+movhl_dop_reg_s12      01011 ... 10001011 0 ...............   %b imm=%s12 f=0
+movhl_dop_cond_reg     01011 ... 11001011 0 ......... 0 ..... %b %c f=0 %cond
+movhl_dop_cond_u6      01011 ... 11001011 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+norm_sop_reg_reg       00101 ..................... 000001 @sop_reg_reg
+norm_sop_reg_u6        00101 ..................... 000001 @sop_reg_u6
+
+normh_sop_reg_reg      00101 ..................... 001000 @sop_reg_reg
+normh_sop_reg_u6       00101 ..................... 001000 @sop_reg_u6
+
+norml_sop_reg_reg      01011 ..................... 100001 @sop_reg_reg
+norml_sop_reg_u6       01011 ..................... 100001 @sop_reg_u6
+
+not_sop_reg_reg        00100 ..................... 001010 @sop_reg_reg
+not_sop_reg_u6         00100 ..................... 001010 @sop_reg_u6
+
+notl_sop_reg_reg       01011 ..................... 001010 @sop_reg_reg
+notl_sop_reg_u6        01011 ..................... 001010 @sop_reg_u6
+
+or_dop_reg_reg         00100 ..... 000101 ................ @dop_reg_reg
+or_dop_reg_u6          00100 ..... 000101 ................ @dop_reg_u6
+or_dop_reg_s12         00100 ..... 000101 ................ @dop_reg_s12
+or_dop_cond_reg        00100 ..... 000101 ................ @dop_cond_reg
+or_dop_cond_u6         00100 ..... 000101 ................ @dop_cond_u6
+
+orl_dop_reg_reg        01011 ..... 000101 ................ @dop_reg_reg
+orl_dop_reg_u6         01011 ..... 000101 ................ @dop_reg_u6
+orl_dop_reg_s12        01011 ..... 000101 ................ @dop_reg_s12
+orl_dop_cond_reg       01011 ..... 000101 ................ @dop_cond_reg
+orl_dop_cond_u6        01011 ..... 000101 ................ @dop_cond_u6
+
+rcmp_dop_reg_reg       00100 ... 000011011 ......... 000000  %b %c
+rcmp_dop_reg_u6        00100 ... 010011011 ......... 000000  %b imm=%u6
+rcmp_dop_reg_s12       00100 ... 100011011 ...............   %b imm=%s12
+rcmp_dop_cond_reg      00100 ... 110011011 ......... 0 ..... %b %c %cond
+rcmp_dop_cond_u6       00100 ... 110011011 ......... 1 ..... %b imm=%u6 %cond
+
+rcmpl_dop_reg_reg      01011 ... 000011011 ......... 000000  %b %c
+rcmpl_dop_reg_u6       01011 ... 010011011 ......... 000000  %b imm=%u6
+rcmpl_dop_reg_s12      01011 ... 100011011 ...............   %b imm=%s12
+rcmpl_dop_cond_reg     01011 ... 110011011 ......... 0 ..... %b %c %cond
+rcmpl_dop_cond_u6      01011 ... 110011011 ......... 1 ..... %b imm=%u6 %cond
+
+rem_dop_reg_reg        00101 ..... 001000 ................ @dop_reg_reg
+rem_dop_reg_u6         00101 ..... 001000 ................ @dop_reg_u6
+rem_dop_reg_s12        00101 ..... 001000 ................ @dop_reg_s12
+rem_dop_cond_reg       00101 ..... 001000 ................ @dop_cond_reg
+rem_dop_cond_u6        00101 ..... 001000 ................ @dop_cond_u6
+
+remu_dop_reg_reg       00101 ..... 001001 ................ @dop_reg_reg
+remu_dop_reg_u6        00101 ..... 001001 ................ @dop_reg_u6
+remu_dop_reg_s12       00101 ..... 001001 ................ @dop_reg_s12
+remu_dop_cond_reg      00101 ..... 001001 ................ @dop_cond_reg
+remu_dop_cond_u6       00101 ..... 001001 ................ @dop_cond_u6
+
+rlc_sop_reg_reg        00100 ..................... 001011 @sop_reg_reg
+rlc_sop_reg_u6         00100 ..................... 001011 @sop_reg_u6
+
+rol_sop_reg_reg        00100 ..................... 001101 @sop_reg_reg
+rol_sop_reg_u6         00100 ..................... 001101 @sop_reg_u6
+rol8_sop_reg_reg       00101 ..................... 010000 @sop_reg_reg
+rol8_sop_reg_u6        00101 ..................... 010000 @sop_reg_u6
+
+ror_sop_reg_reg        00100 ..................... 000011 @sop_reg_reg
+ror_sop_reg_u6         00100 ..................... 000011 @sop_reg_u6
+ror8_sop_reg_reg       00101 ..................... 010001 @sop_reg_reg
+ror8_sop_reg_u6        00101 ..................... 010001 @sop_reg_u6
+
+rorm_dop_reg_reg       00101 ..... 000011 ................ @dop_reg_reg
+rorm_dop_reg_u6        00101 ..... 000011 ................ @dop_reg_u6
+rorm_dop_reg_s12       00101 ..... 000011 ................ @dop_reg_s12
+rorm_dop_cond_reg      00101 ..... 000011 ................ @dop_cond_reg
+rorm_dop_cond_u6       00101 ..... 000011 ................ @dop_cond_u6
+
+rrc_sop_reg_reg        00100 ..................... 000100 @sop_reg_reg
+rrc_sop_reg_u6         00100 ..................... 000100 @sop_reg_u6
+
+rsub_dop_reg_reg       00100 ..... 001110 ................ @dop_reg_reg
+rsub_dop_reg_s12       00100 ..... 001110 ................ @dop_reg_s12
+rsub_dop_cond_reg      00100 ..... 001110 ................ @dop_cond_reg
+
+{
+  neg                  00100 ... 01001110 .... 000000 ...... %f %a %b
+  rsub_dop_reg_u6      00100 ..... 001110 ................   @dop_reg_u6
+}
+
+{
+  neg_cond             00100 ... 11001110 .... 0000001 ..... %f %b %cond
+  rsub_dop_cond_u6     00100 ..... 001110 ................   @dop_cond_u6
+}
+
+rsubl_dop_reg_reg      01011 ..... 001110 ................ @dop_reg_reg
+rsubl_dop_reg_u6       01011 ..... 001110 ................ @dop_reg_u6
+rsubl_dop_reg_s12      01011 ..... 001110 ................ @dop_reg_s12
+rsubl_dop_cond_reg     01011 ..... 001110 ................ @dop_cond_reg
+rsubl_dop_cond_u6      01011 ..... 001110 ................ @dop_cond_u6
+
+rtie 00100100011011110000000000111111
+
+sbc_dop_reg_reg        00100 ..... 000011 ................ @dop_reg_reg
+sbc_dop_reg_u6         00100 ..... 000011 ................ @dop_reg_u6
+sbc_dop_reg_s12        00100 ..... 000011 ................ @dop_reg_s12
+sbc_dop_cond_reg       00100 ..... 000011 ................ @dop_cond_reg
+sbc_dop_cond_u6        00100 ..... 000011 ................ @dop_cond_u6
+
+sbcl_dop_reg_reg       01011 ..... 000011 ................ @dop_reg_reg
+sbcl_dop_reg_u6        01011 ..... 000011 ................ @dop_reg_u6
+sbcl_dop_reg_s12       01011 ..... 000011 ................ @dop_reg_s12
+sbcl_dop_cond_reg      01011 ..... 000011 ................ @dop_cond_reg
+sbcl_dop_cond_u6       01011 ..... 000011 ................ @dop_cond_u6
+
+scond_reg              00100 ... 00101111 di:1 ......... 010001 %b %c
+scond_imm              00100 ... 01101111 di:1 ......... 010001 %b imm=%u6
+
+scondd_reg             00100 ... 00101111 di:1 ......... 010011 %b %c
+scondd_imm             00100 ... 01101111 di:1 ......... 010011 %b imm=%u6
+
+scondl                 01011 ... 00101111 rl:1 ......... 010001 %b %c
+
+sexb_sop_reg_reg       00100 ..................... 000101 @sop_reg_reg
+sexb_sop_reg_u6        00100 ..................... 000101 @sop_reg_u6
+
+sexbl_sop_reg_reg      01011 ..................... 000101 @sop_reg_reg
+sexbl_sop_reg_u6       01011 ..................... 000101 @sop_reg_u6
+
+sexh_sop_reg_reg       00100 ..................... 000110 @sop_reg_reg
+sexh_sop_reg_u6        00100 ..................... 000110 @sop_reg_u6
+
+sexhl_sop_reg_reg      01011 ..................... 000110 @sop_reg_reg
+sexhl_sop_reg_u6       01011 ..................... 000110 @sop_reg_u6
+
+sexwl_sop_reg_reg      01011 ..................... 000111 @sop_reg_reg
+sexwl_sop_reg_u6       01011 ..................... 000111 @sop_reg_u6
+
+%setcc_op 16:3 !function=ex_setcc_op
+
+&setcc_reg_reg  f:bool a b c op
+@setcc_reg_reg  ........ 00 111 ... ................ &setcc_reg_reg %f %a %b %c op=%setcc_op
+
+&setcc_reg_u6   f:bool a b imm op
+@setcc_reg_u6   ........ 01 111 ... ................ &setcc_reg_u6 %f %a %b imm=%u6 op=%setcc_op
+
+&setcc_reg_s12  f:bool b imm op
+@setcc_reg_s12  ........ 10 111 ... ................ &setcc_reg_s12 %f %b imm=%s12 op=%setcc_op
+
+&setcc_cond_reg f:bool b c cond op
+@setcc_cond_reg ........ 11 111 ... .......... 0 ..... &setcc_cond_reg %f %b %c %cond op=%setcc_op
+
+&setcc_cond_u6  f:bool b imm cond op
+@setcc_cond_u6  ........ 11 111 ... .......... 1 ..... &setcc_cond_u6 %f %b imm=%u6 %cond op=%setcc_op
+
+setcc_reg_reg          00100 ........................... @setcc_reg_reg
+setcc_reg_u6           00100 ........................... @setcc_reg_u6
+setcc_reg_s12          00100 ........................... @setcc_reg_s12
+setcc_cond_reg         00100 ........................... @setcc_cond_reg
+setcc_cond_u6          00100 ........................... @setcc_cond_u6
+
+setccl_reg_reg         01011 ........................... @setcc_reg_reg
+setccl_reg_u6          01011 ........................... @setcc_reg_u6
+setccl_reg_s12         01011 ........................... @setcc_reg_s12
+setccl_cond_reg        01011 ........................... @setcc_cond_reg
+setccl_cond_u6         01011 ........................... @setcc_cond_u6
+
+seti_reg               00100110001011110000 ...... 111111 %c
+seti_imm               00100110011011110000 ...... 111111 imm=%u6
+
+sr_dop_reg_reg         00100 ... 001010110 ......... 000000 %b %c
+sr_dop_reg_u6          00100 ... 011010110 ......... 000000 %b imm=%u6
+sr_dop_reg_s12         00100 ... 101010110 ...............  %b imm=%s12
+
+srl_dop_reg_reg        01011 ... 001010110 ......... 000000 %b %c
+srl_dop_reg_u6         01011 ... 011010110 ......... 000000 %b imm=%u6
+srl_dop_reg_s12        01011 ... 101010110 ...............  %b imm=%s12
+
+sub_dop_reg_reg        00100 ..... 000010 ................ @dop_reg_reg
+sub_dop_reg_u6         00100 ..... 000010 ................ @dop_reg_u6
+sub_dop_reg_s12        00100 ..... 000010 ................ @dop_reg_s12
+sub_dop_cond_reg       00100 ..... 000010 ................ @dop_cond_reg
+sub_dop_cond_u6        00100 ..... 000010 ................ @dop_cond_u6
+
+subl_dop_reg_reg       01011 ..... 000010 ................ @dop_reg_reg
+subl_dop_reg_u6        01011 ..... 000010 ................ @dop_reg_u6
+subl_dop_reg_s12       01011 ..... 000010 ................ @dop_reg_s12
+subl_dop_cond_reg      01011 ..... 000010 ................ @dop_cond_reg
+subl_dop_cond_u6       01011 ..... 000010 ................ @dop_cond_u6
+
+sub1_dop_reg_reg       00100 ..... 010111 ................ @dop_reg_reg
+sub1_dop_reg_u6        00100 ..... 010111 ................ @dop_reg_u6
+sub1_dop_reg_s12       00100 ..... 010111 ................ @dop_reg_s12
+sub1_dop_cond_reg      00100 ..... 010111 ................ @dop_cond_reg
+sub1_dop_cond_u6       00100 ..... 010111 ................ @dop_cond_u6
+
+sub1l_dop_reg_reg      01011 ..... 010111 ................ @dop_reg_reg
+sub1l_dop_reg_u6       01011 ..... 010111 ................ @dop_reg_u6
+sub1l_dop_reg_s12      01011 ..... 010111 ................ @dop_reg_s12
+sub1l_dop_cond_reg     01011 ..... 010111 ................ @dop_cond_reg
+sub1l_dop_cond_u6      01011 ..... 010111 ................ @dop_cond_u6
+
+sub2_dop_reg_reg       00100 ..... 011000 ................ @dop_reg_reg
+sub2_dop_reg_u6        00100 ..... 011000 ................ @dop_reg_u6
+sub2_dop_reg_s12       00100 ..... 011000 ................ @dop_reg_s12
+sub2_dop_cond_reg      00100 ..... 011000 ................ @dop_cond_reg
+sub2_dop_cond_u6       00100 ..... 011000 ................ @dop_cond_u6
+
+sub2l_dop_reg_reg      01011 ..... 011000 ................ @dop_reg_reg
+sub2l_dop_reg_u6       01011 ..... 011000 ................ @dop_reg_u6
+sub2l_dop_reg_s12      01011 ..... 011000 ................ @dop_reg_s12
+sub2l_dop_cond_reg     01011 ..... 011000 ................ @dop_cond_reg
+sub2l_dop_cond_u6      01011 ..... 011000 ................ @dop_cond_u6
+
+sub3_dop_reg_reg       00100 ..... 011001 ................ @dop_reg_reg
+sub3_dop_reg_u6        00100 ..... 011001 ................ @dop_reg_u6
+sub3_dop_reg_s12       00100 ..... 011001 ................ @dop_reg_s12
+sub3_dop_cond_reg      00100 ..... 011001 ................ @dop_cond_reg
+sub3_dop_cond_u6       00100 ..... 011001 ................ @dop_cond_u6
+
+sub3l_dop_reg_reg      01011 ..... 011001 ................ @dop_reg_reg
+sub3l_dop_reg_u6       01011 ..... 011001 ................ @dop_reg_u6
+sub3l_dop_reg_s12      01011 ..... 011001 ................ @dop_reg_s12
+sub3l_dop_cond_reg     01011 ..... 011001 ................ @dop_cond_reg
+sub3l_dop_cond_u6      01011 ..... 011001 ................ @dop_cond_u6
+
+swap_sop_reg_reg       00101 ..................... 000000 @sop_reg_reg
+swap_sop_reg_u6        00101 ..................... 000000 @sop_reg_u6
+
+swapl_sop_reg_reg      01011   ..................... 100000 @sop_reg_reg
+swapl_sop_reg_u6       01011   ..................... 100000 @sop_reg_u6
+
+swape_sop_reg_reg      00101 ..................... 001001 @sop_reg_reg
+swape_sop_reg_u6       00101 ..................... 001001 @sop_reg_u6
+
+swapel_sop_reg_reg     01011 ..................... 101001 @sop_reg_reg
+swapel_sop_reg_u6      01011 ..................... 101001 @sop_reg_u6
+
+sleep_reg              00100001001011110000 ...... 111111 %c
+sleep_imm              00100001011011110000 ...... 111111 imm=%u6
+
+swi                    00100010011011110000000000111111
+
+sync                   00100011011011110000000000111111
+
+tst_dop_reg_reg        00100 ... 000010111 ......... 000000  %b %c
+tst_dop_reg_u6         00100 ... 010010111 ......... 000000  %b imm=%u6
+tst_dop_reg_s12        00100 ... 100010111 ...............   %b imm=%s12
+tst_dop_cond_reg       00100 ... 110010111 ......... 0 ..... %b %c %cond
+tst_dop_cond_u6        00100 ... 110010111 ......... 1 ..... %b imm=%u6 %cond
+
+tstl_dop_reg_reg       01011 ... 000010111 ......... 000000  %b %c
+tstl_dop_reg_u6        01011 ... 010010111 ......... 000000  %b imm=%u6
+tstl_dop_reg_s12       01011 ... 100010111 ...............   %b imm=%s12
+tstl_dop_cond_reg      01011 ... 110010111 ......... 0 ..... %b %c %cond
+tstl_dop_cond_u6       01011 ... 110010111 ......... 1 ..... %b imm=%u6 %cond
+
+xbfu_dop_reg_reg       00100 ..... 101101 ................ @dop_reg_reg
+xbfu_dop_reg_u6        00100 ..... 101101 ................ @dop_reg_u6
+xbfu_dop_reg_s12       00100 ..... 101101 ................ @dop_reg_s12
+xbfu_dop_cond_reg      00100 ..... 101101 ................ @dop_cond_reg
+xbfu_dop_cond_u6       00100 ..... 101101 ................ @dop_cond_u6
+
+xbful_dop_reg_reg      01011 ..... 101101 ................ @dop_reg_reg
+xbful_dop_reg_u6       01011 ..... 101101 ................ @dop_reg_u6
+xbful_dop_reg_s12      01011 ..... 101101 ................ @dop_reg_s12
+xbful_dop_cond_reg     01011 ..... 101101 ................ @dop_cond_reg
+xbful_dop_cond_u6      01011 ..... 101101 ................ @dop_cond_u6
+
+xor_dop_reg_reg        00100 ..... 000111 ................ @dop_reg_reg
+xor_dop_reg_u6         00100 ..... 000111 ................ @dop_reg_u6
+xor_dop_reg_s12        00100 ..... 000111 ................ @dop_reg_s12
+xor_dop_cond_reg       00100 ..... 000111 ................ @dop_cond_reg
+xor_dop_cond_u6        00100 ..... 000111 ................ @dop_cond_u6
+
+xorl_dop_reg_reg       01011 ..... 000111 ................ @dop_reg_reg
+xorl_dop_reg_u6        01011 ..... 000111 ................ @dop_reg_u6
+xorl_dop_reg_s12       01011 ..... 000111 ................ @dop_reg_s12
+xorl_dop_cond_reg      01011 ..... 000111 ................ @dop_cond_reg
+xorl_dop_cond_u6       01011 ..... 000111 ................ @dop_cond_u6
+
+# MPY and MAC instructions
+
+mpy_dop_reg_reg        00100 ..... 011010 ................ @dop_reg_reg
+mpy_dop_reg_u6         00100 ..... 011010 ................ @dop_reg_u6
+mpy_dop_reg_s12        00100 ..... 011010 ................ @dop_reg_s12
+mpy_dop_cond_reg       00100 ..... 011010 ................ @dop_cond_reg
+mpy_dop_cond_u6        00100 ..... 011010 ................ @dop_cond_u6
+
+mpyu_dop_reg_reg       00100 ..... 011101 ................ @dop_reg_reg
+mpyu_dop_reg_u6        00100 ..... 011101 ................ @dop_reg_u6
+mpyu_dop_reg_s12       00100 ..... 011101 ................ @dop_reg_s12
+mpyu_dop_cond_reg      00100 ..... 011101 ................ @dop_cond_reg
+mpyu_dop_cond_u6       00100 ..... 011101 ................ @dop_cond_u6
+
+mpym_dop_reg_reg       00100 ..... 011011 ................ @dop_reg_reg
+mpym_dop_reg_u6        00100 ..... 011011 ................ @dop_reg_u6
+mpym_dop_reg_s12       00100 ..... 011011 ................ @dop_reg_s12
+mpym_dop_cond_reg      00100 ..... 011011 ................ @dop_cond_reg
+mpym_dop_cond_u6       00100 ..... 011011 ................ @dop_cond_u6
+
+mpymu_dop_reg_reg      00100 ..... 011100 ................ @dop_reg_reg
+mpymu_dop_reg_u6       00100 ..... 011100 ................ @dop_reg_u6
+mpymu_dop_reg_s12      00100 ..... 011100 ................ @dop_reg_s12
+mpymu_dop_cond_reg     00100 ..... 011100 ................ @dop_cond_reg
+mpymu_dop_cond_u6      00100 ..... 011100 ................ @dop_cond_u6
+
+mpyw_dop_reg_reg       00100 ..... 011110 ................ @dop_reg_reg
+mpyw_dop_reg_u6        00100 ..... 011110 ................ @dop_reg_u6
+mpyw_dop_reg_s12       00100 ..... 011110 ................ @dop_reg_s12
+mpyw_dop_cond_reg      00100 ..... 011110 ................ @dop_cond_reg
+mpyw_dop_cond_u6       00100 ..... 011110 ................ @dop_cond_u6
+
+mpyuw_dop_reg_reg      00100 ..... 011111 ................ @dop_reg_reg
+mpyuw_dop_reg_u6       00100 ..... 011111 ................ @dop_reg_u6
+mpyuw_dop_reg_s12      00100 ..... 011111 ................ @dop_reg_s12
+mpyuw_dop_cond_reg     00100 ..... 011111 ................ @dop_cond_reg
+mpyuw_dop_cond_u6      00100 ..... 011111 ................ @dop_cond_u6
+
+mpyd_dop_reg_reg       00101 ..... 011000 ................ @dop_reg_reg
+mpyd_dop_reg_u6        00101 ..... 011000 ................ @dop_reg_u6
+mpyd_dop_reg_s12       00101 ..... 011000 ................ @dop_reg_s12
+mpyd_dop_cond_reg      00101 ..... 011000 ................ @dop_cond_reg
+mpyd_dop_cond_u6       00101 ..... 011000 ................ @dop_cond_u6
+
+mpydu_dop_reg_reg      00101 ..... 011001 ................ @dop_reg_reg
+mpydu_dop_reg_u6       00101 ..... 011001 ................ @dop_reg_u6
+mpydu_dop_reg_s12      00101 ..... 011001 ................ @dop_reg_s12
+mpydu_dop_cond_reg     00101 ..... 011001 ................ @dop_cond_reg
+mpydu_dop_cond_u6      00101 ..... 011001 ................ @dop_cond_u6
+
+mpyl_dop_reg_reg       01011 ... 00 110000 0 ............... %a %b %c f=0
+mpyl_dop_reg_u6        01011 ... 01 110000 0 ............... %a %b imm=%u6 f=0
+mpyl_dop_reg_s12       01011 ... 10 110000 0 ............... %b imm=%s12 f=0
+mpyl_dop_cond_reg      01011 ... 11 110000 0 ......... 0 ..... %b %c f=0 %cond
+mpyl_dop_cond_u6       01011 ... 11 110000 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+mpyml_dop_reg_reg      01011 ... 00 110001 0 ............... %a %b %c f=0
+mpyml_dop_reg_u6       01011 ... 01 110001 0 ............... %a %b imm=%u6 f=0
+mpyml_dop_reg_s12      01011 ... 10 110001 0 ............... %b imm=%s12 f=0
+mpyml_dop_cond_reg     01011 ... 11 110001 0 ......... 0 ..... %b %c f=0 %cond
+mpyml_dop_cond_u6      01011 ... 11 110001 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+mpymul_dop_reg_reg     01011 ... 00 110010 0 ............... %a %b %c f=0
+mpymul_dop_reg_u6      01011 ... 01 110010 0 ............... %a %b imm=%u6 f=0
+mpymul_dop_reg_s12     01011 ... 10 110010 0 ............... %b imm=%s12 f=0
+mpymul_dop_cond_reg    01011 ... 11 110010 0 ......... 0 ..... %b %c f=0 %cond
+mpymul_dop_cond_u6     01011 ... 11 110010 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+mpymsul_dop_reg_reg    01011 ... 00 110011 0 ............... %a %b %c f=0
+mpymsul_dop_reg_u6     01011 ... 01 110011 0 ............... %a %b imm=%u6 f=0
+mpymsul_dop_reg_s12    01011 ... 10 110011 0 ............... %b imm=%s12 f=0
+mpymsul_dop_cond_reg   01011 ... 11 110011 0 ......... 0 ..... %b %c f=0 %cond
+mpymsul_dop_cond_u6    01011 ... 11 110011 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+divl_dop_reg_reg       01011 ... 00 100100 0 ............... %a %b %c f=0
+divl_dop_reg_u6        01011 ... 01 100100 0 ............... %a %b imm=%u6 f=0
+divl_dop_reg_s12       01011 ... 10 100100 0 ............... %b imm=%s12 f=0
+divl_dop_cond_reg      01011 ... 11 100100 0 ......... 0 ..... %b %c f=0 %cond
+divl_dop_cond_u6       01011 ... 11 100100 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+divul_dop_reg_reg      01011 ... 00 100101 0 ............... %a %b %c f=0
+divul_dop_reg_u6       01011 ... 01 100101 0 ............... %a %b imm=%u6 f=0
+divul_dop_reg_s12      01011 ... 10 100101 0 ............... %b imm=%s12 f=0
+divul_dop_cond_reg     01011 ... 11 100101 0 ......... 0 ..... %b %c f=0 %cond
+divul_dop_cond_u6      01011 ... 11 100101 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+reml_dop_reg_reg       01011 ... 00 101000 0 ............... %a %b %c f=0
+reml_dop_reg_u6        01011 ... 01 101000 0 ............... %a %b imm=%u6 f=0
+reml_dop_reg_s12       01011 ... 10 101000 0 ............... %b imm=%s12 f=0
+reml_dop_cond_reg      01011 ... 11 101000 0 ......... 0 ..... %b %c f=0 %cond
+reml_dop_cond_u6       01011 ... 11 101000 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+remul_dop_reg_reg      01011 ... 00 101001 0 ............... %a %b %c f=0
+remul_dop_reg_u6       01011 ... 01 101001 0 ............... %a %b imm=%u6 f=0
+remul_dop_reg_s12      01011 ... 10 101001 0 ............... %b imm=%s12 f=0
+remul_dop_cond_reg     01011 ... 11 101001 0 ......... 0 ..... %b %c f=0 %cond
+remul_dop_cond_u6      01011 ... 11 101001 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+dmpyh_dop_reg_reg      00101 ..... 010000 ................ @dop_reg_reg
+dmpyh_dop_reg_u6       00101 ..... 010000 ................ @dop_reg_u6_dmpy
+dmpyh_dop_reg_s12      00101 ..... 010000 ................ @dop_reg_s12_dmpy
+dmpyh_dop_cond_reg     00101 ..... 010000 ................ @dop_cond_reg
+dmpyh_dop_cond_u6      00101 ..... 010000 ................ @dop_cond_u6_dmpy
+
+dmpyhu_dop_reg_reg     00101 ..... 010001 ................ @dop_reg_reg
+dmpyhu_dop_reg_u6      00101 ..... 010001 ................ @dop_reg_u6_dmpy
+dmpyhu_dop_reg_s12     00101 ..... 010001 ................ @dop_reg_s12_dmpy
+dmpyhu_dop_cond_reg    00101 ..... 010001 ................ @dop_cond_reg
+dmpyhu_dop_cond_u6     00101 ..... 010001 ................ @dop_cond_u6_dmpy
+
+dmpywh_dop_reg_reg     00101 ..... 110010 ................ @dop_reg_reg
+dmpywh_dop_reg_u6      00101 ..... 110010 ................ @dop_reg_u6_dmpy
+dmpywh_dop_reg_s12     00101 ..... 110010 ................ @dop_reg_s12_dmpy
+dmpywh_dop_cond_reg    00101 ..... 110010 ................ @dop_cond_reg
+dmpywh_dop_cond_u6     00101 ..... 110010 ................ @dop_cond_u6_dmpy
+
+dmpywhu_dop_reg_reg    00101 ..... 110011 ................ @dop_reg_reg
+dmpywhu_dop_reg_u6     00101 ..... 110011 ................ @dop_reg_u6_dmpy
+dmpywhu_dop_reg_s12    00101 ..... 110011 ................ @dop_reg_s12_dmpy
+dmpywhu_dop_cond_reg   00101 ..... 110011 ................ @dop_cond_reg
+dmpywhu_dop_cond_u6    00101 ..... 110011 ................ @dop_cond_u6_dmpy
+
+qmpyh_dop_reg_reg      00101 ..... 110000 ................ @dop_reg_reg
+qmpyh_dop_reg_u6       00101 ..... 110000 ................ @dop_reg_u6_qmpy
+qmpyh_dop_reg_s12      00101 ..... 110000 ................ @dop_reg_s12_qmpy
+qmpyh_dop_cond_reg     00101 ..... 110000 ................ @dop_cond_reg
+qmpyh_dop_cond_u6      00101 ..... 110000 ................ @dop_cond_u6_qmpy
+
+qmpyhu_dop_reg_reg     00101 ..... 110001 ................ @dop_reg_reg
+qmpyhu_dop_reg_u6      00101 ..... 110001 ................ @dop_reg_u6_qmpy
+qmpyhu_dop_reg_s12     00101 ..... 110001 ................ @dop_reg_s12_qmpy
+qmpyhu_dop_cond_reg    00101 ..... 110001 ................ @dop_cond_reg
+qmpyhu_dop_cond_u6     00101 ..... 110001 ................ @dop_cond_u6_qmpy
+
+mac_dop_reg_reg        00101 ..... 001110 ................ @dop_reg_reg
+mac_dop_reg_u6         00101 ..... 001110 ................ @dop_reg_u6
+mac_dop_reg_s12        00101 ..... 001110 ................ @dop_reg_s12
+mac_dop_cond_reg       00101 ..... 001110 ................ @dop_cond_reg
+mac_dop_cond_u6        00101 ..... 001110 ................ @dop_cond_u6
+
+macu_dop_reg_reg       00101 ..... 001111 ................ @dop_reg_reg
+macu_dop_reg_u6        00101 ..... 001111 ................ @dop_reg_u6
+macu_dop_reg_s12       00101 ..... 001111 ................ @dop_reg_s12
+macu_dop_cond_reg      00101 ..... 001111 ................ @dop_cond_reg
+macu_dop_cond_u6       00101 ..... 001111 ................ @dop_cond_u6
+
+macd_dop_reg_reg       00101 ..... 011010 ................ @dop_reg_reg
+macd_dop_reg_u6        00101 ..... 011010 ................ @dop_reg_u6
+macd_dop_reg_s12       00101 ..... 011010 ................ @dop_reg_s12
+macd_dop_cond_reg      00101 ..... 011010 ................ @dop_cond_reg
+macd_dop_cond_u6       00101 ..... 011010 ................ @dop_cond_u6
+
+macdu_dop_reg_reg      00101 ..... 011011 ................ @dop_reg_reg
+macdu_dop_reg_u6       00101 ..... 011011 ................ @dop_reg_u6
+macdu_dop_reg_s12      00101 ..... 011011 ................ @dop_reg_s12
+macdu_dop_cond_reg     00101 ..... 011011 ................ @dop_cond_reg
+macdu_dop_cond_u6      00101 ..... 011011 ................ @dop_cond_u6
+
+dmach_dop_reg_reg      00101 ..... 010010 ................ @dop_reg_reg
+dmach_dop_reg_u6       00101 ..... 010010 ................ @dop_reg_u6_dmpy
+dmach_dop_reg_s12      00101 ..... 010010 ................ @dop_reg_s12_dmpy
+dmach_dop_cond_reg     00101 ..... 010010 ................ @dop_cond_reg
+dmach_dop_cond_u6      00101 ..... 010010 ................ @dop_cond_u6_dmpy
+
+dmachu_dop_reg_reg     00101 ..... 010011 ................ @dop_reg_reg
+dmachu_dop_reg_u6      00101 ..... 010011 ................ @dop_reg_u6_dmpy
+dmachu_dop_reg_s12     00101 ..... 010011 ................ @dop_reg_s12_dmpy
+dmachu_dop_cond_reg    00101 ..... 010011 ................ @dop_cond_reg
+dmachu_dop_cond_u6     00101 ..... 010011 ................ @dop_cond_u6_dmpy
+
+dmacwh_dop_reg_reg     00101 ..... 110110 ................ @dop_reg_reg
+dmacwh_dop_reg_u6      00101 ..... 110110 ................ @dop_reg_u6_dmpy
+dmacwh_dop_reg_s12     00101 ..... 110110 ................ @dop_reg_s12_dmpy
+dmacwh_dop_cond_reg    00101 ..... 110110 ................ @dop_cond_reg
+dmacwh_dop_cond_u6     00101 ..... 110110 ................ @dop_cond_u6_dmpy
+
+dmacwhu_dop_reg_reg    00101 ..... 110111 ................ @dop_reg_reg
+dmacwhu_dop_reg_u6     00101 ..... 110111 ................ @dop_reg_u6_dmpy
+dmacwhu_dop_reg_s12    00101 ..... 110111 ................ @dop_reg_s12_dmpy
+dmacwhu_dop_cond_reg   00101 ..... 110111 ................ @dop_cond_reg
+dmacwhu_dop_cond_u6    00101 ..... 110111 ................ @dop_cond_u6_dmpy
+
+qmach_dop_reg_reg      00101 ..... 110100 ................ @dop_reg_reg
+qmach_dop_reg_u6       00101 ..... 110100 ................ @dop_reg_u6_qmpy
+qmach_dop_reg_s12      00101 ..... 110100 ................ @dop_reg_s12_qmpy
+qmach_dop_cond_reg     00101 ..... 110100 ................ @dop_cond_reg
+qmach_dop_cond_u6      00101 ..... 110100 ................ @dop_cond_u6_qmpy
+
+qmachu_dop_reg_reg     00101 ..... 110101 ................ @dop_reg_reg
+qmachu_dop_reg_u6      00101 ..... 110101 ................ @dop_reg_u6_qmpy
+qmachu_dop_reg_s12     00101 ..... 110101 ................ @dop_reg_s12_qmpy
+qmachu_dop_cond_reg    00101 ..... 110101 ................ @dop_cond_reg
+qmachu_dop_cond_u6     00101 ..... 110101 ................ @dop_cond_u6_qmpy
+
+# SIMD variants of DOP general formats
+
+&dop_reg_reg_simd        a b c
+@dop_reg_reg_simd        ........ 00 ...... 0 ...............   &dop_reg_reg_simd %a %b %c
+@dop_reg_reg_simd_f1        ........ 00 ...... 1 ...............   &dop_reg_reg_simd %a %b %c
+
+&dop_reg_u6_simd_vadd2   a b imm:int64_t
+@dop_reg_u6_simd_vadd2   ........ 01 ...... 0 ...............   &dop_reg_u6_simd_vadd2 %a %b imm=%u6_dword
+@dop_reg_u6_simd_vadd2_f1   ........ 01 ...... 1 ...............   &dop_reg_u6_simd_vadd2 %a %b imm=%u6_dword
+
+&dop_reg_s12_simd_vadd2  b imm:int64_t
+@dop_reg_s12_simd_vadd2  ........ 10 ...... 0 ...............   &dop_reg_s12_simd_vadd2 %b imm=%s12_dword
+@dop_reg_s12_simd_vadd2_f1  ........ 10 ...... 1 ...............   &dop_reg_s12_simd_vadd2 %b imm=%s12_dword
+
+&dop_cond_reg_simd       b c cond
+@dop_cond_reg_simd       ........ 11 ...... 0 ......... 0 ..... &dop_cond_reg_simd %b %c %cond
+@dop_cond_reg_simd_f1       ........ 11 ...... 1 ......... 0 ..... &dop_cond_reg_simd %b %c %cond
+
+&dop_cond_u6_simd_vadd2  b imm:int64_t cond
+@dop_cond_u6_simd_vadd2  ........ 11 ...... 0 ......... 1 ..... &dop_cond_u6_simd_vadd2 %b imm=%u6_dword %cond
+@dop_cond_u6_simd_vadd2_f1  ........ 11 ...... 1 ......... 1 ..... &dop_cond_u6_simd_vadd2 %b imm=%u6_dword %cond
+
+vadd2_dop_reg_reg        00101 ..... 111100 ................ @dop_reg_reg_simd
+vadd2_dop_reg_u6         00101 ..... 111100 ................ @dop_reg_u6_simd_vadd2
+vadd2_dop_reg_s12        00101 ..... 111100 ................ @dop_reg_s12_simd_vadd2
+vadd2_dop_cond_reg       00101 ..... 111100 ................ @dop_cond_reg_simd
+vadd2_dop_cond_u6        00101 ..... 111100 ................ @dop_cond_u6_simd_vadd2
+
+vaddsub_dop_reg_reg      00101 ..... 111110 ................ @dop_reg_reg_simd
+vaddsub_dop_reg_u6       00101 ..... 111110 ................ @dop_reg_u6_simd_vadd2
+vaddsub_dop_reg_s12      00101 ..... 111110 ................ @dop_reg_s12_simd_vadd2
+vaddsub_dop_cond_reg     00101 ..... 111110 ................ @dop_cond_reg_simd
+vaddsub_dop_cond_u6      00101 ..... 111110 ................ @dop_cond_u6_simd_vadd2
+
+vsub2_dop_reg_reg        00101 ..... 111101 ................ @dop_reg_reg_simd
+vsub2_dop_reg_u6         00101 ..... 111101 ................ @dop_reg_u6_simd_vadd2
+vsub2_dop_reg_s12        00101 ..... 111101 ................ @dop_reg_s12_simd_vadd2
+vsub2_dop_cond_reg       00101 ..... 111101 ................ @dop_cond_reg_simd
+vsub2_dop_cond_u6        00101 ..... 111101 ................ @dop_cond_u6_simd_vadd2
+
+vsubadd_dop_reg_reg      00101 ..... 111111 ................ @dop_reg_reg_simd
+vsubadd_dop_reg_u6       00101 ..... 111111 ................ @dop_reg_u6_simd_vadd2
+vsubadd_dop_reg_s12      00101 ..... 111111 ................ @dop_reg_s12_simd_vadd2
+vsubadd_dop_cond_reg     00101 ..... 111111 ................ @dop_cond_reg_simd
+vsubadd_dop_cond_u6      00101 ..... 111111 ................ @dop_cond_u6_simd_vadd2
+
+&dop_reg_u6_simd_vadd2h  a b imm
+@dop_reg_u6_simd_vadd2h  ........ 01 ...... 0 ...............   &dop_reg_u6_simd_vadd2h %a %b imm=%u6_dhalf
+
+&dop_reg_s12_simd_vadd2h b imm
+@dop_reg_s12_simd_vadd2h ........ 10 ...... 0 ...............   &dop_reg_s12_simd_vadd2h %b imm=%s12_dhalf
+
+&dop_cond_u6_simd_vadd2h b imm cond
+@dop_cond_u6_simd_vadd2h ........ 11 ...... 0 ......... 1 ..... &dop_cond_u6_simd_vadd2h %b imm=%u6_dhalf %cond
+
+vadd2h_dop_reg_reg       00101 ..... 010100 ................ @dop_reg_reg_simd
+vadd2h_dop_reg_u6        00101 ..... 010100 ................ @dop_reg_u6_simd_vadd2h
+vadd2h_dop_reg_s12       00101 ..... 010100 ................ @dop_reg_s12_simd_vadd2h
+vadd2h_dop_cond_reg      00101 ..... 010100 ................ @dop_cond_reg_simd
+vadd2h_dop_cond_u6       00101 ..... 010100 ................ @dop_cond_u6_simd_vadd2h
+
+vaddsub2h_dop_reg_reg    00101 ..... 010110 ................ @dop_reg_reg_simd
+vaddsub2h_dop_reg_u6     00101 ..... 010110 ................ @dop_reg_u6_simd_vadd2h
+vaddsub2h_dop_reg_s12    00101 ..... 010110 ................ @dop_reg_s12_simd_vadd2h
+vaddsub2h_dop_cond_reg   00101 ..... 010110 ................ @dop_cond_reg_simd
+vaddsub2h_dop_cond_u6    00101 ..... 010110 ................ @dop_cond_u6_simd_vadd2h
+
+vsub2h_dop_reg_reg       00101 ..... 010101 ................ @dop_reg_reg_simd
+vsub2h_dop_reg_u6        00101 ..... 010101 ................ @dop_reg_u6_simd_vadd2h
+vsub2h_dop_reg_s12       00101 ..... 010101 ................ @dop_reg_s12_simd_vadd2h
+vsub2h_dop_cond_reg      00101 ..... 010101 ................ @dop_cond_reg_simd
+vsub2h_dop_cond_u6       00101 ..... 010101 ................ @dop_cond_u6_simd_vadd2h
+
+vsubadd2h_dop_reg_reg    00101 ..... 010111 ................ @dop_reg_reg_simd
+vsubadd2h_dop_reg_u6     00101 ..... 010111 ................ @dop_reg_u6_simd_vadd2h
+vsubadd2h_dop_reg_s12    00101 ..... 010111 ................ @dop_reg_s12_simd_vadd2h
+vsubadd2h_dop_cond_reg   00101 ..... 010111 ................ @dop_cond_reg_simd
+vsubadd2h_dop_cond_u6    00101 ..... 010111 ................ @dop_cond_u6_simd_vadd2h
+
+&dop_reg_u6_simd_vadd4h  a b imm:int64_t
+@dop_reg_u6_simd_vadd4h  ........ 01 ...... 0 ...............   &dop_reg_u6_simd_vadd4h %a %b imm=%u6_qhalf
+
+&dop_reg_s12_simd_vadd4h b imm:int64_t
+@dop_reg_s12_simd_vadd4h ........ 10 ...... 0 ...............   &dop_reg_s12_simd_vadd4h %b imm=%s12_qhalf
+
+&dop_cond_u6_simd_vadd4h b imm:int64_t cond
+@dop_cond_u6_simd_vadd4h ........ 11 ...... 0 ......... 1 ..... &dop_cond_u6_simd_vadd4h %b imm=%u6_qhalf %cond
+
+vadd4h_dop_reg_reg       00101 ..... 111000 ................ @dop_reg_reg_simd
+vadd4h_dop_reg_u6        00101 ..... 111000 ................ @dop_reg_u6_simd_vadd4h
+vadd4h_dop_reg_s12       00101 ..... 111000 ................ @dop_reg_s12_simd_vadd4h
+vadd4h_dop_cond_reg      00101 ..... 111000 ................ @dop_cond_reg_simd
+vadd4h_dop_cond_u6       00101 ..... 111000 ................ @dop_cond_u6_simd_vadd4h
+
+vaddsub4h_dop_reg_reg    00101 ..... 111010 ................ @dop_reg_reg_simd
+vaddsub4h_dop_reg_u6     00101 ..... 111010 ................ @dop_reg_u6_simd_vadd4h
+vaddsub4h_dop_reg_s12    00101 ..... 111010 ................ @dop_reg_s12_simd_vadd4h
+vaddsub4h_dop_cond_reg   00101 ..... 111010 ................ @dop_cond_reg_simd
+vaddsub4h_dop_cond_u6    00101 ..... 111010 ................ @dop_cond_u6_simd_vadd4h
+
+vsub4h_dop_reg_reg       00101 ..... 111001 ................ @dop_reg_reg_simd
+vsub4h_dop_reg_u6        00101 ..... 111001 ................ @dop_reg_u6_simd_vadd4h
+vsub4h_dop_reg_s12       00101 ..... 111001 ................ @dop_reg_s12_simd_vadd4h
+vsub4h_dop_cond_reg      00101 ..... 111001 ................ @dop_cond_reg_simd
+vsub4h_dop_cond_u6       00101 ..... 111001 ................ @dop_cond_u6_simd_vadd4h
+
+vsubadd4h_dop_reg_reg    00101 ..... 111011 ................ @dop_reg_reg_simd
+vsubadd4h_dop_reg_u6     00101 ..... 111011 ................ @dop_reg_u6_simd_vadd4h
+vsubadd4h_dop_reg_s12    00101 ..... 111011 ................ @dop_reg_s12_simd_vadd4h
+vsubadd4h_dop_cond_reg   00101 ..... 111011 ................ @dop_cond_reg_simd
+vsubadd4h_dop_cond_u6    00101 ..... 111011 ................ @dop_cond_u6_simd_vadd4h
+
+vmac2h_dop_reg_reg       00101 ..... 011110 ................ @dop_reg_reg_simd
+vmac2h_dop_reg_u6        00101 ..... 011110 ................ @dop_reg_u6_simd_vadd2h
+vmac2h_dop_reg_s12       00101 ..... 011110 ................ @dop_reg_s12_simd_vadd2h
+vmac2h_dop_cond_reg      00101 ..... 011110 ................ @dop_cond_reg_simd
+vmac2h_dop_cond_u6       00101 ..... 011110 ................ @dop_cond_u6_simd_vadd2h
+
+vmac2hu_dop_reg_reg      00101 ..... 011111 ................ @dop_reg_reg_simd
+vmac2hu_dop_reg_u6       00101 ..... 011111 ................ @dop_reg_u6_simd_vadd2h
+vmac2hu_dop_reg_s12      00101 ..... 011111 ................ @dop_reg_s12_simd_vadd2h
+vmac2hu_dop_cond_reg     00101 ..... 011111 ................ @dop_cond_reg_simd
+vmac2hu_dop_cond_u6      00101 ..... 011111 ................ @dop_cond_u6_simd_vadd2h
+
+vmpy2h_dop_reg_reg       00101 ..... 011100 ................ @dop_reg_reg_simd
+vmpy2h_dop_reg_u6        00101 ..... 011100 ................ @dop_reg_u6_simd_vadd2h
+vmpy2h_dop_reg_s12       00101 ..... 011100 ................ @dop_reg_s12_simd_vadd2h
+vmpy2h_dop_cond_reg      00101 ..... 011100 ................ @dop_cond_reg_simd
+vmpy2h_dop_cond_u6       00101 ..... 011100 ................ @dop_cond_u6_simd_vadd2h
+
+vmpy2hu_dop_reg_reg      00101 ..... 011101 ................ @dop_reg_reg_simd
+vmpy2hu_dop_reg_u6       00101 ..... 011101 ................ @dop_reg_u6_simd_vadd2h
+vmpy2hu_dop_reg_s12      00101 ..... 011101 ................ @dop_reg_s12_simd_vadd2h
+vmpy2hu_dop_cond_reg     00101 ..... 011101 ................ @dop_cond_reg_simd
+vmpy2hu_dop_cond_u6      00101 ..... 011101 ................ @dop_cond_u6_simd_vadd2h
+
+vpack2hl_dop_reg_reg     00101 ... 00 101001 0 ............... %a %b %c f=0
+vpack2hl_dop_reg_u6      00101 ... 01 101001 0 ............... %a %b imm=%u6 f=0
+vpack2hl_dop_reg_s12     00101 ... 10 101001 0 ............... %b imm=%s12 f=0
+vpack2hl_dop_cond_reg    00101 ... 11 101001 0 ......... 0 ..... %b %c f=0 %cond
+vpack2hl_dop_cond_u6     00101 ... 11 101001 0 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+vpack2hm_dop_reg_reg     00101 ... 00 101001 1 ............... %a %b %c f=0
+vpack2hm_dop_reg_u6      00101 ... 01 101001 1 ............... %a %b imm=%u6 f=0
+vpack2hm_dop_reg_s12     00101 ... 10 101001 1 ............... %b imm=%s12 f=0
+vpack2hm_dop_cond_reg    00101 ... 11 101001 1 ......... 0 ..... %b %c f=0 %cond
+vpack2hm_dop_cond_u6     00101 ... 11 101001 1 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+vpack4hl_dop_reg_reg     01011 ... 00 110000 1 ............... %a %b %c f=0
+vpack4hl_dop_reg_u6      01011 ... 01 110000 1 ............... %a %b imm=%u6 f=0
+vpack4hl_dop_reg_s12     01011 ... 10 110000 1 ............... %b imm=%s12 f=0
+vpack4hl_dop_cond_reg    01011 ... 11 110000 1 ......... 0 ..... %b %c f=0 %cond
+vpack4hl_dop_cond_u6     01011 ... 11 110000 1 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+vpack4hm_dop_reg_reg     01011 ... 00 110001 1 ............... %a %b %c f=0
+vpack4hm_dop_reg_u6      01011 ... 01 110001 1 ............... %a %b imm=%u6 f=0
+vpack4hm_dop_reg_s12     01011 ... 10 110001 1 ............... %b imm=%s12 f=0
+vpack4hm_dop_cond_reg    01011 ... 11 110001 1 ......... 0 ..... %b %c f=0 %cond
+vpack4hm_dop_cond_u6     01011 ... 11 110001 1 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+vpack2wl_dop_reg_reg     01011 ... 00 110010 1 ............... %a %b %c f=0
+vpack2wl_dop_reg_u6      01011 ... 01 110010 1 ............... %a %b imm=%u6 f=0
+vpack2wl_dop_reg_s12     01011 ... 10 110010 1 ............... %b imm=%s12 f=0
+vpack2wl_dop_cond_reg    01011 ... 11 110010 1 ......... 0 ..... %b %c f=0 %cond
+vpack2wl_dop_cond_u6     01011 ... 11 110010 1 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+vpack2wm_dop_reg_reg     01011 ... 00 110011 1 ............... %a %b %c f=0
+vpack2wm_dop_reg_u6      01011 ... 01 110011 1 ............... %a %b imm=%u6 f=0
+vpack2wm_dop_reg_s12     01011 ... 10 110011 1 ............... %b imm=%s12 f=0
+vpack2wm_dop_cond_reg    01011 ... 11 110011 1 ......... 0 ..... %b %c f=0 %cond
+vpack2wm_dop_cond_u6     01011 ... 11 110011 1 ......... 1 ..... %b imm=%u6 f=0 %cond
+
+vrep2hl_dop_reg_reg      00101 ... 00 101111 0 ......... 100010 %b %c
+vrep2hl_dop_reg_u6       00101 ... 01 101111 0 ......... 100010 %b imm=%u6
+
+# VMAX2 and VMIN2 for HS5x and HS6x have different synonymous encodings
+vmax2_dop_reg_reg        00100 ..... 001011 ................ @dop_reg_reg_simd
+vmax2_dop_reg_u6         00100 ..... 001011 ................ @dop_reg_u6_simd_vadd2
+vmax2_dop_reg_s12        00100 ..... 001011 ................ @dop_reg_s12_simd_vadd2
+vmax2_dop_cond_reg       00100 ..... 001011 ................ @dop_cond_reg_simd
+vmax2_dop_cond_u6        00100 ..... 001011 ................ @dop_cond_u6_simd_vadd2
+
+vmax2_dop_reg_reg        00101 ..... 111001 ................ @dop_reg_reg_simd_f1
+vmax2_dop_reg_u6         00101 ..... 111001 ................ @dop_reg_u6_simd_vadd2_f1
+vmax2_dop_reg_s12        00101 ..... 111001 ................ @dop_reg_s12_simd_vadd2_f1
+vmax2_dop_cond_reg       00101 ..... 111001 ................ @dop_cond_reg_simd_f1
+vmax2_dop_cond_u6        00101 ..... 111001 ................ @dop_cond_u6_simd_vadd2_f1
+
+vmin2_dop_reg_reg        00100 ..... 010001 ................ @dop_reg_reg_simd
+vmin2_dop_reg_u6         00100 ..... 010001 ................ @dop_reg_u6_simd_vadd2
+vmin2_dop_reg_s12        00100 ..... 010001 ................ @dop_reg_s12_simd_vadd2
+vmin2_dop_cond_reg       00100 ..... 010001 ................ @dop_cond_reg_simd
+vmin2_dop_cond_u6        00100 ..... 010001 ................ @dop_cond_u6_simd_vadd2
+
+vmin2_dop_reg_reg        00101 ..... 111000 ................ @dop_reg_reg_simd_f1
+vmin2_dop_reg_u6         00101 ..... 111000 ................ @dop_reg_u6_simd_vadd2_f1
+vmin2_dop_reg_s12        00101 ..... 111000 ................ @dop_reg_s12_simd_vadd2_f1
+vmin2_dop_cond_reg       00101 ..... 111000 ................ @dop_cond_reg_simd_f1
+vmin2_dop_cond_u6        00101 ..... 111000 ................ @dop_cond_u6_simd_vadd2_f1
+
+# LD and ST instructions (both 32-bit and 64-bit targets)
+
+%ld_s9 15:s1 16:8
+%st_s9 15:s1 16:8
+%st_w6 6:s6
+
+{
+  lddl_offset     00010 ............... di:1 11   01 x:1 ...... %a %b imm=%ld_s9
+  ldb_offset      00010 ............... di:1 aa:2 01 x:1 ...... %a %b imm=%ld_s9
+}
+
+{
+  lddl_reg        00100 ... 11   11001 x:1 di:1 ............... %a %b %c
+  ldb_reg         00100 ... aa:2 11001 x:1 di:1 ............... %a %b %c
+}
+
+ldh_offset        00010 ............... di:1 aa:2 10 x:1 ...... %a %b imm=%ld_s9
+ldh_reg           00100 ... aa:2 11010 x:1 di:1 ............... %a %b %c
+
+ld_offset         00010 ............... di:1 aa:2 000 ......    %a %b imm=%ld_s9
+ld_reg            00100 ... aa:2 110000 di:1 ...............    %a %b %c
+
+{
+  prealloc_offset 00010 ............... 0 aa:2 001 111110       %b imm=%ld_s9
+  ld_offset_sext  00010 ............... 0 aa:2 001 ......       %a %b imm=%ld_s9
+}
+
+{
+  prealloc_reg    00100 ... aa:2 1100010 ......... 111110       %b %c
+  ld_reg_sext     00100 ... aa:2 1100010 ......... ......       %a %b %c
+}
+
+ldd_offset        00010 ............... di:1 aa:2 110 ......    %a %b imm=%ld_s9
+ldd_reg           00100 ... aa:2 110110 di:1 ...............    %a %b %c
+
+ldl_offset        00010 ............... 1 aa:2 001 ......       %a %b imm=%ld_s9
+ldl_reg           00100 ... aa:2 1100011 ...............        %a %b %c
+
+ldi_b_c           00100 ... 001001100 ......... 000000 %b %c
+ldi_b_u6          00100 ... 011001100 ......... 000000 %b offset=%u6
+ldi_b_s12         00100 ... 101001100 ...............  %b offset=%s12
+
+stb_reg           00011 ..................... di:1 aa:2 01 0 %b %c imm=%st_s9
+stb_w6            00011 ..................... di:1 aa:2 01 1 simm_src=%st_w6 %b simm_offset=%st_s9
+
+sth_reg           00011 ..................... di:1 aa:2 10 0 %b %c imm=%st_s9
+
+{
+  stdl_w6         00011 ..................... 1    aa:2 10 1 simm_src=%st_w6 %b simm_offset=%st_s9
+  sth_w6          00011 ..................... di:1 aa:2 10 1 simm_src=%st_w6 %b simm_offset=%st_s9
+}
+
+st_reg            00011 ..................... di:1 aa:2 00 0 %b %c imm=%st_s9
+st_w6             00011 ..................... di:1 aa:2 00 1 simm_src=%st_w6 %b simm_offset=%st_s9
+
+{
+  stdl_reg        00011 ..................... 1    aa:2 11 0 %b %c imm=%st_s9
+  std_reg         00011 ..................... di:1 aa:2 11 0 %b %c imm=%st_s9
+}
+
+{
+  stl_reg         00011 ..................... 0    aa:2 11 1 %b %c imm=%st_s9
+  stl_w6          00011 ..................... 1    aa:2 11 1 simm_src=%st_w6 %b simm_offset=%st_s9
+  std_w6          00011 ..................... di:1 aa:2 11 1 simm_src=%st_w6 %b simm_offset=%st_s9
+}
